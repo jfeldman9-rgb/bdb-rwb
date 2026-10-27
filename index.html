@@ -2,29 +2,83 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="bdb-build" content="BDB-RWB Step 2"><meta name="theme-color" content="#101421"><title>The Legend of Claudia: BDB's Awakening</title>
+<meta name="bdb-build" content="BDB-RWB phone-start"><meta name="theme-color" content="#101421"><title>The Legend of Claudia: BDB's Awakening</title>
 <link rel="icon" href="data:,">
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080d17;color:#faf0df;font-family:Arial,Helvetica,sans-serif}button,select,input{font:inherit}button,select{border:1px solid #9a8468;border-radius:6px;background:#182234;color:#fff2d9;padding:12px 20px;cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #f4bf74;outline-offset:4px}button:hover{background:#33415b}button:disabled{opacity:.4;cursor:default}[hidden]{display:none!important}#shell{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}#game{position:relative;width:min(100vw,177.7778vh);height:min(100vh,56.25vw)}canvas{display:block}#title{position:absolute;inset:0;pointer-events:none;padding:7% 6%;background:linear-gradient(90deg,rgba(9,16,29,.96),rgba(9,16,29,.85) 48%,transparent 85%)}#title>*{pointer-events:auto}.eyebrow{font-size:clamp(9px,1.2vw,16px);color:#e5b573;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px}h1{font-size:clamp(26px,4.7vw,66px);line-height:.98;letter-spacing:-.045em;margin:0 0 14px;max-width:670px}h1 span{color:#ddabec;font-size:1.25em}#title p{font-size:clamp(10px,1.35vw,18px);line-height:1.6;color:#b9c5d8;max-width:480px;margin:14px 0 24px}.settings{display:flex;gap:12px;align-items:center;margin-bottom:16px;font-size:clamp(10px,1.1vw,15px)}.settings label{display:flex;align-items:center;gap:8px}.settings select{padding:8px 10px}.start{background:#edc186;color:#192030;border:0;font-weight:bold;letter-spacing:.08em;padding:16px 30px}.start:hover{background:#ffe1ab}.footnote{position:absolute;bottom:5%;left:6%;font-size:clamp(9px,1vw,13px);color:#8c9fb9;letter-spacing:.02em}#boot{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#101421;letter-spacing:.18em;color:#f3cc91}#top-buttons{display:none;position:absolute;right:2%;top:17%;gap:8px;z-index:20}.playing #top-buttons{display:flex}#top-buttons button{padding:7px 10px;font-size:12px;background:#101421b8}#touch{display:none;position:absolute;inset:0;pointer-events:none;z-index:15}.touch.playing #touch{display:block}#stick{position:absolute;left:max(3%,env(safe-area-inset-left));bottom:4%;width:18%;aspect-ratio:1;max-width:150px;border:2px solid #ccdfff66;border-radius:50%;background:#15223670;touch-action:none;pointer-events:auto;display:grid;place-items:center}#knob{width:40%;height:40%;border-radius:50%;background:#b7d4e66e;pointer-events:none}.buttons{position:absolute;right:max(2%,env(safe-area-inset-right));bottom:4%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:29%;max-width:340px;align-items:center}.tb{aspect-ratio:1.2;border-radius:30%;padding:0;min-width:44px;min-height:44px;font-size:clamp(10px,1.4vw,18px);font-weight:bold;pointer-events:auto;touch-action:none;background:#18283dd9;border:2px solid #bdd7e788;user-select:none;-webkit-user-select:none}.tb.on{background:#c7a7e8;color:#11182c}.tb.empty{border-color:#687188;color:#a5a9b3}#tbFire{grid-column:3;grid-row:1/3;aspect-ratio:.8;background:#775386d9;border-color:#dda3f0}#tbPapi{background:#8d6552cc}#tbDad{background:#465c66cc}#rotate{display:none;position:fixed;inset:0;background:#101421f5;z-index:100;place-items:center;text-align:center;padding:32px;font-size:22px}#victory{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0e1722e8;text-align:center}#victory h2{font-size:clamp(24px,4vw,50px);color:#f0c993}#graphics-notice{position:fixed;inset:0;z-index:120;background:#101421ee;display:grid;place-content:center;text-align:center;padding:10%}#startup-error{position:fixed;inset:0;z-index:110;background:#121b2b;padding:10%;text-align:center}#startup-code{color:#dfb77b}.touch #title{padding-top:5%}.touch .settings{margin-bottom:8px}.touch #title p{margin:10px 0}.touch .start{padding:12px 24px}@media(orientation:portrait) and (pointer:coarse){#rotate{display:grid}}@media(max-height:450px){.eyebrow{margin-bottom:10px}#title p{margin:8px 0 12px}.settings{margin-bottom:8px}.start{padding:10px 22px}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080d17;color:#faf0df;font-family:Arial,Helvetica,sans-serif}
+button,select,input{font:inherit}button,select{border:1px solid #9a8468;border-radius:6px;background:#182234;color:#fff2d9;padding:12px 20px;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:3px solid #f4bf74;outline-offset:4px}button:hover{background:#33415b}button:disabled{opacity:.4;cursor:default}
+[hidden]{display:none!important}
+#shell{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#game{position:relative;width:min(100vw,177.7778vh);height:min(100dvh,100vh,56.25vw);max-height:100dvh}
+canvas{display:block}
+body:not(.playing) #game>canvas{pointer-events:none}
+#title{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:flex-start;pointer-events:auto;padding:5% 6% 3%;background:linear-gradient(90deg,rgba(9,16,29,.96),rgba(9,16,29,.85) 48%,transparent 85%);overflow:hidden}
+#title .title-copy{pointer-events:none;max-width:670px}
+#title .settings{pointer-events:auto}
+.eyebrow{font-size:clamp(9px,1.2vw,16px);color:#e5b573;letter-spacing:.22em;text-transform:uppercase;margin-bottom:12px}
+h1{font-size:clamp(22px,4.5vw,66px);line-height:.98;letter-spacing:-.045em;margin:0 0 10px;max-width:670px}
+h1 span{color:#ddabec;font-size:1.25em}
+#title p{font-size:clamp(10px,1.35vw,18px);line-height:1.5;color:#b9c5d8;max-width:480px;margin:8px 0 14px}
+.settings{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;font-size:clamp(10px,1.1vw,15px)}
+.settings label{display:flex;align-items:center;gap:8px}.settings select{padding:8px 10px}
+.start-wrap{margin-top:auto;padding-top:10px;width:min(100%,440px);position:relative;z-index:12;pointer-events:auto}
+.start{display:block;width:100%;background:#edc186;color:#192030;border:0;font-weight:bold;letter-spacing:.08em;padding:16px 22px;min-height:56px;font-size:clamp(15px,2.6vw,26px);border-radius:10px;box-shadow:0 8px 28px #0008;text-align:center}
+.start:hover{background:#ffe1ab}
+.touch .start{min-height:64px;font-size:clamp(18px,4.5vw,28px);padding:18px 22px}
+.footnote{margin-top:10px;font-size:clamp(9px,1vw,13px);color:#8c9fb9;letter-spacing:.02em;pointer-events:none}
+#boot{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#101421;letter-spacing:.18em;color:#f3cc91}
+#top-buttons{display:none;position:absolute;right:2%;top:17%;gap:8px;z-index:20}
+.playing #top-buttons{display:flex}
+#top-buttons button{padding:7px 10px;font-size:12px;background:#101421b8}
+#touch{display:none;position:absolute;inset:0;pointer-events:none;z-index:15}
+.touch.playing #touch{display:block}
+#stick{position:absolute;left:max(3%,env(safe-area-inset-left));bottom:4%;width:18%;aspect-ratio:1;max-width:150px;border:2px solid #ccdfff66;border-radius:50%;background:#15223670;touch-action:none;pointer-events:auto;display:grid;place-items:center}
+#knob{width:40%;height:40%;border-radius:50%;background:#b7d4e66e;pointer-events:none}
+.buttons{position:absolute;right:max(2%,env(safe-area-inset-right));bottom:4%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:29%;max-width:340px;align-items:center}
+.tb{aspect-ratio:1.2;border-radius:30%;padding:0;min-width:44px;min-height:44px;font-size:clamp(10px,1.4vw,18px);font-weight:bold;pointer-events:auto;touch-action:none;background:#18283dd9;border:2px solid #bdd7e788;user-select:none;-webkit-user-select:none}
+.tb.on{background:#c7a7e8;color:#11182c}.tb.empty{border-color:#687188;color:#a5a9b3}
+#tbFire{grid-column:3;grid-row:1/3;aspect-ratio:.8;background:#775386d9;border-color:#dda3f0}
+#tbPapi{background:#8d6552cc}#tbDad{background:#465c66cc}
+#rotate{display:none;position:fixed;inset:0;background:#101421f5;z-index:100;place-items:center;text-align:center;padding:max(24px,env(safe-area-inset-top)) 28px;font-size:22px;gap:18px;grid-auto-rows:min-content;align-content:center}
+#rotate .start{width:min(100%,360px);margin:8px auto 0}
+#rotate .rotate-hint{font-size:14px;color:#9eb0c8;margin:0}
+@media (orientation:portrait) and (pointer:coarse){body:not(.playing) #rotate{display:grid}}
+#victory{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0e1722e8;text-align:center}
+#victory h2{font-size:clamp(24px,4vw,50px);color:#f0c993}
+#graphics-notice{position:fixed;inset:0;z-index:120;background:#101421ee;display:grid;place-content:center;text-align:center;padding:10%}
+#startup-error{position:fixed;inset:0;z-index:110;background:#121b2b;padding:10%;text-align:center}
+#startup-code{color:#dfb77b}
+.touch #title{padding-top:max(4%,env(safe-area-inset-top))}
+.touch .settings{margin-bottom:6px}
+.touch #title p{margin:6px 0}
+@media(max-height:450px){.eyebrow{margin-bottom:6px}#title p{margin:4px 0 8px}.settings{margin-bottom:6px}.start{padding:12px 18px;min-height:52px}}
+
 </style>
 </head>
 <body>
 <div id="shell"><div id="game">
 <section id="title" hidden aria-label="Title screen">
- <div class="eyebrow">A rescue. A bad idea. A lot of protein.</div>
- <h1>The Legend<br>of <span>Claudia</span></h1>
- <div class="eyebrow">BDB's Awakening</div>
- <p>Heaven has opinions. Bob brought options.<br>Three chapters. One very questionable rescue.</p>
+ <div class="title-copy">
+  <div class="eyebrow">A rescue. A bad idea. A lot of protein.</div>
+  <h1>The Legend<br>of <span>Claudia</span></h1>
+  <div class="eyebrow">BDB's Awakening</div>
+  <p>Heaven has opinions. Bob brought options.<br>Three chapters. One very questionable rescue.</p>
+ </div>
  <div class="settings"><label>Difficulty <select id="difficulty"><option value="story">Story</option><option value="adventure">Adventure</option><option value="nightmare">Nightmare</option></select></label><label>Chapter <select id="chapter"><option value="1">01 · Boulevard</option><option value="2">02 · Celestial</option><option value="3">03 · Moonlit Keep</option></select></label></div>
  <div class="settings"><label><input type="checkbox" id="auto-fire"> Auto-fire</label></div>
- <button class="start" id="start">BEGIN THE RESCUE →</button>
- <div class="footnote">WASD / ARROWS move · J fire · SPACE jump · SHIFT dash · Q Papi · R Dad<br>Gamepad: X fire · A jump · B dash · Y Papi · LB Dad</div>
+ <div class="start-wrap"><button type="button" class="start" id="start">TAP TO START</button>
+ <div class="footnote">WASD / ARROWS · J fire · SPACE jump · SHIFT dash · Q Papi · R Dad<br>Or tap anywhere on this screen</div></div>
 </section>
 <div id="top-buttons"><button id="pause">Pause</button><button id="mute">Sound on</button></div>
 <div id="touch"><div id="stick" aria-label="Movement stick"><div id="knob"></div></div><div class="buttons"><button class="tb" id="tbPapi">PAPI</button><button class="tb" id="tbDad">DAD</button><button class="tb" id="tbFire">FIRE</button><button class="tb" id="tbJump">JUMP</button><button class="tb" id="tbDash">DASH</button></div></div>
 <section id="victory" hidden><div class="eyebrow">Boundaries successfully mashed.</div><h2>CLAUDIA RESCUED.</h2><p>“Legally, it's produce.”</p><p id="victory-score"></p><button id="replay">Back to title</button></section>
 </div></div>
-<div id="boot">LOADING THE RESCUE…</div><div id="rotate">Turn your phone sideways.<br>The rescue needs elbow room.</div>
+<div id="boot">LOADING THE RESCUE…</div><div id="rotate" role="dialog" aria-label="Rotate or start">
+<p>Turn your phone sideways.<br>The rescue needs elbow room.</p>
+<button type="button" class="start" id="rotate-start">TAP TO START</button>
+<p class="rotate-hint">Or tap to begin letterboxed, then rotate when you can.</p>
+</div>
 <div id="startup-error" hidden role="alert"><h2 id="startup-title"></h2><p id="startup-description"></p><p id="startup-code"></p><button id="startup-retry">Reload game</button></div>
 <div id="graphics-notice" hidden role="alert"><h2>Graphics paused</h2><p>The rescue will resume when graphics recover.</p><button id="graphics-retry">Reload game</button></div>
 <script src="lib/phaser.min.js"></script><script type="module" src="src/bootstrap.js"></script>

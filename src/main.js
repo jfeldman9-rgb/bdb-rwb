@@ -11,6 +11,7 @@ import { installAudioLifecycle,unlock,toggleMute,isMuted } from './audio.js';
 import { installGraphicsLifecycle } from './graphics-lifecycle.js';
 import { installGraphicsNotice } from './graphics-notice.js';
 import { perf, bindPerfLifecycle } from './perf.js';
+import { wireTitleStart } from './title-start.js';
 
 class Boot extends Phaser.Scene {
  constructor(){super('boot');}
@@ -35,8 +36,8 @@ class Title extends Phaser.Scene {
    doc.getElementById('title').hidden=true;this.game.inp.clear();
    this.game.story.play('intro',()=>this.scene.start('gameplay',{stage:Number(chapter.value),difficulty:this.save.difficulty,save:this.save}));
   };
-  doc.getElementById('start').addEventListener('click',this.begin);
-  this.events.once('shutdown',()=>doc.getElementById('start').removeEventListener('click',this.begin));
+  this.disposeTitleStart=wireTitleStart({doc,begin:()=>this.begin(),coarse:coarsePointer()});
+  this.events.once('shutdown',()=>this.disposeTitleStart?.());
   if(q.get('demo')==='1'||q.get('autostart')==='1'){
    // Demo can exercise any chapter without changing saved unlocks.
    if(q.get('demo')==='1'){chapter.value=String(Math.max(1,Math.min(3,Number(q.get('stage'))||1)));difficulty.value='adventure';}
