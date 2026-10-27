@@ -4,7 +4,7 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
     "interventionist-0"
   ],
@@ -28,21 +28,22 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": true
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "interventionist_grab",
       "frames": [
-        "interventionist_grab_01",
-        "interventionist_grab_02",
-        "interventionist_grab_03"
+        "interventionist_walk_01",
+        "interventionist_walk_02",
+        "interventionist_walk_03"
       ],
       "pages": [
         0,
@@ -50,50 +51,53 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     },
     {
       "name": "interventionist_hold",
       "frames": [
-        "interventionist_hold_01",
-        "interventionist_hold_02"
+        "interventionist_walk_01",
+        "interventionist_walk_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        125,
+        125
       ],
-      "loop": false
+      "loop": false,
+      "fps": 8
     },
     {
       "name": "interventionist_hurt",
       "frames": [
-        "interventionist_hurt_01",
-        "interventionist_hurt_02"
+        "interventionist_walk_01",
+        "interventionist_walk_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "interventionist_down",
       "frames": [
-        "interventionist_down_01",
-        "interventionist_down_02",
-        "interventionist_down_03"
+        "interventionist_walk_01",
+        "interventionist_walk_02",
+        "interventionist_walk_03"
       ],
       "pages": [
         0,
@@ -101,19 +105,20 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     },
     {
       "name": "interventionist_slam",
       "frames": [
-        "interventionist_slam_01",
-        "interventionist_slam_02",
-        "interventionist_slam_03",
-        "interventionist_slam_04"
+        "interventionist_walk_01",
+        "interventionist_walk_02",
+        "interventionist_walk_03",
+        "interventionist_walk_04"
       ],
       "pages": [
         0,
@@ -122,14 +127,20 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     }
   ],
   "placeholder": true,
-  "source": "local coloured silhouettes"
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 20,
+    "unique": 6,
+    "reused": 14
+  }
 }

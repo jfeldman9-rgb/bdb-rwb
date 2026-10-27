@@ -4,7 +4,7 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
     "dad-0"
   ],
@@ -28,22 +28,23 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": true
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "dad_swat",
       "frames": [
-        "dad_swat_01",
-        "dad_swat_02",
-        "dad_swat_03",
-        "dad_swat_04"
+        "dad_run_01",
+        "dad_run_02",
+        "dad_run_03",
+        "dad_run_04"
       ],
       "pages": [
         0,
@@ -52,19 +53,20 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "dad_cheer",
       "frames": [
-        "dad_cheer_01",
-        "dad_cheer_02",
-        "dad_cheer_03"
+        "dad_run_01",
+        "dad_run_02",
+        "dad_run_03"
       ],
       "pages": [
         0,
@@ -72,13 +74,19 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     }
   ],
   "placeholder": true,
-  "source": "local coloured silhouettes"
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 13,
+    "unique": 6,
+    "reused": 7
+  }
 }

@@ -19,3 +19,7 @@ Deviations and later work:
 - Muse and Argon reviews have not been performed or claimed.
 
 Local `main` only. No remote, push, PR, npm install, paid API, Tinyfish, Claude Fable/extra usage, Seedance or Manus. Packet/art/RWB references were only read.
+
+### Art follow-up (same day)
+- Repacked from `/workspace/bdb-art/sprites/` per `FPS.md` (dedupe HOLDs, scale 0.38, Stage-1 GPU <20 MiB).
+- Codex Astra session did not consume the queued art update; pack applied by Grok Bot after Codex exit.

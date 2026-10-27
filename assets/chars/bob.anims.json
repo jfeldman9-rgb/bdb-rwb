@@ -4,10 +4,9 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
-    "bob-0",
-    "bob-1"
+    "bob-0"
   ],
   "anims": [
     {
@@ -18,9 +17,21 @@
         "bob_idle_03",
         "bob_idle_04",
         "bob_idle_05",
-        "bob_idle_06"
+        "bob_idle_06",
+        "bob_idle_07",
+        "bob_idle_08",
+        "bob_idle_09",
+        "bob_idle_10",
+        "bob_idle_11",
+        "bob_idle_12"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -29,14 +40,21 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": true
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "bob_walk",
@@ -44,11 +62,23 @@
         "bob_walk_01",
         "bob_walk_02",
         "bob_walk_03",
-        "bob_walk_04",
+        "bob_walk_03",
         "bob_walk_05",
-        "bob_walk_06"
+        "bob_walk_06",
+        "bob_walk_07",
+        "bob_walk_08",
+        "bob_walk_09",
+        "bob_walk_10",
+        "bob_walk_11",
+        "bob_walk_12"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -57,55 +87,79 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56
       ],
-      "loop": true
+      "loop": true,
+      "fps": 18
     },
     {
       "name": "bob_shoot",
       "frames": [
         "bob_shoot_01",
-        "bob_shoot_02",
+        "bob_shoot_01",
         "bob_shoot_03",
-        "bob_shoot_04"
+        "bob_shoot_03",
+        "bob_shoot_05",
+        "bob_shoot_05",
+        "bob_shoot_07"
       ],
       "pages": [
+        0,
+        0,
+        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        63,
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
       ],
-      "loop": false
+      "loop": false,
+      "fps": 16
     },
     {
       "name": "bob_hurt",
       "frames": [
         "bob_hurt_01",
         "bob_hurt_02",
-        "bob_hurt_03"
+        "bob_hurt_03",
+        "bob_hurt_03",
+        "bob_hurt_05"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "bob_knockdown",
@@ -113,21 +167,31 @@
         "bob_knockdown_01",
         "bob_knockdown_02",
         "bob_knockdown_03",
-        "bob_knockdown_04"
+        "bob_knockdown_04",
+        "bob_knockdown_05",
+        "bob_knockdown_06",
+        "bob_knockdown_07"
       ],
       "pages": [
+        0,
+        0,
+        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "bob_getup",
@@ -135,23 +199,38 @@
         "bob_getup_01",
         "bob_getup_02",
         "bob_getup_03",
-        "bob_getup_04"
+        "bob_getup_04",
+        "bob_getup_05",
+        "bob_getup_06",
+        "bob_getup_07"
       ],
       "pages": [
         0,
         0,
         0,
-        1
+        0,
+        0,
+        0,
+        0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     }
   ],
   "placeholder": false,
-  "source": "/workspace/bdb-art/sprites/_v1"
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 50,
+    "unique": 45,
+    "reused": 5
+  }
 }

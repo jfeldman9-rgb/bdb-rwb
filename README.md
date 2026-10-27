@@ -52,6 +52,6 @@ Rebuild assets using the existing Python/Pillow installation:
 node tools/make-placeholders.mjs
 ```
 
-The packer reads the original, non-interpolated frames in `/workspace/bdb-art/sprites/_v1`, falling back to the root if that archive is absent. Bob's walk has **six** frames. It packs flat atlases, creates clothed silhouettes for missing keys, and copies only the specified packet media. Existing FFmpeg extracts video posters; without it, the packer uses a background poster. All reference directories remain read-only. See [asset notes](docs/ASSET-NOTES.md).
+The packer reads the **v2 higher-fps** frames in `/workspace/bdb-art/sprites/` (see `FPS.md`; ignores `_v1/` and `_old/`). Bob walk is **12** frames @18fps; shoot/attack HOLDs are deduped in the atlas. It packs flat atlases, creates clothed silhouettes for missing keys, and copies only the specified packet media. Existing FFmpeg extracts video posters; without it, the packer uses a background poster. All reference directories remain read-only. See [asset notes](docs/ASSET-NOTES.md).
 
 Step 2 includes all three chapters, both mini-bosses, the Wingmen finale, the campaign bot, placeholder media and local saves. Final character/background/cutscene art, rendered voice casting, physical iPhone checks, human pacing and the Muse/Argon reviews remain later work. No remote is configured and nothing has been pushed.

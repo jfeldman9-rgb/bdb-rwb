@@ -4,10 +4,9 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
-    "yetti_walker-0",
-    "yetti_walker-1"
+    "yetti_walker-0"
   ],
   "anims": [
     {
@@ -18,9 +17,21 @@
         "yetti_walker_idle_03",
         "yetti_walker_idle_04",
         "yetti_walker_idle_05",
-        "yetti_walker_idle_06"
+        "yetti_walker_idle_06",
+        "yetti_walker_idle_07",
+        "yetti_walker_idle_08",
+        "yetti_walker_idle_09",
+        "yetti_walker_idle_10",
+        "yetti_walker_idle_11",
+        "yetti_walker_idle_12"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -29,14 +40,21 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": true
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "yetti_walker_walk",
@@ -48,9 +66,25 @@
         "yetti_walker_walk_05",
         "yetti_walker_walk_06",
         "yetti_walker_walk_07",
-        "yetti_walker_walk_08"
+        "yetti_walker_walk_08",
+        "yetti_walker_walk_09",
+        "yetti_walker_walk_10",
+        "yetti_walker_walk_11",
+        "yetti_walker_walk_12",
+        "yetti_walker_walk_13",
+        "yetti_walker_walk_14",
+        "yetti_walker_walk_15",
+        "yetti_walker_walk_16"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -61,81 +95,122 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56,
+        56
       ],
-      "loop": true
+      "loop": true,
+      "fps": 18
     },
     {
       "name": "yetti_walker_attack",
       "frames": [
         "yetti_walker_attack_01",
-        "yetti_walker_attack_02",
+        "yetti_walker_attack_01",
         "yetti_walker_attack_03",
-        "yetti_walker_attack_04"
+        "yetti_walker_attack_03",
+        "yetti_walker_attack_05",
+        "yetti_walker_attack_05",
+        "yetti_walker_attack_07"
       ],
       "pages": [
         0,
-        1,
-        1,
-        1
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        63,
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
       ],
-      "loop": false
+      "loop": false,
+      "fps": 16
     },
     {
       "name": "yetti_walker_hurt",
       "frames": [
         "yetti_walker_hurt_01",
-        "yetti_walker_hurt_02",
-        "yetti_walker_hurt_03"
+        "yetti_walker_hurt_01",
+        "yetti_walker_hurt_03",
+        "yetti_walker_hurt_03",
+        "yetti_walker_hurt_05"
       ],
       "pages": [
-        1,
-        1,
-        1
+        0,
+        0,
+        0,
+        0,
+        0
       ],
       "holds": [
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "yetti_walker_knockdown",
       "frames": [
         "yetti_walker_knockdown_01",
-        "yetti_walker_knockdown_02",
+        "yetti_walker_knockdown_01",
         "yetti_walker_knockdown_03",
-        "yetti_walker_knockdown_04"
+        "yetti_walker_knockdown_03",
+        "yetti_walker_knockdown_05",
+        "yetti_walker_knockdown_06",
+        "yetti_walker_knockdown_07"
       ],
       "pages": [
-        1,
-        1,
-        1,
-        1
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     }
   ],
   "placeholder": false,
-  "source": "/workspace/bdb-art/sprites/_v1"
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 47,
+    "unique": 40,
+    "reused": 7
+  }
 }

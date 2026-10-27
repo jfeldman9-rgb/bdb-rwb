@@ -74,7 +74,7 @@ No npm install, paid API, Tinyfish, Claude Fable/extra usage, Seedance or Manus 
 
 ## Deviations and deferred work
 
-- **Bob walk = 6**, overriding the plan's eight-frame brief. `_v1` contains the originals; later optical-flow frames in the root were excluded. Bob frames were not invented.
+- **Bob walk = 12 @18fps** from Game Art v2 (`FPS.md`). Codex Step 2 initially packed `_v1` (6-frame); a follow-up local pack swapped in v2 with HOLD dedupe and pack scale 0.38 for the iPhone GPU budget.
 - The four packet rules are verbatim; combat otherwise uses small pure models with the retained Phaser Fighter/view, input, audio, viewport and recovery patterns. This makes the browser and bot simulations share behavior.
 - Flat lighting is the shipped default, touch scale is capped at 1.5, and bloom is off. Normal maps are optional and omitted.
 - Shared actor pages remain across stages; exclusive previous boss pages/backgrounds are released. This avoids unloading and reloading identical Bob/Yetti pages.
@@ -83,3 +83,15 @@ No npm install, paid API, Tinyfish, Claude Fable/extra usage, Seedance or Manus 
 - The compact campaign is functional but **human pacing is not yet tuned to 5–8 minutes per chapter**. The bot uses unlimited checkpoint continues in the full campaign. Further balance/playfeel work remains appropriate for review.
 - Physical iPhone Safari playthrough, the real-device 60-second capture, and hardware p95 ≤16.7 ms remain unverified. The parent can capture these from the provided preview.
 - Muse/Argon reviews and Jason's final fun/playability check remain outstanding and are not claimed complete.
+
+## Art pack (v2 follow-up)
+
+Queued to the Codex session but not delivered before exit (`thread … not found`). Applied locally after Step 2 commits.
+
+- Source: `/workspace/bdb-art/sprites/` (144 frames). Ignored `_v1/` and `_old/`.
+- Dedupe: bob 50→45 unique, yetti_walker 47→40, yetti_guard 47→39 (shoot/attack/hurt HOLDs share atlas frames; anim defs still list full cadence).
+- Pack scale: **0.38** (0.58 draw-intent residency was ~42 MiB Stage-1 GPU; 0.38 hits the budget).
+- **Disk webp:** 1.6 MiB (1678060 bytes), 13 pages.
+- **GPU RGBA (unpacked pages):** all chars 20.289 MiB; Stage-1 kit 18.879 MiB (under 20).
+- Atlas-spec tests updated; suite **68 pass / 0 fail**.
+- Commit: see `git log -1 --oneline` after the art commit.

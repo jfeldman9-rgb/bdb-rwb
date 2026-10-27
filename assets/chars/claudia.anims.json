@@ -4,7 +4,7 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
     "claudia-0"
   ],
@@ -24,20 +24,21 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120
+        100,
+        100,
+        100,
+        100
       ],
-      "loop": true
+      "loop": true,
+      "fps": 10
     },
     {
       "name": "claudia_freed",
       "frames": [
-        "claudia_freed_01",
-        "claudia_freed_02",
-        "claudia_freed_03",
-        "claudia_freed_04"
+        "claudia_idle-caged_01",
+        "claudia_idle-caged_02",
+        "claudia_idle-caged_03",
+        "claudia_idle-caged_04"
       ],
       "pages": [
         0,
@@ -46,27 +47,34 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     },
     {
       "name": "claudia_portrait",
       "frames": [
-        "claudia_portrait_01"
+        "claudia_idle-caged_01"
       ],
       "pages": [
         0
       ],
       "holds": [
-        85
+        1000
       ],
-      "loop": false
+      "loop": false,
+      "fps": 1
     }
   ],
   "placeholder": true,
-  "source": "local coloured silhouettes"
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 9,
+    "unique": 4,
+    "reused": 5
+  }
 }

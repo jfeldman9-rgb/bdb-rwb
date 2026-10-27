@@ -4,10 +4,9 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
-    "wingman-0",
-    "wingman-1"
+    "wingman-0"
   ],
   "anims": [
     {
@@ -29,22 +28,23 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": true
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "wingman_ring",
       "frames": [
-        "wingman_ring_01",
-        "wingman_ring_02",
-        "wingman_ring_03",
-        "wingman_ring_04"
+        "wingman_hover_01",
+        "wingman_hover_02",
+        "wingman_hover_03",
+        "wingman_hover_04"
       ],
       "pages": [
         0,
@@ -53,35 +53,37 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "wingman_telegraph",
       "frames": [
-        "wingman_telegraph_01",
-        "wingman_telegraph_02"
+        "wingman_hover_01",
+        "wingman_hover_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        100,
+        100
       ],
-      "loop": false
+      "loop": false,
+      "fps": 10
     },
     {
       "name": "wingman_dive",
       "frames": [
-        "wingman_dive_01",
-        "wingman_dive_02",
-        "wingman_dive_03"
+        "wingman_hover_01",
+        "wingman_hover_02",
+        "wingman_hover_03"
       ],
       "pages": [
         0,
@@ -89,18 +91,19 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "wingman_land",
       "frames": [
-        "wingman_land_01",
-        "wingman_land_02",
-        "wingman_land_03"
+        "wingman_hover_01",
+        "wingman_hover_02",
+        "wingman_hover_03"
       ],
       "pages": [
         0,
@@ -108,51 +111,59 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     },
     {
       "name": "wingman_hurt",
       "frames": [
-        "wingman_hurt_01",
-        "wingman_hurt_02"
+        "wingman_hover_01",
+        "wingman_hover_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "wingman_split",
       "frames": [
-        "wingman_split_01",
-        "wingman_split_02",
-        "wingman_split_03",
-        "wingman_split_04"
+        "wingman_hover_01",
+        "wingman_hover_02",
+        "wingman_hover_03",
+        "wingman_hover_04"
       ],
       "pages": [
-        1,
-        1,
-        1,
-        1
+        0,
+        0,
+        0,
+        0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     }
   ],
   "placeholder": true,
-  "source": "local coloured silhouettes"
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 24,
+    "unique": 6,
+    "reused": 18
+  }
 }

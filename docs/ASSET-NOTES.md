@@ -1,15 +1,21 @@
-# Step 2 asset provenance
+# Asset notes (BDB-RWB)
 
-`tools/pack-flat.py`, invoked by `tools/make-placeholders.mjs`, reads local sources only. No generation service or paid API is used.
+## Character atlases (v2 higher-fps, Oct 27 2026 America/Phoenix)
 
-- Bob: original 720×600 RGBA frames from `/workspace/bdb-art/sprites/_v1`; idle 6, walk 6, shoot 4, hurt 3, knockdown 4, getup 4. Canvas metadata is 720×600, baseline 570. The artwork's feet are approximately y=560. The root also contains later optical-flow interpolations; those are intentionally not packed.
-- Yetti 1 → `yetti_walker`, Yetti 2 → `yetti_guard`: idle 6, walk 8, attack 4, hurt 3, knockdown 4. Hover, charger and choir reuse the first atlas with tints; Lecturer reuses the second. Hover collision remains on the shadow lane.
-- Every other §5.1 key has a locally drawn, coloured silhouette atlas. Dad has a BDB swatter plus a larger in-engine swatter overlay. PAPI runners are fully clothed adult silhouettes with four colour variants. Claudia and the bosses await final art.
-- All atlases are trimmed, paged at up to 2048×2048, and carry source rectangles and animation holds. No normal maps are required. Shared character pages survive stage transitions; obsolete boss pages and backgrounds are released.
-- Packet `chapter1-boulevard.webp`, `chapter2-clouds.webp`, `chapter3-castle.webp` and `astra-keep.webp` are stretched to 1280×720. Chapter 3 currently uses the chapter3-castle plate; astra-keep is packed for later composition.
-- Packet opening/victory MP4s are copied without alteration. JPG posters are extracted locally. Chapter 2/3 entry, kidnap, boss intro and Dad video variants are deferred; chapter cards and an in-engine Dad actor work now.
-- Packet `bdb-rise.mp3` supplies the placeholder music. The ten packet voice files are copied with the IDs in BUILD-PLAN §5.4. All planned lines are registered in `src/voice-lines.js`; unrecorded lines caption without fetching missing audio. Stable local casting-role IDs are reserved there for the later ElevenLabs/IndexTTS pass. No provider voice ID or cloned voice has been rendered in Step 2.
-- Dad's `dad_catchphrase` caption is exactly Jason's locked line. It replaces the plan's tentative catchphrase for the actual call-in.
-- The excluded console portrait is never read or copied.
+Source: `/workspace/bdb-art/sprites/` main folder. Ignore `_v1/` and `_old/`.
+Spec: `FPS.md`.
 
-`tests/fixtures/packet-rules.js` preserves the four requested packet rules, with TypeScript annotations removed. `tests/packet-parity.test.mjs` checks byte-for-byte function-body parity against the implementation. Shop logic and its tests were deliberately excluded from the port.
+| Key | Anims (count@fps) |
+| --- | --- |
+| bob | idle12@12, walk12@18, shoot7@16, hurt5@14, knockdown7@14, getup7@14 |
+| yetti_walker (yetti1) | idle12@12, walk16@18, attack7@16, hurt5@14, knockdown7@14 |
+| yetti_guard (yetti2) | same as walker |
+| others | clothed silhouette stand-ins via `tools/pack-flat.py` |
+
+Packer (`tools/pack-flat.py` / `node tools/make-placeholders.mjs`):
+- Trims transparent bounds, packs webp pages, **dedupes identical HOLD frames** (anim defs re-reference shared atlas frames).
+- Pack scale **0.38** (anims.json `scale`). The ~0.58 on-screen draw intent at full unique residency overshoots ~42 MiB Stage-1 GPU; 0.38 + trim + dedupe lands Stage-1 kit under 20 MiB. `fighter.js` uses `def.scale / m.scale`, so on-screen size stays correct.
+- Logical canvas stays `[720,600]`, baseline `570`.
+- Never copies `elon-console.webp`.
+
+See `assets/chars/_pack_report.json` for the latest disk/GPU totals.

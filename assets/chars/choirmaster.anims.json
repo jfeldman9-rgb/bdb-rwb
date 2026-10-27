@@ -4,7 +4,7 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
     "choirmaster-0"
   ],
@@ -28,37 +28,39 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
       ],
-      "loop": true
+      "loop": true,
+      "fps": 10
     },
     {
       "name": "choirmaster_hurt",
       "frames": [
-        "choirmaster_hurt_01",
-        "choirmaster_hurt_02"
+        "choirmaster_sing_01",
+        "choirmaster_sing_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "choirmaster_down",
       "frames": [
-        "choirmaster_down_01",
-        "choirmaster_down_02",
-        "choirmaster_down_03"
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03"
       ],
       "pages": [
         0,
@@ -66,19 +68,20 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     },
     {
       "name": "choirmaster_ring",
       "frames": [
-        "choirmaster_ring_01",
-        "choirmaster_ring_02",
-        "choirmaster_ring_03",
-        "choirmaster_ring_04"
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04"
       ],
       "pages": [
         0,
@@ -87,14 +90,20 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     }
   ],
   "placeholder": true,
-  "source": "local coloured silhouettes"
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 15,
+    "unique": 6,
+    "reused": 9
+  }
 }

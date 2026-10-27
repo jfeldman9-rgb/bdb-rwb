@@ -4,7 +4,7 @@
     600
   ],
   "baseline": 570,
-  "scale": 1,
+  "scale": 0.38,
   "pages": [
     "yetti_charger-0"
   ],
@@ -28,38 +28,40 @@
         0
       ],
       "holds": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120
+        71,
+        71,
+        71,
+        71,
+        71,
+        71
       ],
-      "loop": true
+      "loop": true,
+      "fps": 14
     },
     {
       "name": "yetti_charger_telegraph",
       "frames": [
-        "yetti_charger_telegraph_01",
-        "yetti_charger_telegraph_02"
+        "yetti_charger_walk_01",
+        "yetti_charger_walk_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        100,
+        100
       ],
-      "loop": false
+      "loop": false,
+      "fps": 10
     },
     {
       "name": "yetti_charger_rush",
       "frames": [
-        "yetti_charger_rush_01",
-        "yetti_charger_rush_02",
-        "yetti_charger_rush_03",
-        "yetti_charger_rush_04"
+        "yetti_charger_walk_01",
+        "yetti_charger_walk_02",
+        "yetti_charger_walk_03",
+        "yetti_charger_walk_04"
       ],
       "pages": [
         0,
@@ -68,35 +70,37 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85,
-        85
+        63,
+        63,
+        63,
+        63
       ],
-      "loop": false
+      "loop": false,
+      "fps": 16
     },
     {
       "name": "yetti_charger_hurt",
       "frames": [
-        "yetti_charger_hurt_01",
-        "yetti_charger_hurt_02"
+        "yetti_charger_walk_01",
+        "yetti_charger_walk_02"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        85,
-        85
+        71,
+        71
       ],
-      "loop": false
+      "loop": false,
+      "fps": 14
     },
     {
       "name": "yetti_charger_down",
       "frames": [
-        "yetti_charger_down_01",
-        "yetti_charger_down_02",
-        "yetti_charger_down_03"
+        "yetti_charger_walk_01",
+        "yetti_charger_walk_02",
+        "yetti_charger_walk_03"
       ],
       "pages": [
         0,
@@ -104,13 +108,19 @@
         0
       ],
       "holds": [
-        85,
-        85,
-        85
+        83,
+        83,
+        83
       ],
-      "loop": false
+      "loop": false,
+      "fps": 12
     }
   ],
   "placeholder": true,
-  "source": "local coloured silhouettes"
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 17,
+    "unique": 6,
+    "reused": 11
+  }
 }
