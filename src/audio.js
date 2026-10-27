@@ -11,85 +11,8 @@ const moreVoice = Object.create(null);
 const voiceOff = new Set();
 let audioHidden = false, audioEpoch = 0;
 const audioTimers = new Set();
-export const VOICE = {
-  st1_narrator_01: ['NARRATOR', "Emond's Field, on Winternight. The Two Rivers sleeps, but the Shadow is on the road."],
-  st1_moiraine_01: ['MOIRAINE', 'Winternight has begun. Stay sharp.'],
-  riley_st1_01: ['RILEY', "I'll guard our home."],
-  trolloc_intro_01: ['TROLLOC', 'The Shadow is hungry!'],
-  trolloc_heavy_intro_01: ['TROLLOC CHIEFTAIN', 'Break the village!'],
-  chieftain_mid_01: ['TROLLOC CHIEFTAIN', 'Grrr! Small human kicks hard!'],
-  chieftain_defeat_01: ['TROLLOC CHIEFTAIN', 'Retreat! Back to the Blight!'],
-  riley_combo_01: ['RILEY', 'Front kick!'], riley_combo_02: ['RILEY', 'Roundhouse!'], riley_combo_03: ['RILEY', 'Spin!'],
-  riley_fire_01: ['RILEY', 'Fire!'], riley_grab_01: ['RILEY', 'Not so fast!'], riley_throw_01: ['RILEY', 'Over there!'],
-  riley_bighit_01: ['RILEY', 'Oof! That one hurt!'], riley_bighit_02: ['RILEY', "I'm okay! Keep going!"],
-  riley_low_01: ['RILEY', 'I need a moment.'], riley_respawn_01: ['RILEY', 'Back on my feet.'],
-  riley_victory_01: ['RILEY', 'The way is clear.'],
-  st1_clear_moiraine_01: ['MOIRAINE', 'The road is open. The Shadow fled east.'],
-  riley_st1_clear_01: ['RILEY', 'Twinkle Toes, I am coming.'],
-  // Restored from 1.1 (same approved Kokoro files): balefire and the Loial assist.
-  riley_super_01: ['RILEY', 'Balefire!'], riley_call_01: ['RILEY', 'Loial, now!'], riley_call_spent_01: ['RILEY', 'Loial needs a rest.'],
-  loial_charge_01: ['LOIAL', 'For my friends!'], loial_done_01: ['LOIAL', 'That should help!'],
-};
-// Power-up and Twix-cutscene lines. Kept out of VOICE so the start-of-run preload stays the 25 Stage 1 clips;
-// these load on demand when a power pickup or the Twix appears (preloadClips). riley_angreal_01 is the approved
-// 1.1 Kokoro file; the rest are Kokoro TTS (see VOICE_PROVENANCE.md).
-export const EXTRA_VOICE = {
-  riley_angreal_01: ['RILEY', 'The fire burns brighter!'],
-  riley_saangreal_01: ['RILEY', 'Whoa. That is a LOT of saidin!'],
-  riley_lightning_01: ['RILEY', 'Lightning, on my call!'],
-  riley_fireshield_01: ['RILEY', 'Try touching me now!'],
-  riley_airwhip_01: ['RILEY', 'Come here, you!'],
-  riley_twix_01: ['RILEY', 'Wait... is that a Twix?'],
-  // The Twix campfire cutscene script (order and panels: src/twix.js). Riley is 16; PG on purpose.
-  twix_01: ['RILEY', 'Snack truce. One Twix each, and nobody bites anybody.'],
-  twix_02: ['GRUNT TROLLOC', "Mmf. Crunchy. Way better than Ishamael's stew. His stew bites back."],
-  twix_03: ['SPEAR TROLLOC', 'Lanfear calls us smelly. Every day! I took a bath once. Last spring!'],
-  twix_04: ['HOUND TROLLOC', 'Aginor made my snout. Then he laughed at my snout.'],
-  twix_05: ['GRUNT TROLLOC', 'And the Myrddraal stare at you with no eyes. How do they stare with NO EYES?'],
-  twix_06: ['SPEAR TROLLOC', 'No Forsaken ever says thank you. Not one time. Not even on Winternight.'],
-  twix_07: ['RILEY', 'Have you guys ever thought about... not working for the Dark One?'],
-  twix_08: ['ALL TROLLOCS', '...Does the Light have more Twix?'],
-  twix_09: ['RILEY', "Ask me after I win. Break's over!"],
-  // Stage 2: Baerlon and the Whitecloaks (Kokoro TTS; casts in VOICE_PROVENANCE.md). Kid-safe on purpose.
-  st2_story_01: ['NARRATOR', "The Fade's trail led north, through the rain, to the walled town of Baerlon."],
-  st2_story_02: ['RILEY', 'These hoofprints... a Myrddraal came this way. Hang on, Twinkle Toes.'],
-  st2_story_03: ['RILEY', "That's her ribbon! She was here!"],
-  st2_story_04: ['JARET BYAR', 'A boy who channels? Darkfriend! Children of the Light, seize him!'],
-  st2_story_05: ['RILEY', "Darkfriend? I'm sixteen! I'm just looking for my friend!"],
-  st2_story_06: ['WHITECLOAK', "That's exactly what a Darkfriend would say!"],
-  zealot_intro_01: ['WHITECLOAK', 'Halt, Darkfriend! In the name of the Light!'],
-  riley_st2_stable_01: ['RILEY', 'Hound Trollocs? The Fade left guards behind!'],
-  riley_ribbon_01: ['RILEY', "Twinkle Toes' ribbon! I'm getting closer."],
-  zealot_mud_01: ['WHITECLOAK', 'My cloak! Do you know how hard it is to get mud out of white wool?!'],
-  riley_mud_01: ['RILEY', 'Try cold water!'],
-  byar_intro_01: ['JARET BYAR', 'I am Jaret Byar, Child of the Light. Kneel, Darkfriend!'],
-  byar_parry_01: ['JARET BYAR', 'Too slow, Darkfriend!'],
-  byar_mid_01: ['JARET BYAR', 'Archers! Cover the yard!'],
-  byar_volley_01: ['JARET BYAR', 'Loose!'],
-  byar_rage_01: ['JARET BYAR', 'Burn the barn! Smoke the Darkfriend out!'],
-  byar_defeat_01: ['JARET BYAR', 'This is not over, Darkfriend! The Light will find you!'],
-  riley_st2_victory_01: ['RILEY', "I'm NOT a Darkfriend! ...And your barn is on fire!"],
-  riley_st2_clear_01: ['RILEY', 'The trail keeps going. Hang on, Twinkle Toes. I am coming.'],
-  // Stage 3: Caemlyn and the Myrddraal (Kokoro TTS for Riley/narrator; ElevenLabs eleven_v4 for Gill, cutthroat, Myrddraal)
-  st3_story_01: ['NARRATOR', 'The trail led south, to Caemlyn, the great white city of the Queen.'],
-  st3_story_02: ['BASEL GILL', 'A man with no eyes, on my rooftops, at dusk. He carried a little bundle. Blue ribbon on it.'],
-  st3_story_03: ['RILEY', "Twinkle Toes' ribbon. He's here."],
-  st3_story_04: ['BASEL GILL', 'There are Darkfriends in the market too, lad. Watch your back.'],
-  st3_story_05: ['RILEY', 'I always do.'],
-  st3_story_06: ['NARRATOR', 'As the sun went down over the palace, Riley went up onto the roofs.'],
-  cutthroat_intro_01: ['CUTTHROAT', "That's the one the Lady wants. Take him quiet."],
-  cutthroat_grab_01: ['CUTTHROAT', 'Gotcha!'],
-  riley_escape_01: ['RILEY', 'Off me!'],
-  riley_st3_roof_01: ['RILEY', "Roof tiles. Great. Of course it's roof tiles."],
-  riley_st3_glimpse_01: ['RILEY', 'There! On the far roof!'],
-  fade_intro_01: ['MYRDDRAAL', "The boy who channels. Your sister's trail ends here."],
-  fade_mid_01: ['MYRDDRAAL', 'Fear me, boy.'],
-  fade_split_01: ['MYRDDRAAL', 'Which shadow is real?'],
-  riley_counter_01: ['RILEY', 'That one!'],
-  fade_defeat_01: ['MYRDDRAAL', 'The shadow... remembers...'],
-  riley_st3_victory_01: ['RILEY', 'Remember this, then.'],
-  riley_st3_clear_01: ['RILEY', "Another ribbon. I'm coming, Twinkle Toes."],
-};
+export const VOICE = {};
+export const EXTRA_VOICE = {};
 function init() {
   if (ctx) return;
   try {
@@ -240,15 +163,15 @@ export const sfx = {
   levelClear() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((n, i) => tone({ f0: n, dur: 0.18, delay: i * 0.11, vol: 0.2 })); },
   gameOver() { [440, 415, 392, 370, 349, 330, 220].forEach((n, i) => tone({ f0: n, dur: 0.3, delay: i * 0.22, vol: 0.22, type: 'triangle' })); },
   // 1.1 recipes
-  balefire() { tone({ f0: 180, f1: 880, dur: 0.35, vol: 0.22, type: 'sawtooth' }); noise({ f0: 3000, f1: 400, dur: 0.4, vol: 0.2, filter: 'highpass' }); tone({ f0: 90, f1: 40, dur: 0.4, vol: 0.35, type: 'sine' }); duck(0.3, 0.1, 1.2); },
-  loialHorn() { tone({ f0: 220, f1: 330, dur: 0.22, vol: 0.28, type: 'sawtooth' }); tone({ f0: 330, f1: 440, dur: 0.24, delay: 0.18, vol: 0.24, type: 'sawtooth' }); },
+  papi() { tone({ f0: 180, f1: 880, dur: 0.35, vol: 0.22, type: 'sawtooth' }); noise({ f0: 3000, f1: 400, dur: 0.4, vol: 0.2, filter: 'highpass' }); tone({ f0: 90, f1: 40, dur: 0.4, vol: 0.35, type: 'sine' }); duck(0.3, 0.1, 1.2); },
+  dadHorn() { tone({ f0: 220, f1: 330, dur: 0.22, vol: 0.28, type: 'sawtooth' }); tone({ f0: 330, f1: 440, dur: 0.24, delay: 0.18, vol: 0.24, type: 'sawtooth' }); },
   // power-ups
   powerUp() { [784, 988, 1175, 1568].forEach((n, i) => tone({ f0: n, dur: 0.12, delay: i * 0.06, vol: 0.18, type: 'triangle' })); },
   powerDown() { tone({ f0: 660, f1: 220, dur: 0.3, vol: 0.14, type: 'triangle' }); },
   zap() { if (!gate('zap', 60)) return; noise({ f0: 6000, f1: 900, dur: 0.18, vol: 0.32, filter: 'highpass' }); tone({ f0: 1400, f1: 180, dur: 0.16, vol: 0.16, type: 'sawtooth' }); tone({ f0: 70, f1: 40, dur: 0.25, vol: 0.35, type: 'sine' }); },
   fall() { tone({ f0: 1800, f1: 500, dur: 0.7, vol: 0.12, type: 'sine' }); },
   grumble() { if (!gate('grumble', 300)) return; tone({ f0: vary(85, 0.15), f1: 60, dur: 0.45, vol: 0.16, type: 'sawtooth' }); noise({ f0: 380, f1: 160, dur: 0.4, vol: 0.12, attack: 0.06 }); },
-  // Stage 2 (Baerlon) cues
+  // Stage 2 (cloud) cues
   clang() { if (!gate('clang', 70)) return; tone({ f0: vary(1250), f1: 880, dur: 0.11, vol: 0.14, type: 'square' }); tone({ f0: vary(1870), dur: 0.22, vol: 0.09, type: 'triangle' }); noise({ f0: 5200, f1: 2000, dur: 0.08, vol: 0.18, filter: 'highpass' }); },
   glint() { if (!gate('glint', 200)) return; tone({ f0: 2600, f1: 3400, dur: 0.16, vol: 0.06, type: 'sine' }); tone({ f0: 3900, dur: 0.1, delay: 0.06, vol: 0.04, type: 'sine' }); },
   dread() { if (!gate('dread', 350)) return; tone({ f0: 55, f1: 40, dur: 0.18, vol: 0.22, type: 'sine' }); tone({ f0: 82, f1: 48, dur: 0.12, vol: 0.08, type: 'triangle', delay: 0.08 }); },
@@ -270,19 +193,7 @@ export const sfx = {
   torchIgnite() { if (!gate('torchIgnite', 120)) return; noise({ f0: 280, f1: 1800, dur: 0.45, vol: 0.25, filter: 'bandpass', attack: 0.05 }); tone({ f0: vary(120), f1: 75, dur: 0.3, vol: 0.18, type: 'sine' }); },
 };
 let musicWanted = false, unlocked = false;
-export const MUSIC = {
-  stage1: { url: 'assets/audio/music-main.mp3', stream: true, loopStart: 31.103, loopEnd: 159.103, gain: 1 },
-  title: { url: 'assets/audio/music-title.mp3', loopStart: 0.25, loopEnd: 45.964286, gain: 1 },
-  boss1: { url: 'assets/audio/music-boss1.mp3', loopStart: 0.25, loopEnd: 38.65, gain: 0.94 },
-  stage2: { url: 'assets/audio/music-stage2.mp3', loopStart: 0.25, loopEnd: 64.865374, gain: 1 },
-  boss2: { url: 'assets/audio/music-boss2.mp3', loopStart: 0.25, loopEnd: 55.902177, gain: 0.94 },
-  stage3: { url: 'assets/audio/music-stage3.mp3', loopStart: 0.25, loopEnd: 64.865374, gain: 1 },
-  boss3: { url: 'assets/audio/music-boss3.mp3', loopStart: 0.25, loopEnd: 53.583333, gain: 0.94 },
-  stage4: { url: 'assets/audio/music-stage4.mp3', loopStart: 0.25, loopEnd: 40.25, gain: 1 },
-  boss4: { url: 'assets/audio/music-boss4.mp3', loopStart: 0.25, loopEnd: 30.726190476190474, gain: 0.94 },
-  stage5: { url: 'assets/audio/music-stage5.mp3', loopStart: 0.25, loopEnd: 40.25, gain: 1 },
-  boss5: { url: 'assets/audio/music-boss5.mp3', loopStart: 0.25, loopEnd: 32, gain: 0.94 },
-};
+export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
 const tracks = Object.create(null), musicBytes = Object.create(null);
 let currentTrack = null, wantedTrack = 'stage1';
 /** equal-power fade on a GainNode, built from short linear ramps (works on every WebAudio implementation) */
@@ -479,7 +390,7 @@ function loadClip(id) {
   return pending;
 }
 export function preloadVoices() { Object.keys(VOICE).forEach(loadClip); }
-/** on-demand preload for EXTRA_VOICE lines (power pickups and the Twix cutscene) */
+/** on-demand preload for EXTRA_VOICE lines (power pickups and the story scene) */
 export function preloadClips(ids) { for (const id of ids) if (Object.prototype.hasOwnProperty.call(EXTRA_VOICE, id) || moreVoice[id]) loadClip(id); }
 export function registerLines(map) { for (const id in map) moreVoice[id] = map[id]; }
 /** `present` is the ids whose mp3 is on disk. Every other id in `all` stays a caption and is not fetched. */

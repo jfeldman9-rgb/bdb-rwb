@@ -1,0 +1,89 @@
+{
+  "browser": "Chromium, SwiftShader (not hardware performance evidence)",
+  "httpStatus": 200,
+  "campaign": {
+    "stage": 3,
+    "zone": 3,
+    "boss": true,
+    "phase": 3,
+    "victory": true,
+    "elapsed": 229.95000000007514,
+    "stats": {
+      "shots": 609,
+      "papi": 6,
+      "dad": 3,
+      "kos": 75,
+      "deaths": 8,
+      "stages": [
+        1,
+        2,
+        3
+      ],
+      "phases": [
+        "1:2",
+        "2:2",
+        "3:2",
+        "3:3"
+      ]
+    }
+  },
+  "touch": {
+    "touch": true,
+    "buttons": [
+      {
+        "id": "tbPapi",
+        "width": 61.6875,
+        "height": 51.40625
+      },
+      {
+        "id": "tbDad",
+        "width": 61.6875,
+        "height": 51.40625
+      },
+      {
+        "id": "tbFire",
+        "width": 61.6875,
+        "height": 77.109375
+      },
+      {
+        "id": "tbJump",
+        "width": 61.6875,
+        "height": 51.40625
+      },
+      {
+        "id": "tbDash",
+        "width": 61.6875,
+        "height": 51.40625
+      }
+    ],
+    "canvas": {
+      "x": 75.328125,
+      "y": 0,
+      "width": 693.328125,
+      "height": 389.984375,
+      "top": 0,
+      "right": 768.65625,
+      "bottom": 389.984375,
+      "left": 75.328125
+    }
+  },
+  "checks": {
+    "simultaneousTouch": true,
+    "touchRelease": true,
+    "storyDefault": true,
+    "pauseFreezes": true,
+    "portraitRotate": true,
+    "graphicsRecovery": true,
+    "inlineOpeningVideo": true,
+    "keyboardVideoSkip": true
+  },
+  "errors": [],
+  "screenshots": [
+    "docs/shots/title.png",
+    "docs/shots/stage1.png",
+    "docs/shots/boss.png",
+    "docs/shots/wingmen.png",
+    "docs/shots/victory.png",
+    "docs/shots/touch-stage1.png"
+  ]
+}

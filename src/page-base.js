@@ -1,4 +1,4 @@
-// GitHub Pages serves this game from /riley-wheel-brawl/, not the domain root.
+// GitHub Pages serves this game from /bob-wheel-brawl/, not the domain root.
 // A project URL without a trailing slash resolves "assets/..." against the
 // parent directory, and that host is case-sensitive. Queued loader paths stay
 // repo-relative; this only fixes the document base they resolve against.

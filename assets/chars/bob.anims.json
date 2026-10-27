@@ -1,0 +1,157 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "bob-0",
+    "bob-1"
+  ],
+  "anims": [
+    {
+      "name": "bob_idle",
+      "frames": [
+        "bob_idle_01",
+        "bob_idle_02",
+        "bob_idle_03",
+        "bob_idle_04",
+        "bob_idle_05",
+        "bob_idle_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "bob_walk",
+      "frames": [
+        "bob_walk_01",
+        "bob_walk_02",
+        "bob_walk_03",
+        "bob_walk_04",
+        "bob_walk_05",
+        "bob_walk_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "bob_shoot",
+      "frames": [
+        "bob_shoot_01",
+        "bob_shoot_02",
+        "bob_shoot_03",
+        "bob_shoot_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "bob_hurt",
+      "frames": [
+        "bob_hurt_01",
+        "bob_hurt_02",
+        "bob_hurt_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "bob_knockdown",
+      "frames": [
+        "bob_knockdown_01",
+        "bob_knockdown_02",
+        "bob_knockdown_03",
+        "bob_knockdown_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "bob_getup",
+      "frames": [
+        "bob_getup_01",
+        "bob_getup_02",
+        "bob_getup_03",
+        "bob_getup_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites/_v1"
+}

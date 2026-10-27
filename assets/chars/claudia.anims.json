@@ -1,0 +1,72 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "claudia-0"
+  ],
+  "anims": [
+    {
+      "name": "claudia_idle-caged",
+      "frames": [
+        "claudia_idle-caged_01",
+        "claudia_idle-caged_02",
+        "claudia_idle-caged_03",
+        "claudia_idle-caged_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "claudia_freed",
+      "frames": [
+        "claudia_freed_01",
+        "claudia_freed_02",
+        "claudia_freed_03",
+        "claudia_freed_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "claudia_portrait",
+      "frames": [
+        "claudia_portrait_01"
+      ],
+      "pages": [
+        0
+      ],
+      "holds": [
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

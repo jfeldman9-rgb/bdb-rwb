@@ -12,7 +12,7 @@ export function resumeUrl(href, stage) {
 
 /** Reload into the running stage. On the title (or with no stage to read) this is a plain reload. */
 export function resumeGame(root = globalThis, game = root.__game) {
-  const s = game?.scene?.getScene?.('stage1'), loc = root.location;
+  const s = game?.scene?.getScene?.('gameplay'), loc = root.location;
   if (s?.started && s.stageNo >= 1 && loc?.href && typeof loc.replace === 'function') {
     try { loc.replace(resumeUrl(loc.href, s.stageNo)); return 'resume'; } catch (e) { }
   }
@@ -39,7 +39,7 @@ export function showStuck(root, error, game) {
 export function installResumeCleanup(game, q, root = globalThis) {
   if (!q?.has?.('resume') || !game?.events?.on) return false;
   const check = () => {
-    if (!game.scene?.getScene?.('stage1')?.started) return;
+    if (!game.scene?.getScene?.('gameplay')?.started) return;
     game.events.off?.('step', check);
     q.delete('autostart'); q.delete('resume');
     try {

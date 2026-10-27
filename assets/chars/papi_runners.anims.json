@@ -1,0 +1,151 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "papi_runners-0"
+  ],
+  "anims": [
+    {
+      "name": "papi_runners_run1",
+      "frames": [
+        "papi_runners_run1_01",
+        "papi_runners_run1_02",
+        "papi_runners_run1_03",
+        "papi_runners_run1_04",
+        "papi_runners_run1_05",
+        "papi_runners_run1_06",
+        "papi_runners_run1_07",
+        "papi_runners_run1_08"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "papi_runners_run2",
+      "frames": [
+        "papi_runners_run2_01",
+        "papi_runners_run2_02",
+        "papi_runners_run2_03",
+        "papi_runners_run2_04",
+        "papi_runners_run2_05",
+        "papi_runners_run2_06",
+        "papi_runners_run2_07",
+        "papi_runners_run2_08"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "papi_runners_run3",
+      "frames": [
+        "papi_runners_run3_01",
+        "papi_runners_run3_02",
+        "papi_runners_run3_03",
+        "papi_runners_run3_04",
+        "papi_runners_run3_05",
+        "papi_runners_run3_06",
+        "papi_runners_run3_07",
+        "papi_runners_run3_08"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "papi_runners_run4",
+      "frames": [
+        "papi_runners_run4_01",
+        "papi_runners_run4_02",
+        "papi_runners_run4_03",
+        "papi_runners_run4_04",
+        "papi_runners_run4_05",
+        "papi_runners_run4_06",
+        "papi_runners_run4_07",
+        "papi_runners_run4_08"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

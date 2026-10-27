@@ -47,7 +47,7 @@ export function deviceMetadata(root = globalThis) {
     if (query.has(key)) flags[key] = query.get(key);
   }
   return {
-    build: { label: doc?.querySelector('meta[name="rwb-build"]')?.content || 'stage1-unidentified', commit: immutableCommit,
+    build: { label: doc?.querySelector('meta[name="bdb-build"]')?.content || 'bdb-step2', commit: immutableCommit,
       url: root.location ? `${root.location.origin || ''}${path}${Object.keys(flags).length ? '?' + new URLSearchParams(flags) : ''}` : null },
     renderer: root.__perf?.renderer || null, softwareRenderer: root.__perf?.software ?? null,
     quality: root.__perf?.quality ?? 0, renderScale: game?.rs ?? null, dpr: root.devicePixelRatio || 1,
@@ -132,7 +132,7 @@ export function createPerf({ now = () => globalThis.performance.now(), dateNow =
         elapsedWallMs: Math.max(0, at - this.startedAtMs),
         metadata: metadata(), captureStartMetadata: this.captureMetadata,
         sampling: {
-          clock: 'performance.now between active Stage1 update calls; frame cadence, not GPU execution time',
+          clock: 'performance.now between active gameplay update calls; frame cadence, not GPU execution time',
           percentileMethod: 'legacy conservative rank min(N-1,floor(N*p)), unrounded',
           displayRounding: 'upward to 0.001 ms; exported metrics are unrounded',
           activeOnly: true, fightDefinition: 'interval starts while an alive, non-entering enemy is engaged',

@@ -1,95 +1,31 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="rwb-build" content="stage1-evidence-v2">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Riley Wheel Brawl 2.0 - Stage 1: Emond's Field</title>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="bdb-build" content="BDB-RWB Step 2"><meta name="theme-color" content="#101421"><title>The Legend of Claudia: BDB's Awakening</title>
 <link rel="icon" href="data:,">
 <style>
-@font-face{font-family:'PressStart';src:url('assets/fonts/press-start-2p.ttf') format('truetype');font-display:block}
-html,body{margin:0;height:100%;background:#05070d;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#game{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#9fb0d0;font:14px/1.6 system-ui,sans-serif;pointer-events:none}
-#boot[hidden],#touch[hidden],#perf-open[hidden],#startup-error[hidden]{display:none!important}
-#startup-error{position:fixed;z-index:200;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:#05070d;color:#e7eeff;font:16px/1.6 system-ui,sans-serif;touch-action:pan-y}
-#startup-card{max-width:540px;padding:28px;border:1px solid #61769e;border-radius:16px;background:#0b1428;box-shadow:0 12px 48px #0008}
-#startup-card h1{margin:0 0 12px;font-size:28px;line-height:1.2}
-#startup-card p{margin:12px 0;color:#c4d1eb}
-#startup-card button{min-height:48px;padding:12px 20px;border:1px solid #91a8d1;border-radius:8px;background:#203452;color:#fff;font:600 16px system-ui;cursor:pointer;touch-action:manipulation}
-#startup-card button:focus-visible{outline:3px solid #ffd578;outline-offset:4px}
-#startup-code{font:13px/1.5 ui-monospace,monospace}
-#graphics-notice[hidden]{display:none}
-#graphics-notice{position:fixed;z-index:90;left:50%;top:max(20px,env(safe-area-inset-top));transform:translateX(-50%);box-sizing:border-box;width:min(600px,calc(100% - 32px));padding:18px 22px;border:1px solid #e7bf76;border-radius:12px;background:#121b2ff5;color:#fff;font:16px/1.5 system-ui,sans-serif;box-shadow:0 12px 48px #0008}
-#graphics-notice h1{font-size:22px;margin:0 0 8px}
-#graphics-notice p{margin:8px 0 12px;color:#d8e2f5}
-#graphics-notice button{min-height:44px;padding:10px 16px;border:1px solid #91a8d1;border-radius:8px;background:#203452;color:#fff;font:600 16px system-ui;cursor:pointer;touch-action:manipulation}
-#graphics-notice button:focus-visible{outline:3px solid #ffd578;outline-offset:3px}
-body.touch.graphics-lost #touch{display:none}
-/* touch controls: only shown on touch devices (body.touch is set on the first real touch or a coarse pointer) */
-#touch{position:fixed;inset:0;pointer-events:none;display:none}
-body.touch #touch{display:block}
-#stick{position:absolute;left:calc(3vw + env(safe-area-inset-left,0px));bottom:calc(4vh + env(safe-area-inset-bottom,0px));width:min(30vh,200px);height:min(30vh,200px);border-radius:50%;border:2px solid rgba(255,255,255,.22);background:rgba(15,22,40,.28);pointer-events:auto}
-#knob{position:absolute;left:50%;top:50%;width:42%;height:42%;margin:-21% 0 0 -21%;border-radius:50%;background:rgba(200,215,255,.35);border:2px solid rgba(255,255,255,.4)}
-.tb{position:absolute;width:min(14vh,92px);height:min(14vh,92px);border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(20,30,50,.38);color:#fff;font:bold 13px system-ui;display:flex;align-items:center;justify-content:center;pointer-events:auto;letter-spacing:.05em}
-.tb.on{background:rgba(255,200,120,.45)}
-#tbA{right:calc(4vw + min(15vh,100px) + env(safe-area-inset-right,0px));bottom:calc(5vh + env(safe-area-inset-bottom,0px));border-color:rgba(255,120,110,.7)}
-#tbJ{right:calc(3vw + env(safe-area-inset-right,0px));bottom:calc(5vh + min(11vh,70px) + env(safe-area-inset-bottom,0px));border-color:rgba(120,180,255,.7)}
-#tbS{right:calc(4vw + min(15vh,100px) + env(safe-area-inset-right,0px));bottom:calc(6vh + min(16vh,108px) + env(safe-area-inset-bottom,0px));border-color:rgba(120,230,255,.7)}
-#tbP{right:calc(3vw + env(safe-area-inset-right,0px));top:calc(3vh + env(safe-area-inset-top,0px));width:52px;height:52px;font-size:16px}
-#tbB{right:calc(3vw + env(safe-area-inset-right,0px));bottom:calc(5vh + min(11vh,70px) + min(14vh,92px) + max(20px,4vh) + env(safe-area-inset-bottom,0px));width:max(48px,min(13vh,80px));height:max(48px,min(13vh,80px));font-size:12px;border-color:rgba(230,245,255,.8)}
-#tbL{right:calc(5vw + min(30vh,200px) + env(safe-area-inset-right,0px));bottom:calc(6vh + min(16vh,108px) + env(safe-area-inset-bottom,0px));width:max(44px,min(11vh,72px));height:max(44px,min(11vh,72px));font-size:12px;border-color:rgba(140,240,174,.8)}
-.tb.off{opacity:.35}
-.tb.ready{box-shadow:0 0 16px rgba(200,235,255,.9)}
-/* Upright phones: the 200px stick covers half the width, so shrink it; stack CALL above BALE in the right column
-   instead of beside FIRE (where it sat on the stick); move the Perf report opener to the top so it is clear of
-   the stick and KICK. Landscape layout is unchanged. */
-@media (orientation:portrait){
-#stick{width:min(38vw,30vh,200px);height:min(38vw,30vh,200px)}
-html body.touch #perf-open{top:max(12px,env(safe-area-inset-top));bottom:auto}
-#tbL{right:calc(3vw + env(safe-area-inset-right,0px));bottom:calc(5vh + min(11vh,70px) + min(14vh,92px) + max(20px,4vh) + max(48px,min(13vh,80px)) + max(16px,2.5vh) + env(safe-area-inset-bottom,0px))}
-}
-/* Performance capture is an ordinary local DOM dialog, above every canvas/touch input. */
-#perf-open{position:fixed;z-index:20;left:max(12px,env(safe-area-inset-left));bottom:max(48px,env(safe-area-inset-bottom));min-height:44px;padding:10px 14px;border:1px solid #8195bd;border-radius:8px;background:#0d1429e8;color:#e7eeff;font:600 14px system-ui;cursor:pointer}
-body.touch #perf-open{left:50%;bottom:max(48px,env(safe-area-inset-bottom));transform:translateX(-50%)}
-html.perf-open,html.perf-open body{touch-action:pan-y pinch-zoom}
-#perf-overlay[hidden]{display:none}
-#perf-overlay{position:fixed;z-index:100;inset:0;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));box-sizing:border-box;background:#020510d9;touch-action:pan-y pinch-zoom}
-#perf-dialog{box-sizing:border-box;width:min(760px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid #91a8d1;border-radius:14px;padding:18px;background:#0b1428;color:#f3f5ff;font:16px/1.5 system-ui;touch-action:pan-y pinch-zoom}
-#perf-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-#perf-dialog h1{font-size:22px;line-height:1.25;margin:0}
-#perf-dialog p{margin:12px 0}
-#perf-dialog button{min-height:48px;min-width:48px;padding:10px 16px;border:1px solid #8fa8d7;border-radius:8px;background:#203452;color:#fff;font:600 16px system-ui;cursor:pointer;touch-action:manipulation}
-#perf-dialog button:hover{background:#304968}
-#perf-dialog button:focus-visible,#perf-open:focus-visible,#perf-json:focus-visible{outline:3px solid #ffd578;outline-offset:3px}
-#perf-summary{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.6 ui-monospace,Menlo,monospace;padding:12px;background:#131f34;border-radius:8px;-webkit-user-select:text;user-select:text}
-#perf-summary[data-result="FAIL"]{border-left:4px solid #ffb08e}
-.perf-actions{display:flex;flex-wrap:wrap;gap:10px}
-#perf-status{min-height:24px;color:#ffe0a4}
-#perf-json{display:block;box-sizing:border-box;width:100%;min-height:140px;margin-top:8px;padding:10px;border:1px solid #8097bb;border-radius:6px;background:#050b17;color:#dce7ff;font:13px/1.5 ui-monospace,Menlo,monospace;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:pan-y pinch-zoom}
-@media(max-height:500px){#perf-dialog{padding:12px}#perf-dialog h1{font-size:18px}#perf-dialog p{margin:8px 0}}
-</style></head><body>
-<div id="game"></div>
-<div id="boot">Loading Emond's Field…</div>
-<section id="startup-error" hidden role="alert" aria-labelledby="startup-title" aria-describedby="startup-description">
-<div id="startup-card"><h1 id="startup-title">The game could not start</h1><p id="startup-description"></p><button id="startup-retry" type="button">Reload game</button><p id="startup-code"></p></div>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080d17;color:#faf0df;font-family:Arial,Helvetica,sans-serif}button,select,input{font:inherit}button,select{border:1px solid #9a8468;border-radius:6px;background:#182234;color:#fff2d9;padding:12px 20px;cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #f4bf74;outline-offset:4px}button:hover{background:#33415b}button:disabled{opacity:.4;cursor:default}[hidden]{display:none!important}#shell{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}#game{position:relative;width:min(100vw,177.7778vh);height:min(100vh,56.25vw)}canvas{display:block}#title{position:absolute;inset:0;pointer-events:none;padding:7% 6%;background:linear-gradient(90deg,rgba(9,16,29,.96),rgba(9,16,29,.85) 48%,transparent 85%)}#title>*{pointer-events:auto}.eyebrow{font-size:clamp(9px,1.2vw,16px);color:#e5b573;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px}h1{font-size:clamp(26px,4.7vw,66px);line-height:.98;letter-spacing:-.045em;margin:0 0 14px;max-width:670px}h1 span{color:#ddabec;font-size:1.25em}#title p{font-size:clamp(10px,1.35vw,18px);line-height:1.6;color:#b9c5d8;max-width:480px;margin:14px 0 24px}.settings{display:flex;gap:12px;align-items:center;margin-bottom:16px;font-size:clamp(10px,1.1vw,15px)}.settings label{display:flex;align-items:center;gap:8px}.settings select{padding:8px 10px}.start{background:#edc186;color:#192030;border:0;font-weight:bold;letter-spacing:.08em;padding:16px 30px}.start:hover{background:#ffe1ab}.footnote{position:absolute;bottom:5%;left:6%;font-size:clamp(9px,1vw,13px);color:#8c9fb9;letter-spacing:.02em}#boot{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#101421;letter-spacing:.18em;color:#f3cc91}#top-buttons{display:none;position:absolute;right:2%;top:17%;gap:8px;z-index:20}.playing #top-buttons{display:flex}#top-buttons button{padding:7px 10px;font-size:12px;background:#101421b8}#touch{display:none;position:absolute;inset:0;pointer-events:none;z-index:15}.touch.playing #touch{display:block}#stick{position:absolute;left:max(3%,env(safe-area-inset-left));bottom:4%;width:18%;aspect-ratio:1;max-width:150px;border:2px solid #ccdfff66;border-radius:50%;background:#15223670;touch-action:none;pointer-events:auto;display:grid;place-items:center}#knob{width:40%;height:40%;border-radius:50%;background:#b7d4e66e;pointer-events:none}.buttons{position:absolute;right:max(2%,env(safe-area-inset-right));bottom:4%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:29%;max-width:340px;align-items:center}.tb{aspect-ratio:1.2;border-radius:30%;padding:0;min-width:44px;min-height:44px;font-size:clamp(10px,1.4vw,18px);font-weight:bold;pointer-events:auto;touch-action:none;background:#18283dd9;border:2px solid #bdd7e788;user-select:none;-webkit-user-select:none}.tb.on{background:#c7a7e8;color:#11182c}.tb.empty{border-color:#687188;color:#a5a9b3}#tbFire{grid-column:3;grid-row:1/3;aspect-ratio:.8;background:#775386d9;border-color:#dda3f0}#tbPapi{background:#8d6552cc}#tbDad{background:#465c66cc}#rotate{display:none;position:fixed;inset:0;background:#101421f5;z-index:100;place-items:center;text-align:center;padding:32px;font-size:22px}#victory{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0e1722e8;text-align:center}#victory h2{font-size:clamp(24px,4vw,50px);color:#f0c993}#graphics-notice{position:fixed;inset:0;z-index:120;background:#101421ee;display:grid;place-content:center;text-align:center;padding:10%}#startup-error{position:fixed;inset:0;z-index:110;background:#121b2b;padding:10%;text-align:center}#startup-code{color:#dfb77b}.touch #title{padding-top:5%}.touch .settings{margin-bottom:8px}.touch #title p{margin:10px 0}.touch .start{padding:12px 24px}@media(orientation:portrait) and (pointer:coarse){#rotate{display:grid}}@media(max-height:450px){.eyebrow{margin-bottom:10px}#title p{margin:8px 0 12px}.settings{margin-bottom:8px}.start{padding:10px 22px}}
+</style>
+</head>
+<body>
+<div id="shell"><div id="game">
+<section id="title" hidden aria-label="Title screen">
+ <div class="eyebrow">A rescue. A bad idea. A lot of protein.</div>
+ <h1>The Legend<br>of <span>Claudia</span></h1>
+ <div class="eyebrow">BDB's Awakening</div>
+ <p>Heaven has opinions. Bob brought options.<br>Three chapters. One very questionable rescue.</p>
+ <div class="settings"><label>Difficulty <select id="difficulty"><option value="story">Story</option><option value="adventure">Adventure</option><option value="nightmare">Nightmare</option></select></label><label>Chapter <select id="chapter"><option value="1">01 · Boulevard</option><option value="2">02 · Celestial</option><option value="3">03 · Moonlit Keep</option></select></label></div>
+ <div class="settings"><label><input type="checkbox" id="auto-fire"> Auto-fire</label></div>
+ <button class="start" id="start">BEGIN THE RESCUE →</button>
+ <div class="footnote">WASD / ARROWS move · J fire · SPACE jump · SHIFT dash · Q Papi · R Dad<br>Gamepad: X fire · A jump · B dash · Y Papi · LB Dad</div>
 </section>
-<aside id="graphics-notice" hidden role="status" aria-live="polite" aria-labelledby="graphics-title">
-<h1 id="graphics-title">Graphics interrupted</h1><p>Gameplay is paused while this browser restores graphics. If it does not recover, Reload game restarts Stage 1. You can still save the Perf report below.</p><button id="graphics-retry" type="button">Reload game</button>
-</aside>
-<div id="touch"><div id="stick"><div id="knob"></div></div>
-<div class="tb" id="tbA">KICK</div><div class="tb" id="tbJ">JUMP</div><div class="tb" id="tbS">FIRE</div><div class="tb" id="tbP">II</div><div class="tb off" id="tbB">BALE</div><div class="tb" id="tbL">CALL</div></div>
-<button id="perf-open" type="button" aria-haspopup="dialog" aria-controls="perf-dialog" aria-expanded="false" aria-label="Open local performance report">Perf report</button>
-<div id="perf-overlay" hidden>
-<section id="perf-dialog" role="dialog" aria-modal="true" aria-labelledby="perf-title" aria-describedby="perf-description" tabindex="-1">
-<header><h1 id="perf-title">Stage 1 performance report</h1><button id="perf-close" type="button">Close</button></header>
-<p id="perf-description">Gameplay is paused while this report is open. Play a fight, then open this panel to capture its timing. Reset starts a fresh capture when you close the panel.</p>
-<pre id="perf-summary"></pre>
-<div class="perf-actions"><button id="perf-copy" type="button">Copy JSON</button><button id="perf-save" type="button">Save JSON</button><button id="perf-reset" type="button">Reset capture</button></div>
-<p id="perf-status" role="status" aria-live="polite"></p>
-<p>Local only: no automatic upload. JSON includes build, renderer, quality, viewport, browser/device details, sample context and raw frame times. Review it before sharing.</p>
-<label for="perf-json">Report JSON (select and copy if needed)</label><textarea id="perf-json" readonly spellcheck="false" aria-label="Performance report JSON"></textarea>
-</section></div>
-<script src="lib/phaser.min.js"></script>
-<script type="module" src="src/bootstrap.js"></script>
+<div id="top-buttons"><button id="pause">Pause</button><button id="mute">Sound on</button></div>
+<div id="touch"><div id="stick" aria-label="Movement stick"><div id="knob"></div></div><div class="buttons"><button class="tb" id="tbPapi">PAPI</button><button class="tb" id="tbDad">DAD</button><button class="tb" id="tbFire">FIRE</button><button class="tb" id="tbJump">JUMP</button><button class="tb" id="tbDash">DASH</button></div></div>
+<section id="victory" hidden><div class="eyebrow">Boundaries successfully mashed.</div><h2>CLAUDIA RESCUED.</h2><p>“Legally, it's produce.”</p><p id="victory-score"></p><button id="replay">Back to title</button></section>
+</div></div>
+<div id="boot">LOADING THE RESCUE…</div><div id="rotate">Turn your phone sideways.<br>The rescue needs elbow room.</div>
+<div id="startup-error" hidden role="alert"><h2 id="startup-title"></h2><p id="startup-description"></p><p id="startup-code"></p><button id="startup-retry">Reload game</button></div>
+<div id="graphics-notice" hidden role="alert"><h2>Graphics paused</h2><p>The rescue will resume when graphics recover.</p><button id="graphics-retry">Reload game</button></div>
+<script src="lib/phaser.min.js"></script><script type="module" src="src/bootstrap.js"></script>
 </body></html>

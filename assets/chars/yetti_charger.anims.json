@@ -1,0 +1,116 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "yetti_charger-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_charger_walk",
+      "frames": [
+        "yetti_charger_walk_01",
+        "yetti_charger_walk_02",
+        "yetti_charger_walk_03",
+        "yetti_charger_walk_04",
+        "yetti_charger_walk_05",
+        "yetti_charger_walk_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "yetti_charger_telegraph",
+      "frames": [
+        "yetti_charger_telegraph_01",
+        "yetti_charger_telegraph_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_charger_rush",
+      "frames": [
+        "yetti_charger_rush_01",
+        "yetti_charger_rush_02",
+        "yetti_charger_rush_03",
+        "yetti_charger_rush_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_charger_hurt",
+      "frames": [
+        "yetti_charger_hurt_01",
+        "yetti_charger_hurt_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_charger_down",
+      "frames": [
+        "yetti_charger_down_01",
+        "yetti_charger_down_02",
+        "yetti_charger_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

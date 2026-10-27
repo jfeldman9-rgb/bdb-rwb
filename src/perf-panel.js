@@ -1,6 +1,6 @@
 // A local-only, keyboard/touch-accessible capture UI. It never uploads reports.
 import { perf, displayMs } from './perf.js';
-import { stageLightLine } from './stage3-lights.js';
+const stageLightLine = () => 'Flat lighting';
 import { perfBtn } from './debug-flag.js';
 
 const SHIELDED_EVENTS = ['pointerdown', 'pointerup', 'pointermove', 'mousedown', 'mouseup',
@@ -93,7 +93,7 @@ export function installPerfPanel({ game, getStage }) {
     perf.setSuspended('report', true); clearGameplayInput(game);
     if (pausedStage?.setPauseReason) pausedStage.setPauseReason('report', true);
     else if (pausedStage) {
-      fallbackWasPaused = game.scene.isPaused('stage1');
+      fallbackWasPaused = game.scene.isPaused('gameplay');
       if (!fallbackWasPaused) pausedStage.scene.pause();
     }
     overlay.hidden = false; opener.setAttribute('aria-expanded', 'true'); status.textContent = '';
@@ -138,7 +138,7 @@ export function installPerfPanel({ game, getStage }) {
   on(saveButton, 'click', () => {
     const blob = new Blob([output.value], { type: 'application/json' });
     const url = URL.createObjectURL(blob), anchor = document.createElement('a');
-    anchor.href = url; anchor.download = `riley-stage1-perf-${currentReport.generatedAt.replace(/[:.]/g, '-')}.json`;
+    anchor.href = url; anchor.download = `bob-stage1-perf-${currentReport.generatedAt.replace(/[:.]/g, '-')}.json`;
     anchor.hidden = true; dialog.append(anchor); anchor.click(); anchor.remove();
     // Safari may consume the URL asynchronously. This URL is local and never sent to a server.
     setTimeout(() => URL.revokeObjectURL(url), 60000);

@@ -1,0 +1,78 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "yetti_choir-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_choir_sing",
+      "frames": [
+        "yetti_choir_sing_01",
+        "yetti_choir_sing_02",
+        "yetti_choir_sing_03",
+        "yetti_choir_sing_04",
+        "yetti_choir_sing_05",
+        "yetti_choir_sing_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "yetti_choir_hurt",
+      "frames": [
+        "yetti_choir_hurt_01",
+        "yetti_choir_hurt_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_choir_down",
+      "frames": [
+        "yetti_choir_down_01",
+        "yetti_choir_down_02",
+        "yetti_choir_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

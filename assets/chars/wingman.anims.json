@@ -1,0 +1,158 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "wingman-0",
+    "wingman-1"
+  ],
+  "anims": [
+    {
+      "name": "wingman_hover",
+      "frames": [
+        "wingman_hover_01",
+        "wingman_hover_02",
+        "wingman_hover_03",
+        "wingman_hover_04",
+        "wingman_hover_05",
+        "wingman_hover_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "wingman_ring",
+      "frames": [
+        "wingman_ring_01",
+        "wingman_ring_02",
+        "wingman_ring_03",
+        "wingman_ring_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "wingman_telegraph",
+      "frames": [
+        "wingman_telegraph_01",
+        "wingman_telegraph_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "wingman_dive",
+      "frames": [
+        "wingman_dive_01",
+        "wingman_dive_02",
+        "wingman_dive_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "wingman_land",
+      "frames": [
+        "wingman_land_01",
+        "wingman_land_02",
+        "wingman_land_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "wingman_hurt",
+      "frames": [
+        "wingman_hurt_01",
+        "wingman_hurt_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "wingman_split",
+      "frames": [
+        "wingman_split_01",
+        "wingman_split_02",
+        "wingman_split_03",
+        "wingman_split_04"
+      ],
+      "pages": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

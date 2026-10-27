@@ -1,0 +1,100 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "choirmaster-0"
+  ],
+  "anims": [
+    {
+      "name": "choirmaster_sing",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04",
+        "choirmaster_sing_05",
+        "choirmaster_sing_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "choirmaster_hurt",
+      "frames": [
+        "choirmaster_hurt_01",
+        "choirmaster_hurt_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "choirmaster_down",
+      "frames": [
+        "choirmaster_down_01",
+        "choirmaster_down_02",
+        "choirmaster_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "choirmaster_ring",
+      "frames": [
+        "choirmaster_ring_01",
+        "choirmaster_ring_02",
+        "choirmaster_ring_03",
+        "choirmaster_ring_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

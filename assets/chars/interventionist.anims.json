@@ -1,0 +1,135 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "interventionist-0"
+  ],
+  "anims": [
+    {
+      "name": "interventionist_walk",
+      "frames": [
+        "interventionist_walk_01",
+        "interventionist_walk_02",
+        "interventionist_walk_03",
+        "interventionist_walk_04",
+        "interventionist_walk_05",
+        "interventionist_walk_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "interventionist_grab",
+      "frames": [
+        "interventionist_grab_01",
+        "interventionist_grab_02",
+        "interventionist_grab_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "interventionist_hold",
+      "frames": [
+        "interventionist_hold_01",
+        "interventionist_hold_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "interventionist_hurt",
+      "frames": [
+        "interventionist_hurt_01",
+        "interventionist_hurt_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "interventionist_down",
+      "frames": [
+        "interventionist_down_01",
+        "interventionist_down_02",
+        "interventionist_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "interventionist_slam",
+      "frames": [
+        "interventionist_slam_01",
+        "interventionist_slam_02",
+        "interventionist_slam_03",
+        "interventionist_slam_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

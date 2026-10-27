@@ -7,22 +7,11 @@ import { isMuted, onMuteChange } from './audio.js';
 // Kept out of the 25 MB pre-fight sum; tools/audit-stage1.mjs counts it under cutscenes.
 
 export const CLIP_BASE = 'assets/cutscenes/';
-/** Which clips play where. intro: after the first title tap, before Stage 1. 1: before the Chieftain fight. */
-export const STAGE_CLIPS = Object.freeze({
-  intro: Object.freeze(['twinkletoes', 'moiraine', 'intro', 'intro_battle']),
-  1: Object.freeze(['stage1']),
-  2: Object.freeze(['stage2']),
-  3: Object.freeze(['stage3']),
-  4: Object.freeze(['stage4']),
-  6: Object.freeze(['stage6']),
-  7: Object.freeze([]), // Optional stage7/S7 clip awaits the rear-view review.
-});
-/** In-fight snack break and post-victory bonus; neither is a stage-entry clip. */
-export const EVENT_CLIPS = Object.freeze({ twix: Object.freeze(['twix']), trex: Object.freeze(['trex']) });
-/** Game actions that skip the current clip. Stick directions and run do not. Start/pause (Enter, Esc) skip the whole sequence. */
-export const SKIP_ACTIONS = Object.freeze(new Set(['attack', 'jump', 'special', 'power', 'assist', 'start', 'pause']));
+export const STAGE_CLIPS = Object.freeze({ intro: ['opening'], victory: ['victory'] });
+export const EVENT_CLIPS = STAGE_CLIPS;
+export const SKIP_ACTIONS = Object.freeze(new Set(['fire', 'jump', 'dash', 'papi', 'dad', 'start', 'pause']));
 export const START_MS = 4000, STALL_MS = 3000, MAX_CLIP_MS = 30000, TICK_MS = 250, GUARD_MS = 450, VOLUME = 0.85;
-export const SEEN_KEY = 'rwb-cutscenes-seen';
+export const SEEN_KEY = 'bdb-cutscenes-seen';
 
 const on = (q, k) => !!q?.has?.(k) && q.get(k) !== '0';
 
@@ -52,7 +41,7 @@ export class CutscenePlayer {
     this.root = root; this.base = o.base ?? CLIP_BASE;
     this.startMs = o.startMs ?? START_MS; this.stallMs = o.stallMs ?? STALL_MS; this.maxMs = o.maxMs ?? MAX_CLIP_MS;
     this.tickMs = o.tickMs ?? TICK_MS; this.guardMs = o.guardMs ?? GUARD_MS; this.volume = o.volume ?? VOLUME;
-    // Wall-clock cap only for callers that pass maxMs (Rand: 11 s). Intro/stage clips keep the old behaviour.
+    // Wall-clock cap only for callers that pass maxMs (Dad: 11 s). Intro/stage clips keep the old behaviour.
     this.capMs = Number.isFinite(o.maxMs) ? o.maxMs : null;
     this.srcOf = typeof o.src === 'function' ? o.src : null;
     this.video = null; this.run = null; this.blessed = false; this.log = [];
@@ -99,11 +88,11 @@ export class CutscenePlayer {
     const doc = this.root.document, v = this.element();
     const overlay = css(doc.createElement('div'), { position: 'fixed', inset: '0', left: '0', top: '0', right: '0', bottom: '0', zIndex: '80',
       background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', touchAction: 'none', cursor: 'pointer' });
-    overlay.id = 'rwb-cutscene'; overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-label', 'Cutscene. Tap or press any button to skip.');
+    overlay.id = 'bdb-cutscene'; overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-label', 'Cutscene. Tap or press any button to skip.');
     const hint = css(doc.createElement('div'), { position: 'absolute', right: 'max(14px, env(safe-area-inset-right))', bottom: 'max(12px, env(safe-area-inset-bottom))',
       padding: '7px 10px', borderRadius: '6px', background: 'rgba(0,0,0,0.55)', color: '#ffe9a8', font: "10px/1.4 PressStart, system-ui, sans-serif",
       letterSpacing: '0.04em', pointerEvents: 'none', opacity: '0.9' });
-    hint.id = 'rwb-cutscene-hint'; hint.textContent = touch ? 'TAP TO SKIP ▶▶' : 'PRESS ANY BUTTON TO SKIP ▶▶';
+    hint.id = 'bdb-cutscene-hint'; hint.textContent = touch ? 'TAP TO SKIP ▶▶' : 'PRESS ANY BUTTON TO SKIP ▶▶';
     overlay.appendChild(v); overlay.appendChild(hint);
     const r = this.run = { ids: [...ids], i: -1, done, progress, overlay, hint, touch: !!touch, muted, userMuted: muted, ended: false, ticks: 0, t0: this.now(), how: null, timer: null, swallowClickUntil: 0 };
     r.padHeld = this.padDown(); r.frame = frame;

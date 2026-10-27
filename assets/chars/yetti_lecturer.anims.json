@@ -1,0 +1,113 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "yetti_lecturer-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_lecturer_walk",
+      "frames": [
+        "yetti_lecturer_walk_01",
+        "yetti_lecturer_walk_02",
+        "yetti_lecturer_walk_03",
+        "yetti_lecturer_walk_04",
+        "yetti_lecturer_walk_05",
+        "yetti_lecturer_walk_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "yetti_lecturer_grab",
+      "frames": [
+        "yetti_lecturer_grab_01",
+        "yetti_lecturer_grab_02",
+        "yetti_lecturer_grab_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_lecturer_hold",
+      "frames": [
+        "yetti_lecturer_hold_01",
+        "yetti_lecturer_hold_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_lecturer_hurt",
+      "frames": [
+        "yetti_lecturer_hurt_01",
+        "yetti_lecturer_hurt_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "yetti_lecturer_down",
+      "frames": [
+        "yetti_lecturer_down_01",
+        "yetti_lecturer_down_02",
+        "yetti_lecturer_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

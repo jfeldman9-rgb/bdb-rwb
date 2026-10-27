@@ -1,0 +1,84 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 1,
+  "pages": [
+    "dad-0"
+  ],
+  "anims": [
+    {
+      "name": "dad_run",
+      "frames": [
+        "dad_run_01",
+        "dad_run_02",
+        "dad_run_03",
+        "dad_run_04",
+        "dad_run_05",
+        "dad_run_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": true
+    },
+    {
+      "name": "dad_swat",
+      "frames": [
+        "dad_swat_01",
+        "dad_swat_02",
+        "dad_swat_03",
+        "dad_swat_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    },
+    {
+      "name": "dad_cheer",
+      "frames": [
+        "dad_cheer_01",
+        "dad_cheer_02",
+        "dad_cheer_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        85,
+        85,
+        85
+      ],
+      "loop": false
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes"
+}

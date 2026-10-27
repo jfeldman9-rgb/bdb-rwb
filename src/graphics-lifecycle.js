@@ -9,7 +9,7 @@ export const GRAPHICS_CONTEXT_REASON = 'graphics-context';
  * Call refresh() if a custom boot flow supplies its scene after boot/ready.
  * destroy() is teardown only: it detaches listeners without resuming a lost game.
  */
-export function installGraphicsLifecycle({ game, getStage = () => game?.scene?.getScene?.('stage1'), meter = perf,
+export function installGraphicsLifecycle({ game, getStage = () => game?.scene?.getScene?.('gameplay'), meter = perf,
   onLost = () => {}, onRestored = () => {} } = {}) {
   let renderer = null, watchedStage = null, disposed = false, lost = false, ownsGamePause = false;
   const clearInput = () => game?.inp?.clear?.();

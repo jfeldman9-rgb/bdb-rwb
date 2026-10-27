@@ -12,11 +12,11 @@ html, body {
   overscroll-behavior: none;
 }
 #game {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  position: relative;
+  width: min(100vw, 177.7778vh);
+  width: min(100vw, 177.7778dvh);
+  height: min(100vh, 56.25vw);
+  height: min(100dvh, 56.25vw);
   overflow: hidden;
 }
 #game canvas {
@@ -26,9 +26,9 @@ html, body {
 
 export function installViewportCss(doc) {
   if (!doc || typeof doc.getElementById !== 'function' || typeof doc.createElement !== 'function') return;
-  if (doc.getElementById('rwb-viewport-css')) return;
+  if (doc.getElementById('bdb-viewport-css')) return;
   const style = doc.createElement('style');
-  style.id = 'rwb-viewport-css';
+  style.id = 'bdb-viewport-css';
   style.textContent = VIEWPORT_CSS;
   (doc.head || doc.documentElement || doc.body)?.appendChild(style);
 }
@@ -128,10 +128,10 @@ const fmt = r => r ? `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.
 function updateViewportLogger(root, game, frame, pin) {
   const doc = root.document;
   if (!doc?.getElementById || !doc.createElement) return;
-  let box = doc.getElementById('rwb-viewport-log');
+  let box = doc.getElementById('bdb-viewport-log');
   if (!box) {
     box = doc.createElement('div');
-    box.id = 'rwb-viewport-log';
+    box.id = 'bdb-viewport-log';
     box.setAttribute('aria-hidden', 'true');
     box.style.cssText = 'position:fixed;z-index:80;left:8px;top:8px;max-width:52vw;padding:6px 8px;background:#05070de6;color:#d6ffe8;font:11px/1.35 ui-monospace,monospace;pointer-events:none;white-space:pre;';
     (doc.body || doc.documentElement)?.appendChild(box);

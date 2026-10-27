@@ -6,7 +6,7 @@ import { releaseIdleRenderTargets } from './render-resources.js';
 
 export const WINDOW_MS = 2000, SLOW_AVG_MS = 21, MAX_SAMPLE_MS = 100;
 // A lost WebGL context writes this so the next boot does not allocate the full canvas again.
-export const QUALITY_FLOOR_KEY = 'rwb-q-floor';
+export const QUALITY_FLOOR_KEY = 'bdb-q-floor';
 
 export function readQualityFloor(storage) {
   try {
@@ -61,14 +61,14 @@ export function installGovernor(game, { q, rs0, vw, vh, meter, floor = 0, log = 
     storedFloor = Math.max(storedFloor, 3);
     writeQualityFloor(storedFloor);
     if (!apply) return storedFloor;
-    const st = game.scene.getScene('stage1');
+    const st = game.scene.getScene('gameplay');
     if (st && storedFloor > level) applyLevel(st, storedFloor);
     return storedFloor;
   };
   game.setRS = rs => {
     if (game.rs === rs) return;
     game.rs = rs; game.scale.resize(vw * rs, vh * rs);
-    for (const k of ['stage1', 'hud']) { const s = game.scene.getScene(k); if (s && s.cameras && s.cameras.main) s.cameras.main.setZoom(rs); }
+    for (const k of ['gameplay', 'hud']) { const s = game.scene.getScene(k); if (s && s.cameras && s.cameras.main) s.cameras.main.setZoom(rs); }
     // Quality changes happen during update, between renderer passes. Release only
     // idle old-size targets; asset textures and checked-out filter targets remain.
     releaseIdleRenderTargets(game);
@@ -90,7 +90,7 @@ export function installGovernor(game, { q, rs0, vw, vh, meter, floor = 0, log = 
     meter.quality = level;
   }
   game.governor = () => {
-    const st = game.scene.getScene('stage1'); if (!st) return;
+    const st = game.scene.getScene('gameplay'); if (!st) return;
     if (appliedRun !== st.runId) {
       // Scene restarts recreate filters/particles. Reapply the current quality tier
       // instead of reporting q5 while silently rendering full-cost q0 effects.

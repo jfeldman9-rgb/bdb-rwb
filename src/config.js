@@ -1,9 +1,9 @@
-// Shared constants for Riley Wheel Brawl 2.0 (Stage 1 vertical slice).
+// Logical viewport and lane constants for The Legend of Claudia.
 export const VW = 1280, VH = 720;
 export const LANE_TOP = 572, LANE_BOT = 690;      // walkable depth band (screen y of feet)
 export const WORLD_W = 5200;
-export const q = new URLSearchParams(location.search);
-export const DPR = window.devicePixelRatio || 1;
+export const q = new URLSearchParams(globalThis.location?.search || '');
+export const DPR = globalThis.devicePixelRatio || 1;
 export const HITSTOP = { light: 4, medium: 6, heavy: 9, finisher: 14 };   // frames @60
 export const SHAKE = { light: 0.16, medium: 0.28, heavy: 0.5, finisher: 0.75 };
 export const DEBUG = !!q.get('debug');
@@ -26,13 +26,13 @@ export function coarsePointer(root = globalThis, search = q) {
 }
 
 /**
- * Starting render scale. ?rs= always wins (desktop screenshots and the dump tool).
+ * Starting render scale. Explicit overrides respect the touch/desktop caps.
  * Touch / iOS uses the fitted 16:9 CSS height, in quarter steps, and never starts above 1.5.
  * A desktop pointer keeps the old min(2, devicePixelRatio) scale.
  */
 export function chooseRenderScale({ dpr = 1, coarse = false, cssHeight = 0, rsQuery = null, gameHeight = VH } = {}) {
   const asked = rsQuery == null || rsQuery === '' ? NaN : +rsQuery;
-  if (Number.isFinite(asked) && asked > 0) return Math.max(1, Math.min(asked, 2));
+  if (Number.isFinite(asked) && asked > 0) return Math.max(1, Math.min(asked, coarse ? 1.5 : 2));
   if (coarse) {
     if (cssHeight > 0 && dpr > 0 && gameHeight > 0) {
       const fitted = Math.round((cssHeight * dpr / gameHeight) * 4) / 4;
@@ -45,9 +45,9 @@ export function chooseRenderScale({ dpr = 1, coarse = false, cssHeight = 0, rsQu
 }
 
 function fittedCssHeight() {
-  const vv = window.visualViewport;
-  const w = vv?.width || window.innerWidth || 0;
-  const h = vv?.height || window.innerHeight || 0;
+  const vv = globalThis.visualViewport;
+  const w = vv?.width || globalThis.innerWidth || 0;
+  const h = vv?.height || globalThis.innerHeight || 0;
   if (!(w > 0) || !(h > 0)) return 0;
   return Math.min(h, w * VH / VW);
 }
