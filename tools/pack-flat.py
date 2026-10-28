@@ -4,7 +4,8 @@
 - Reads /workspace/bdb-art/sprites MAIN folder (ignores _v1/ and _old/).
 - Spec: FPS.md — bob idle12@12 walk12@18 shoot8@16 hurt5@14 knockdown7@14 getup7@14;
   yetti1/2 idle12@12 walk16@18 attack 8@16 (yetti1, hand-drawn v3) / 7@16 (yetti2) hurt5@14 knockdown7@14.
-  Hand-drawn v3 sheets are numbered 00..07; everything else starts at 01 (third spec field).
+  dad enter6@12 swat8@16 exit6@12 (dad_callin.png slice).
+  Hand-drawn v3 sheets and dad are numbered 00..; everything else starts at 01 (third spec field).
 - Dedupes identical pixel frames in the atlas; anim defs re-reference shared frames.
 - Trims alpha, packs webp, downscales by DRAW_SCALE (~0.58) for iPhone GPU.
 - canvas/baseline stay logical 720×600 / 570; anims.scale = DRAW_SCALE so
@@ -48,9 +49,10 @@ REAL = {
     'idle': (12, 12), 'walk': (16, 18), 'attack': (7, 16),
     'hurt': (5, 14), 'knockdown': (7, 14),
   }),
+  # Dad call-in (dad_callin.png slice, Oct 28): jog in, overhead BDB swat (impact on swat_06), jog out.
+  'dad': ('dad', {'enter': (6, 12, 0), 'swat': (8, 16, 0), 'exit': (6, 12, 0)}),
 }
 STANDINS = {
-  'dad': {'run': (6, 12), 'swat': (4, 14), 'cheer': (3, 12)},
   'claudia': {'idle-caged': (4, 10), 'freed': (4, 12), 'portrait': (1, 1)},
   'yetti_hover': {'fly': (6, 12), 'shoot': (3, 14), 'hurt': (2, 14), 'down': (3, 12)},
   'yetti_charger': {'walk': (6, 14), 'telegraph': (2, 10), 'rush': (4, 16), 'hurt': (2, 14), 'down': (3, 12)},
@@ -119,36 +121,35 @@ def prepare(im):
   return crop, (sx0, sy0, crop.width, crop.height), (src_w, src_h)
 
 
+def shelf(sizes, cap):
+  """Height-sorted shelf pack. sizes: [(w, h)]. Returns (placements, pages) where
+  placements[i] = (page, x, y) and pages = [(W, H)]."""
+  order = sorted(range(len(sizes)), key=lambda i: (-sizes[i][1], -sizes[i][0]))
+  place = [None] * len(sizes)
+  pages = []
+  x = y = rowh = W = H = 0
+  for i in order:
+    w, h = sizes[i]
+    if x + w + PAD > cap:
+      x = 0; y += rowh + PAD; rowh = 0
+    if y + h + PAD > MAXW:
+      pages.append((W, H)); x = y = rowh = W = H = 0
+    place[i] = (len(pages), x, y)
+    x += w + PAD; rowh = max(rowh, h); W = max(W, x); H = max(H, y + h)
+  pages.append((W, H))
+  return place, pages
+
+
 def pack(key, anims_spec, source=None):
-  # wipe prior pages for this key
+  # wipe prior pages for this key (webp/json/ktx)
   for old in out.glob(f'{key}-*'):
     old.unlink()
-  pages = []
-  entries = {}
-  atlas = Image.new('RGBA', (MAXW, MAXW))
-  x = y = rowh = W = H = 0
-  # hash -> (frame_name, page_index)
+  # hash -> unique frame index
   seen = {}
-  unique = 0
+  uniques = []  # (frame_name, crop, spriteSourceSize, sourceSize)
   logical = 0
   reused = 0
   anims = []
-
-  def flush():
-    nonlocal atlas, entries, x, y, rowh, W, H
-    if not entries:
-      return
-    name = f'{key}-{len(pages)}'
-    pages.append(name)
-    atlas.crop((0, 0, W, H)).save(out / f'{name}.webp', quality=88, method=6)
-    (out / f'{name}.json').write_text(json.dumps({
-      'frames': entries,
-      'meta': {'image': f'{name}.webp', 'size': {'w': W, 'h': H}, 'scale': DRAW_SCALE},
-    }))
-    atlas = Image.new('RGBA', (MAXW, MAXW))
-    entries = {}
-    x = y = rowh = W = H = 0
-
   for anim, (count, fps, *first) in anims_spec.items():
     first = first[0] if first else 1
     hold = fps_ms(fps) if fps > 0 else 1000
@@ -160,41 +161,47 @@ def pack(key, anims_spec, source=None):
     }
     for i in range(first, first + count):
       logical += 1
-      logical_name = f'{key}_{anim}_{i:02d}'
       im = load_frame(source, anim, i) if source else silhouette(key, anim, i)
-      crop, (sx0, sy0, cw, ch), (src_w, src_h) = prepare(im)
+      crop, sss, (src_w, src_h) = prepare(im)
       digest = hashlib.sha256(crop.tobytes()).hexdigest()
       if digest in seen:
-        frame_name, page_i = seen[digest]
         reused += 1
       else:
-        w, h = crop.size
-        if x + w + PAD > MAXW:
-          x = 0; y += rowh + PAD; rowh = 0
-        if y + h + PAD > MAXW:
-          flush()
-        atlas.paste(crop, (x, y))
-        frame_name = logical_name  # first occurrence keeps its name
-        entries[frame_name] = {
-          'frame': dict(x=x, y=y, w=w, h=h),
-          'rotated': False, 'trimmed': True,
-          'spriteSourceSize': dict(x=sx0, y=sy0, w=cw, h=ch),
-          'sourceSize': dict(w=src_w, h=src_h),
-        }
-        page_i = len(pages)  # current in-progress page index
-        seen[digest] = (frame_name, page_i)
-        unique += 1
-        x += w + PAD; rowh = max(rowh, h); W = max(W, x); H = max(H, y + h)
-      # page index for references must match the page the unique frame lives on.
-      # seen stores page_i at insert time (= len(pages) before flush). After flush,
-      # len(pages) increases; stored page_i stays correct.
-      a['frames'].append(frame_name)
-      a['pages'].append(seen[digest][1])
+        seen[digest] = len(uniques)  # first occurrence keeps its name
+        uniques.append((f'{key}_{anim}_{i:02d}', crop, sss, (src_w, src_h)))
+      a['frames'].append(seen[digest])
       a['holds'].append(hold)
     anims.append(a)
-  flush()
-  # fix: pages recorded at insert are correct because flush appends then resets;
-  # verify all referenced pages exist
+
+  # Pick the page width that wastes the least GPU area (stage-1 RGBA budget).
+  sizes = [u[1].size for u in uniques]
+  place, dims = min((shelf(sizes, cap) for cap in range(768, MAXW + 1, 128)),
+                    key=lambda r: (sum(w * h for w, h in r[1]), len(r[1])))
+  pages = [f'{key}-{n}' for n in range(len(dims))]
+  for n, (W, H) in enumerate(dims):
+    W, H = -(-W // 4) * 4, -(-H // 4) * 4  # 4×4 block aligned for ASTC/ETC2 (compress-ktx.py)
+    atlas = Image.new('RGBA', (W, H))
+    entries = {}
+    for (name, crop, (sx0, sy0, cw, ch), (src_w, src_h)), (pg, x, y) in zip(uniques, place):
+      if pg != n:
+        continue
+      atlas.paste(crop, (x, y))
+      entries[name] = {
+        'frame': dict(x=x, y=y, w=crop.width, h=crop.height),
+        'rotated': False, 'trimmed': True,
+        'spriteSourceSize': dict(x=sx0, y=sy0, w=cw, h=ch),
+        'sourceSize': dict(w=src_w, h=src_h),
+      }
+    atlas.save(out / f'{pages[n]}.webp', quality=88, method=6)
+    (out / f'{pages[n]}.json').write_text(json.dumps({
+      'frames': entries,
+      'meta': {'image': f'{pages[n]}.webp', 'size': {'w': W, 'h': H}, 'scale': DRAW_SCALE},
+    }))
+  for a in anims:
+    idx = a['frames']
+    a['frames'] = [uniques[u][0] for u in idx]
+    a['pages'] = [place[u][0] for u in idx]
+  unique = len(uniques)
   meta = {
     'canvas': [720, 600],
     'baseline': 570,

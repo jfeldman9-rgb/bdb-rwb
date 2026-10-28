@@ -54,13 +54,18 @@ export class GameScene extends Phaser.Scene {
    view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
   }
   for(const [m,v]of this.views)if(!live.has(m)){v.destroy();this.views.delete(m);}
-  if(w.dad){if(!this.dadView)this.dadView=this.makeView(w.dad,'dad',.52);Object.assign(this.dadView,{x:w.dad.x,y:w.dad.y,z:0});this.dadView.play(w.dad.state,1,false);this.dadView.sync();}
+  if(w.dad){if(!this.dadView)this.dadView=this.makeView(w.dad,'dad',.52);this.showDad(w.dad);}
   else if(this.dadView){this.dadView.destroy();this.dadView=null;}
  }
+ // Dad's frame comes from the sim clock (dad.js) so the impact frame lands exactly on resolve() and holds through pauses.
+ showDad(d){const v=this.dadView,m=v.meta,a=m.anims.find(x=>x.name==='dad_'+d.state);Object.assign(v,{x:d.x,y:d.y,z:0});
+  if(a){const i=Math.min(a.frames.length-1,d.frame|0);v.cur='dad_'+d.state;v.sprite.anims.stop();v.sprite.setTexture(m.pages[a.pages[i]],a.frames[i]);}else v.play(d.state,1,false);
+  v.sprite.setAlpha(d.alpha??1);v.sync();v.shadow.setAlpha(.9*(d.alpha??1));}
  effects(dt){
   const w=this.world,g=this.g;g.clear();
-  this.dadLabel.setVisible(!!w.dad);
-  if(w.dad){const d=w.dad,swing=d.state==='swat'?Math.sin(d.age*12)*65:0,x=d.x+135+swing,y=d.y-230;g.lineStyle(12,0xd5bc82);g.lineBetween(d.x+45,d.y-100,x,y);g.lineStyle(6,0xffe3a5);g.strokeRoundedRect(x-44,y-70,88,90,12);for(let i=-25;i<=25;i+=12){g.lineStyle(1,0xffe3a5);g.lineBetween(x+i,y-64,x+i,y+14);}this.dadLabel.setPosition(x-22,y-42);}
+  // Procedural paddle only for the old silhouette stand-in; the packed swat frames carry the BDB swatter.
+  const paddle=!!w.dad&&!this.anims.exists('dad_swat');this.dadLabel.setVisible(paddle);
+  if(paddle){const d=w.dad,swing=d.state==='swat'?Math.sin(d.age*12)*65:0,x=d.x+135+swing,y=d.y-230;g.lineStyle(12,0xd5bc82);g.lineBetween(d.x+45,d.y-100,x,y);g.lineStyle(6,0xffe3a5);g.strokeRoundedRect(x-44,y-70,88,90,12);for(let i=-25;i<=25;i+=12){g.lineStyle(1,0xffe3a5);g.lineBetween(x+i,y-64,x+i,y+14);}this.dadLabel.setPosition(x-22,y-42);}
   for(const e of w.enemies.filter(e=>e.alive)){
    if(e.type==='hover'){g.lineStyle(3,0x9de1ff,.9);g.strokeEllipse(e.x,e.y,90,20);}
    if(e.shield){g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(e.x+e.facing*48,e.y-82,34,110);}
@@ -85,6 +90,8 @@ export class GameScene extends Phaser.Scene {
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
   if(type==='dad')sfx.dadHorn();
+  if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);cam.shake(160,.008);sfx.hit(true);
+   for(let i=0;i<18;i++)this.particles.push({x:data.x-85+Math.random()*60-30,y:data.y-12,vx:Math.random()*360-180,vy:-80-Math.random()*240,life:.35+Math.random()*.35,color:i%3?0xfff3b0:0xffffff});}
   if(type==='hit'||type==='ko'){sfx.hit(type==='ko');for(let i=0;i<(type==='ko'?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}
  }}
  update(time,delta){

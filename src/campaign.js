@@ -141,7 +141,7 @@ export class Campaign {
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
       hittable:visible.some(e=>e.canBeHit),bossPhase:phase?`${this.stageNo}:${phase}`:null,bossInvuln:visible.some(e=>e.boss&&!e.canBeHit)});
     if(!result.ok){this.banner("DAD'S ON HIS COFFEE BREAK.");return false;}
-    this.dad=new Dad(this.camX,this.bob.y); this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
+    this.dad=new Dad(this.camX,this.bob.y,this.bob.x+150); this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
     this.emit('voice','dad_catchphrase'); this.emit('dad'); return true;
   }
   /** Lose a life, keep progress: zones resume at the wave reached; a mini-boss keeps the damage dealt. */
@@ -169,7 +169,7 @@ export class Campaign {
     this.elapsed+=dt;this.messageTime=Math.max(0,this.messageTime-dt);
     if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');}}return;}
     if(this.papiTime>0){this.papiTime=Math.max(0,this.papiTime-dt);return;}
-    if(this.dad){this.dad.update(dt,()=>{for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;}return;}
+    if(this.dad){this.dad.update(dt,()=>{this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;}return;}
     if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);return;}
     tickDadCall(this.dadCall,dt);
     if(this.bob.state==='grabbed' && input.presses){if(this.bob.mash(input.presses))this.banner(STORY.mash); input={};}

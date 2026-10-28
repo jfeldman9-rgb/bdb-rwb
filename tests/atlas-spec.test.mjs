@@ -22,6 +22,13 @@ test('yetti_walker attack is the 8 hand-drawn yetti1 v3 frames at 16 fps; guard 
  assert.deepEqual(a.frames,Array.from({length:8},(_,i)=>`yetti_walker_attack_0${i}`));
  const g=await json('assets/chars/yetti_guard.anims.json');assert.equal(g.anims.find(x=>x.name==='yetti_guard_attack').frames.length,7);
 });
+test('Dad call-in is real packed art: enter 6@12, swat 8@16, exit 6@12, frames indexed from 00',async()=>{
+ const m=await json('assets/chars/dad.anims.json');assert.equal(m.placeholder,false);assert.deepEqual(m.canvas,[720,600]);
+ for(const [name,count,fps]of [['enter',6,12],['swat',8,16],['exit',6,12]]){const a=m.anims.find(x=>x.name===`dad_${name}`);assert.ok(a,`missing dad_${name}`);
+  assert.equal(a.frames.length,count);assert.equal(a.fps,fps);assert.equal(a.loop,false);assert.ok(a.holds.every(h=>h===hold(fps)));
+  assert.deepEqual(a.frames,Array.from({length:count},(_,i)=>`dad_${name}_0${i}`));}
+ assert.equal(m.anims.length,3);assert.equal(m.dedupe.unique,20);
+});
 test('every animation references a valid trimmed frame and atlas page',async()=>{
  for(const file of (await readdir('assets/chars')).filter(f=>f.endsWith('.anims.json'))){
   const m=await json(`assets/chars/${file}`);
