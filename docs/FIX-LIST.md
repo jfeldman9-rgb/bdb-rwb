@@ -1,3 +1,44 @@
+# BDB Fix List — Pass 4 (from Pass 3 reviews)
+
+**Date:** 2026-10-28  
+**Head reviewed:** `cursor/bdb-pass3-7221` @ `1eb6f3a` (draft PR #6). Coding starts at `298879e`, where the missing-file boot break is already committed.  
+**Sources:** Muse (`docs/REVIEW-MUSE-PASS3.md`, branch `cursor/muse-pass3-review-54c5`, 5.5/10), Argon (`docs/REVIEW-ARGON-PASS3.md`, branch `cursor/argon-review-pass3-a093`, 6.5/10), Kimi (`docs/REVIEW-KIMI-PASS3.md`, branch `cursor/kimi-review-pass3-ea29`, 4/10), Claude (`docs/REVIEW-CLAUDE-PASS3.md`, branch `cursor/claude-review-pass3-0e64`, 4/10), plus the Pass 3 deferrals in `docs/OVERNIGHT-STATUS.md`.  
+**Locked, not on this list:** eggplant fires straight (`vy=0`); `CAM_LEAD` stays 0.28 (use the constant, do not change the number); no upgrade shop; Dad's catchphrase and every quoted Bob/Yetti line stay exact; do not touch `assets/cutscenes/intro_v3.mp4`. Choirmaster fight numbers stay put until Jason signs off (Claude C3).
+
+### Already landed at `298879e` — do not reopen
+The four reviews scored PR #6 at `1eb6f3a`, which did not boot: `src/shot-feel.js` was never committed, and `bindRotatePause` / `noteRenderer` were imported without exports. `b360d53` commits that module and those exports, removes the unread `FX.slowmo` / `FX.hitstop` fields, and sends snowball knockback through `p.dir`. `298879e` records the clean-clone `192/192`. Confirmed on this tree before the list below was written. Skip it.
+
+| ID | Fix | Found by | Notes |
+|---|---|---|---|
+| **P4-1** | Nightmare Stage 3 stalls at a 30 Hz step: a phase-3 Wingman already at 1 HP soaks every eggplant, so the other Wingman never reaches the finisher. Stop soaking at the floor. Add a 30 Hz clear and a full Nightmare Stage 1 clear. | Muse P1 (30 Hz stall, missing S1 test); Claude T2 | Not a Choirmaster retune. The device loop still steps the sim at 1/60; this is the bot-harness dt the finishability proxy uses. |
+| **P4-2** | The freeze guard shows the stuck card during a slow chapter load, and the first same-origin error covers a stage that is still running. Skip while loading. A single stray error does not trip; a repeat does. Empty `filename` does not trip. Slow-load test. | Claude R2, R5; Claude T3 | `started` belongs to `create`, not `preload`. |
+| **P4-3** | Dad's catchphrase is dropped when another line is sounding (cutscenes off, including every Reload resume). Put `dad_catchphrase` on the scripted wait. Wording unchanged. | Claude R3; Claude T4 | |
+| **P4-4** | A dead Wingman is revived at 1 HP when phase 3 respawns. `wingHp <= 0` stays dead. Clear `wingHp` when the phase advances so phase-N HP cannot land on phase N+1. | Argon #2; Muse P2; Claude R8, T6 | The phase-3 floor of 1 still applies to a Wingman who is alive. |
+| **P4-5** | `showStuck` stacks a second click listener on `#startup-retry`. `installStageRecovery` never clears its timer on `game.destroy`. | Argon #3; Claude R7; Kimi minor 4 | The startup Reload listener already resumes. |
+| **P4-6** | `startHeldClip` pauses Phaser before `createStoryPlayer.play`, so the story player's resume is a no-op and `destroy()` can leave the game paused. One owner. Abort a live clip before starting another. | Argon #4; Kimi minor 3 | |
+| **P4-7** | Per-frame arrays in `syncViews`, `effects`, particles, and the HUD boss bars. Boss bars also mark the 66% and 33% gates. | Argon #5; Claude R10; Muse readability (phase ticks) | |
+| **P4-8** | Stage 2 music starts in `create` and is faded out the same frame when the kidnap clip runs. | Argon #5; Kimi F8 | |
+| **P4-9** | Respawn hardcodes `VW * 0.28` instead of `CAM_LEAD`. | Kimi minor 1 | The value stays 0.28. |
+| **P4-10** | Mercy banner replaces the checkpoint banner in the same tick. A killing eggplant splats twice and plays a light hit then a heavy hit. | Kimi F8 | |
+| **P4-11** | "Dad not unlocked yet" is reported as spent (`DAD'S OUT OF SWATS`). The spent banner does not show the 10-KO / 45 s recharge. | Claude C10 (Pass 2, still open) | |
+| **P4-12** | Escape and P start a run from the title. Pad Start still begins. Enter still begins. | Claude C12 (Pass 2, still open); Muse P2 | |
+| **P4-13** | Plan docs still promise a second Dad swat. The packed atlas is one swat. Reconcile the docs. | Claude C13 (Pass 2, still open) | Do not add a second swat. |
+| **P4-14** | Choir buff has no visual: 300 px ring, note glyphs, gold pulse on buffed enemies. | Muse readability (MUSE-100 #24) | `choirMultiplier` unchanged. |
+| **P4-15** | Guard shield chips 1–2 draw nothing. Crack the ellipse. Clang rises per chip. Break threshold stays 3. | Muse readability (MUSE-100 #26) | |
+| **P4-16** | Same-lane Yettis stack into one sprite. Separate bodies under 46 px. Bosses exempt. Fixed `actorId` order. | Muse readability (MUSE-100 #29) | Keep Adventure clears inside 140–240 s. |
+| **P4-17** | Boss corpses use the same 0.5 s hold as minions. Hold a boss knockdown longer, then fade. | Muse readability | Minion hold stays 0.5 s. |
+| **P4-18** | After the title, a missing chapter file still says the game stopped before the title screen. | Claude R6 | |
+
+### Deferred (not in the eighteen)
+- **Choirmaster fight balance** (Claude C3). Waits for Jason. No HP, volley, or add retune.
+- **Muse Adventure zone-5 spike.** No further heal cut. Band stays 140–240 s.
+- **Kimi G5.** The rotate overlay's real orientation flip is still a browser check. `bindRotatePause` is unit-tested.
+- **Claude R9.** `grabPunish` is a handoff only `Campaign.update` consumes. The campaign clears it the same step. Left as-is.
+- **Kimi minor 5.** A static "every import name is exported" check. `tests/boot.test.mjs` already imports every module; the missing-export failure mode was the uncommitted file, now fixed.
+- **Muse Story flatness / human playthrough** and the nocutscenes back-to-back narration ear-check. Bot band only this pass.
+
+---
+
 # BDB Fix List — Pass 3 (from Pass 2 reviews)
 
 **Date:** 2026-10-28  
