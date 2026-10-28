@@ -8,7 +8,7 @@ import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
 import { normalizeSave, clearStage } from './save.js';
-import { clamp } from './config.js';
+import { clamp, LANE_TOP, LANE_BOT } from './config.js';
 import { STORY, TUTORIALS } from './story.js';
 
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
@@ -27,15 +27,17 @@ export class Campaign {
     this.zoneIndex = 0; this.waveIndex = 0; this.locked = false; this.enemies = []; this.projectiles = []; this.hostile = []; this.pickups = [];
     this.bounds = { l: 0, r: 5200 }; this.camX = 0; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
     this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
+    this.shieldHintShown = false; this.papiHintShown = false;
     this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
   }
-  dropTrio(x) { for (let i=0;i<3;i++) this.pickups.push({ x: clamp(x+i*35,this.bounds.l+65,this.bounds.r-65), y: 630, kind: 'shake' }); }
+  dropTrio(x, y = this.bob?.y ?? 630) { const laneY = clamp(y, LANE_TOP, LANE_BOT); for (let i=0;i<3;i++) this.pickups.push({ x: clamp(x+i*35,this.bounds.l+65,this.bounds.r-65), y: laneY, kind: 'shake' }); }
   spawnWave() {
-    const zone=this.def.zones[this.zoneIndex], wave=zone.waves[this.waveIndex];
-    this.enemies = wave.map((type,i)=>new Yetti(type,zone.l+780+i*105,630+((i%3)-1)*24));
-    const tutorial = this.stageNo===1 && this.save.bestScore===0 && !this.seenTutorials.has(this.zoneIndex);
-    this.banner(tutorial ? TUTORIALS[this.zoneIndex] : `ZONE ${this.zoneIndex+1} · WAVE ${this.waveIndex+1}`);
-    if(tutorial)this.seenTutorials.add(this.zoneIndex);
+    const zone=this.def.zones[this.zoneIndex], wave=zone.waves[this.waveIndex], gap=zone.spawnGap ?? 105;
+    this.enemies = wave.map((type,i)=>new Yetti(type,zone.l+780+i*gap,630+((i%3)-1)*24));
+    const teachKey = `${this.zoneIndex}:${this.waveIndex}`, teachText = TUTORIALS[this.zoneIndex]?.[this.waveIndex];
+    const tutorial = this.stageNo===1 && this.save.bestScore===0 && teachText && !this.seenTutorials.has(teachKey);
+    this.banner(tutorial ? teachText : `ZONE ${this.zoneIndex+1} · WAVE ${this.waveIndex+1}`);
+    if(tutorial)this.seenTutorials.add(teachKey);
   }
   enterZone() {
     const zone=this.def.zones[this.zoneIndex]; this.locked=true; this.bounds={l:zone.l,r:zone.r}; this.camX=zone.l;
@@ -66,11 +68,18 @@ export class Campaign {
   }
   hit(e,damage,dir,bonk) {
     const result=e.takeHit(damage,dir,bonk);
-    if (result.blocked) { this.emit('shield',{x:e.x,y:e.y}); if (result.shieldBroke) this.banner(STORY.shield); return; }
+    if (result.blocked) {
+      this.emit('shield',{x:e.x,y:e.y});
+      if (result.shieldBroke) this.banner(STORY.shield);
+      else if (this.stageNo===1 && !this.shieldHintShown) { this.shieldHintShown=true; this.banner('BLOCKED! DASH THROUGH THE GOLD SHIELD.'); }
+      return;
+    }
     if (result.accepted) { this.hitStop=4/60; this.emit('hit',{x:e.x,y:e.y,bonk}); }
     if (result.phase) {
       this.checkpoint.phase=result.phase; this.stats.phases.push(`${this.stageNo}:${result.phase}`);
-      this.banner(`${this.def.boss.name} · PHASE II`); this.dropTrio(this.bob.x+40);
+      if (e.type==='interventionist') { this.banner('THE INTERVENTIONIST · PHASE II: HE MEANS IT NOW'); this.emit('voice','lecturer_intervention'); }
+      else this.banner(`${this.def.boss.name} · PHASE II`);
+      this.dropTrio(this.bob.x+40);
     }
     if (!e.alive) this.recordKo(e);
   }
@@ -85,6 +94,7 @@ export class Campaign {
     this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice','bdb_laugh'); return true;
   }
   useDad() {
+    if(this.stageNo===1 && !this.dadCall.unlocked){this.banner('DAD ARRIVES IN ZONE 3.');return false;}
     const visible=this.enemies.filter(e=>e.alive&&e.x>=this.camX&&e.x<=this.camX+1280);
     const phase=this.wingmen?.phase||visible.find(e=>e.boss)?.phase;
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
@@ -96,7 +106,7 @@ export class Campaign {
   respawn() {
     this.stats.deaths++; const cp={...this.checkpoint};
     this.bob=new Bob({x:cp.x,difficulty:this.difficultyKey});this.bob.inv=2;
-    this.enemies=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;
+    this.enemies=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.shieldHintShown=false;
     this.zoneIndex=cp.zone;this.waveIndex=0;this.locked=false;this.bounds={l:0,r:5200};this.bossActive=false;
     if(cp.zone===3)this.startBoss(cp.phase);
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
@@ -138,8 +148,10 @@ export class Campaign {
     }
     this.hostile=this.hostile.filter(p=>p.alive);
     for(const p of this.pickups)if(Math.abs(p.x-this.bob.x)<55&&Math.abs(p.y-this.bob.y)<48){
+      const before=this.papi.charges;
       const collected=collectShake(this.papi.shakeRemainder,this.papi.charges,this.bob.hp,false);
       this.papi.charges=collected.charges;this.papi.shakeRemainder=collected.shakeRemainder;p.gone=true;this.emit('pickup');
+      if(this.stageNo===1&&this.papi.charges>before&&!this.papiHintShown){this.papiHintShown=true;this.banner('PAPI READY! 3 SHAKES = 1 CHARGE. SAVE IT FOR A CROWD.');}
     }
     this.pickups=this.pickups.filter(p=>!p.gone);
     if(this.wingmen){const before=this.wingmen.phase;this.wingmen.update(dt,this);if(before!==this.wingmen.phase)this.stats.phases.push(`3:${this.wingmen.phase}`);}

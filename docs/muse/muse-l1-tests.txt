@@ -1,0 +1,439 @@
+TAP version 13
+# Subtest: v2 Bob art: canvas, baseline, FPS.md frame counts and holds
+ok 1 - v2 Bob art: canvas, baseline, FPS.md frame counts and holds
+  ---
+  duration_ms: 7.583557
+  ...
+# Subtest: every animation references a valid trimmed frame and atlas page
+ok 2 - every animation references a valid trimmed frame and atlas page
+  ---
+  duration_ms: 22.212654
+  ...
+# Subtest: §5.1 keys present; Yetti originals use v2 walk=16 and are not placeholders
+ok 3 - §5.1 keys present; Yetti originals use v2 walk=16 and are not placeholders
+  ---
+  duration_ms: 3.520417
+  ...
+# Subtest: character atlas GPU residency stays under 20 MiB for a Stage 1 kit
+ok 4 - character atlas GPU residency stays under 20 MiB for a Stage 1 kit
+  ---
+  duration_ms: 17.427842
+  ...
+# Subtest: 270px/s movement normalizes diagonals and stays inside the lane
+ok 5 - 270px/s movement normalizes diagonals and stays inside the lane
+  ---
+  duration_ms: 2.371221
+  ...
+# Subtest: jump is independent of lane and lands safely
+ok 6 - jump is independent of lane and lands safely
+  ---
+  duration_ms: 0.562007
+  ...
+# Subtest: dash works on the ground and in air and recovers stock
+ok 7 - dash works on the ground and in air and recovers stock
+  ---
+  duration_ms: 0.583754
+  ...
+# Subtest: third hit within two seconds knocks down then gets up with immunity
+ok 8 - third hit within two seconds knocks down then gets up with immunity
+  ---
+  duration_ms: 0.703757
+  ...
+# Subtest: old hit streak expires; a charger always knocks down
+ok 9 - old hit streak expires; a charger always knocks down
+  ---
+  duration_ms: 2.609598
+  ...
+# Subtest: six presses free a grab and incapacitate the Lecturer
+ok 10 - six presses free a grab and incapacitate the Lecturer
+  ---
+  duration_ms: 0.552732
+  ...
+# Subtest: Story auto-mashes; killed grabber cannot strand Bob
+ok 11 - Story auto-mashes; killed grabber cannot strand Bob
+  ---
+  duration_ms: 0.468249
+  ...
+# Subtest: every source module imports under a DOM stub; all local dependencies exist
+ok 12 - every source module imports under a DOM stub; all local dependencies exist
+  ---
+  duration_ms: 114.424266
+  ...
+# Subtest: no excluded engine content or modules in gameplay imports
+ok 13 - no excluded engine content or modules in gameplay imports
+  ---
+  duration_ms: 7.935732
+  ...
+# Subtest: title, HUD, story and voice registry contain only BDB player-facing text
+ok 14 - title, HUD, story and voice registry contain only BDB player-facing text
+  ---
+  duration_ms: 3.776283
+  ...
+# Subtest: git has no remotes
+ok 15 - git has no remotes
+  ---
+  duration_ms: 5.579516
+  ...
+# Subtest: full Adventure campaign through victory at 30 Hz without cheats
+ok 16 - full Adventure campaign through victory at 30 Hz without cheats
+  ---
+  duration_ms: 63.677117
+  ...
+# {"seconds":140.66666666666126,"shots":279,"papi":7,"dad":2,"kos":64,"deaths":2,"stages":[1,2,3],"phases":["1:2","2:2","3:2","3:3"]}
+# Subtest: full Adventure campaign through victory at 60 Hz without cheats
+ok 17 - full Adventure campaign through victory at 60 Hz without cheats
+  ---
+  duration_ms: 82.383283
+  ...
+# {"seconds":144.80000000000737,"shots":279,"papi":7,"dad":2,"kos":64,"deaths":2,"stages":[1,2,3],"phases":["1:2","2:2","3:2","3:3"]}
+# Subtest: full Adventure campaign through victory at 120 Hz without cheats
+ok 18 - full Adventure campaign through victory at 120 Hz without cheats
+  ---
+  duration_ms: 45.834581
+  ...
+# {"seconds":138.39166666670513,"shots":269,"papi":7,"dad":2,"kos":64,"deaths":1,"stages":[1,2,3],"phases":["1:2","2:2","3:2","3:3"]}
+# Subtest: stage changes release exclusive previous character pages and animations
+ok 19 - stage changes release exclusive previous character pages and animations
+  ---
+  duration_ms: 0.561005
+  ...
+# Subtest: pause and call-in freezes stop combat and leave no latent attack
+ok 20 - pause and call-in freezes stop combat and leave no latent attack
+  ---
+  duration_ms: 0.311922
+  ...
+# Subtest: first charge is locked until explicitly granted
+ok 21 - first charge is locked until explicitly granted
+  ---
+  duration_ms: 1.293403
+  ...
+# Subtest: recharge requires both 10 Bob KOs and 45 seconds; max three calls
+ok 22 - recharge requires both 10 Bob KOs and 45 seconds; max three calls
+  ---
+  duration_ms: 0.286866
+  ...
+# Subtest: all refusal reasons spend nothing
+ok 23 - all refusal reasons spend nothing
+  ---
+  duration_ms: 1.660147
+  ...
+# Subtest: regulars faint, elites lose 60 percent and shield, bosses respect phase floors
+ok 24 - regulars faint, elites lose 60 percent and shield, bosses respect phase floors
+  ---
+  duration_ms: 0.52398
+  ...
+# Subtest: per-phase budget is scoped to the chapter and phase
+ok 25 - per-phase budget is scoped to the chapter and phase
+  ---
+  duration_ms: 0.325101
+  ...
+# Subtest: Dad resolves once at 0.65 seconds and always exits
+ok 26 - Dad resolves once at 0.65 seconds and always exits
+  ---
+  duration_ms: 0.405096
+  ...
+# Subtest: every shot stays horizontal including when Bob is airborne or moving lanes
+ok 27 - every shot stays horizontal including when Bob is airborne or moving lanes
+  ---
+  duration_ms: 2.531625
+  ...
+# Subtest: held FIRE produces five shots per second; release does not fire
+ok 28 - held FIRE produces five shots per second; release does not fire
+  ---
+  duration_ms: 0.654256
+  ...
+# Subtest: point blank bonks in the facing lane; the projectile hits the shadow lane
+ok 29 - point blank bonks in the facing lane; the projectile hits the shadow lane
+  ---
+  duration_ms: 0.337502
+  ...
+# Subtest: swept hit collision catches fast shots and ignores other lanes
+ok 30 - swept hit collision catches fast shots and ignores other lanes
+  ---
+  duration_ms: 0.215057
+  ...
+# Subtest: gun has no removed targeting, temperature, or release-to-fire mechanics
+ok 31 - gun has no removed targeting, temperature, or release-to-fire mechanics
+  ---
+  duration_ms: 11.08103
+  ...
+# Subtest: keyboard, pad and touch expose exactly the five combat actions
+ok 32 - keyboard, pad and touch expose exactly the five combat actions
+  ---
+  duration_ms: 1.725449
+  ...
+# Subtest: buffered taps are consumed once and expire
+ok 33 - buffered taps are consumed once and expire
+  ---
+  duration_ms: 0.839789
+  ...
+# Subtest: keyboard alias ownership keeps FIRE held until both keys release
+ok 34 - keyboard alias ownership keeps FIRE held until both keys release
+  ---
+  duration_ms: 0.312786
+  ...
+# Subtest: simultaneous touch stick and buttons survive independent cancellations
+ok 35 - simultaneous touch stick and buttons survive independent cancellations
+  ---
+  duration_ms: 0.495558
+  ...
+# Subtest: blur and visibility loss release all held state
+ok 36 - blur and visibility loss release all held state
+  ---
+  duration_ms: 0.42508
+  ...
+# Subtest: pad FIRE holds and disconnect clears stale buttons
+ok 37 - pad FIRE holds and disconnect clears stale buttons
+  ---
+  duration_ms: 0.417026
+  ...
+# Subtest: graphics loss pauses combat and restoration preserves an existing manual pause
+ok 38 - graphics loss pauses combat and restoration preserves an existing manual pause
+  ---
+  duration_ms: 2.822681
+  ...
+# Subtest: performance capture excludes pause gaps and samples active fight cadence
+ok 39 - performance capture excludes pause gaps and samples active fight cadence
+  ---
+  duration_ms: 0.934543
+  ...
+# Subtest: all planned voice line IDs are registered and missing recordings caption safely
+ok 40 - all planned voice line IDs are registered and missing recordings caption safely
+  ---
+  duration_ms: 4.371969
+  ...
+# Subtest: packet placeholder voices, music, cutscenes and backgrounds are on disk
+ok 41 - packet placeholder voices, music, cutscenes and backgrounds are on disk
+  ---
+  duration_ms: 10.073177
+  ...
+# Subtest: nocutscenes wins over every other flag and demo skips by default
+ok 42 - nocutscenes wins over every other flag and demo skips by default
+  ---
+  duration_ms: 0.808046
+  ...
+# Subtest: placeholder runner implementation uses clothed silhouettes without a disallowed overlay
+ok 43 - placeholder runner implementation uses clothed silhouettes without a disallowed overlay
+  ---
+  duration_ms: 2.151514
+  ...
+# Subtest: all four packet function bodies remain verbatim
+ok 44 - all four packet function bodies remain verbatim
+  ---
+  duration_ms: 1.463657
+  ...
+# Subtest: packet: protein economy charges every third shake and caps at two
+ok 45 - packet: protein economy charges every third shake and caps at two
+  ---
+  duration_ms: 3.022272
+  ...
+# Subtest: packet: phase-three boss damage floors each Wingman at one HP
+ok 46 - packet: phase-three boss damage floors each Wingman at one HP
+  ---
+  duration_ms: 0.261773
+  ...
+# Subtest: packet: Papacito requires exactly two weakened live Wingmen and never wastes the last charge
+ok 47 - packet: Papacito requires exactly two weakened live Wingmen and never wastes the last charge
+  ---
+  duration_ms: 0.45318
+  ...
+# Subtest: wipe KOs visible non-bosses only and awards 500 each
+ok 48 - wipe KOs visible non-bosses only and awards 500 each
+  ---
+  duration_ms: 0.396498
+  ...
+# Subtest: every refusal is free, including boss-only phase 1 and 2 arenas
+ok 49 - every refusal is free, including boss-only phase 1 and 2 arenas
+  ---
+  duration_ms: 0.372421
+  ...
+# Subtest: finisher removes both Wingmen and grants 4000 only when ready
+ok 50 - finisher removes both Wingmen and grants 4000 only when ready
+  ---
+  duration_ms: 0.366688
+  ...
+# Subtest: save handles missing, malformed, nonfinite and legacy fields
+ok 51 - save handles missing, malformed, nonfinite and legacy fields
+  ---
+  duration_ms: 2.499047
+  ...
+# Subtest: storage failure never breaks play and saves use the isolated key
+ok 52 - storage failure never breaks play and saves use the isolated key
+  ---
+  duration_ms: 0.60759
+  ...
+# Subtest: clears unlock subsequent stages and Nightmare only after victory
+ok 53 - clears unlock subsequent stages and Nightmare only after victory
+  ---
+  duration_ms: 0.278089
+  ...
+# Subtest: touch defaults to Story, scales at most 1.5 and disables bloom
+ok 54 - touch defaults to Story, scales at most 1.5 and disables bloom
+  ---
+  duration_ms: 0.321847
+  ...
+# Subtest: shop has no UI or gameplay state
+ok 55 - shop has no UI or gameplay state
+  ---
+  duration_ms: 13.228991
+  ...
+# Subtest: Adventure bot clears all Stage 1 zones and Interventionist under eight sim minutes
+ok 56 - Adventure bot clears all Stage 1 zones and Interventionist under eight sim minutes
+  ---
+  duration_ms: 20.653684
+  ...
+# {"seconds":39.46666666666571,"shots":80,"papi":1,"dad":1,"kos":13,"deaths":1,"stages":[1],"phases":["1:2"]}
+# Subtest: zone death returns to the last checkpoint with full hearts and fresh wave
+ok 57 - zone death returns to the last checkpoint with full hearts and fresh wave
+  ---
+  duration_ms: 0.435419
+  ...
+# Subtest: straight eggplant fire kills every Stage 1 zone-1 Yetti without dash or lane aim
+ok 58 - straight eggplant fire kills every Stage 1 zone-1 Yetti without dash or lane aim
+  ---
+  duration_ms: 1.628676
+  ...
+# Subtest: Stage 1 spawn rows stay inside the gun band from Bob's default lane
+ok 59 - Stage 1 spawn rows stay inside the gun band from Bob's default lane
+  ---
+  duration_ms: 0.649687
+  ...
+# Subtest: Stage 1 tutorials land on the wave that teaches them
+ok 60 - Stage 1 tutorials land on the wave that teaches them
+  ---
+  duration_ms: 0.694309
+  ...
+# Subtest: first blocked eggplant teaches the dash once; locked Dad names Zone 3
+ok 61 - first blocked eggplant teaches the dash once; locked Dad names Zone 3
+  ---
+  duration_ms: 0.288916
+  ...
+# Subtest: Zone 3 choir buffs the whole spawn group; shake trio drops on Bob lane and banks PAPI with a banner
+ok 62 - Zone 3 choir buffs the whole spawn group; shake trio drops on Bob lane and banks PAPI with a banner
+  ---
+  duration_ms: 0.569911
+  ...
+# Subtest: Interventionist retry respawns at the boss checkpoint in the reached phase with full hearts
+ok 63 - Interventionist retry respawns at the boss checkpoint in the reached phase with full hearts
+  ---
+  duration_ms: 0.310418
+  ...
+# Subtest: HUD stage prompt keeps Stage 1 lessons visible after banners fade
+ok 64 - HUD stage prompt keeps Stage 1 lessons visible after banners fade
+  ---
+  duration_ms: 7.250601
+  ...
+# Subtest: phone labels prefer TAP TO START
+ok 65 - phone labels prefer TAP TO START
+  ---
+  duration_ms: 1.288564
+  ...
+# Subtest: form controls do not count as start taps; empty title and start button do
+ok 66 - form controls do not count as start taps; empty title and start button do
+  ---
+  duration_ms: 0.534667
+  ...
+# Subtest: wireTitleStart fires begin from start button, rotate CTA, and title tap-anywhere
+ok 67 - wireTitleStart fires begin from start button, rotate CTA, and title tap-anywhere
+  ---
+  duration_ms: 0.468588
+  ...
+# Subtest: index.html exposes TAP TO START and rotate-start for phones
+ok 68 - index.html exposes TAP TO START and rotate-start for phones
+  ---
+  duration_ms: 6.401992
+  ...
+# Subtest: phase 1→2→3 splits into two; shots and Dad cannot kill phase 3
+ok 69 - phase 1→2→3 splits into two; shots and Dad cannot kill phase 3
+  ---
+  duration_ms: 2.39097
+  ...
+# Subtest: finisher softlock spawns a reachable shake trio every eight seconds
+ok 70 - finisher softlock spawns a reachable shake trio every eight seconds
+  ---
+  duration_ms: 2.607016
+  ...
+# Subtest: boss death retry preserves the current phase checkpoint
+ok 71 - boss death retry preserves the current phase checkpoint
+  ---
+  duration_ms: 0.402409
+  ...
+# Subtest: boss damage sanitizes invalid values and never increases live HP above floor
+ok 72 - boss damage sanitizes invalid values and never increases live HP above floor
+  ---
+  duration_ms: 1.304608
+  ...
+# Subtest: packet HP scales by twelve for all six roles
+ok 73 - packet HP scales by twelve for all six roles
+  ---
+  duration_ms: 1.851544
+  ...
+# Subtest: guard front blocks, rear hits, and dash breaks the shield
+ok 74 - guard front blocks, rear hits, and dash breaks the shield
+  ---
+  duration_ms: 0.369757
+  ...
+# Subtest: guard shield shatters after three frontal eggplants
+ok 75 - guard shield shatters after three frontal eggplants
+  ---
+  duration_ms: 0.136474
+  ...
+# Subtest: hover is hittable on its shadow lane
+ok 76 - hover is hittable on its shadow lane
+  ---
+  duration_ms: 0.122665
+  ...
+# Subtest: charger holds its 0.72 second tell before rushing
+ok 77 - charger holds its 0.72 second tell before rushing
+  ---
+  duration_ms: 0.740847
+  ...
+# Subtest: choir buff is 1.28 inside 300px and ends on KO
+ok 78 - choir buff is 1.28 inside 300px and ends on KO
+  ---
+  duration_ms: 0.131566
+  ...
+# Subtest: lecturer telegraphs then grabs; mash releases both actors
+ok 79 - lecturer telegraphs then grabs; mash releases both actors
+  ---
+  duration_ms: 0.295199
+  ...
+# Subtest: mini-bosses each reset once into phase two and can then be defeated
+ok 80 - mini-bosses each reset once into phase two and can then be defeated
+  ---
+  duration_ms: 0.154251
+  ...
+# Subtest: each Stage 1 role uses its own atlas art
+ok 81 - each Stage 1 role uses its own atlas art
+  ---
+  duration_ms: 0.21323
+  ...
+# Subtest: charger rush crosses the telegraphed spot instead of stopping short
+ok 82 - charger rush crosses the telegraphed spot instead of stopping short
+  ---
+  duration_ms: 0.711917
+  ...
+# Subtest: charger tell lengthens on Story pace
+ok 83 - charger tell lengthens on Story pace
+  ---
+  duration_ms: 0.261549
+  ...
+# Subtest: hover bobs above its shadow lane while staying hittable there
+ok 84 - hover bobs above its shadow lane while staying hittable there
+  ---
+  duration_ms: 0.334076
+  ...
+# Subtest: Interventionist phase two moves faster and slams a shockwave on a whiffed grab
+ok 85 - Interventionist phase two moves faster and slams a shockwave on a whiffed grab
+  ---
+  duration_ms: 0.351089
+  ...
+1..85
+# tests 85
+# suites 0
+# pass 85
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 542.338416

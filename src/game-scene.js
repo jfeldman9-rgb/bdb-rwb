@@ -47,12 +47,18 @@ export class GameScene extends Phaser.Scene {
   const live=new Set();
   for(const model of [w.bob,...w.enemies.filter(e=>e.alive)]){
    live.add(model);let view=this.views.get(model);const isBob=model===w.bob,key=isBob?'bob':model.type==='wingman'?'wingman':TYPES[model.type].art;
-   if(!view){view=this.makeView(model,key,isBob ? .46 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
+   if(!view){view=this.makeView(model,key,isBob ? .46 : model.type==='interventionist' ? .59 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
    Object.assign(view,{x:model.x,y:model.y,z:model.z||0,state:model.state});view.face(model.facing);
-   let anim=isBob?(model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle'):
-    model.state==='hurt'?'hurt':model.state==='down'?'knockdown':model.state==='telegraph'||model.state==='rush'?'attack':model.state==='approach'?'walk':'idle';
-   if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':'walk'):'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
-   view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
+   let anim;
+   if(isBob)anim=model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle';
+   else if(model.type==='hover')anim=model.state==='hurt'?'hurt':model.state==='telegraph'?'shoot':model.state==='down'?'down':'fly';
+   else if(model.type==='charger')anim=model.state==='hurt'?'hurt':model.state==='telegraph'?'telegraph':model.state==='rush'?'rush':model.state==='down'?'down':'walk';
+   else if(model.type==='choir'||model.type==='choirmaster')anim=model.state==='hurt'?'hurt':model.state==='down'?'down':model.type==='choirmaster'&&model.state==='telegraph'?'ring':'sing';
+   else if(model.type==='lecturer'||model.type==='interventionist')anim=model.state==='hurt'?'hurt':model.state==='down'?'down':model.state==='slam'&&model.type==='interventionist'?'slam':model.state==='hold'?'hold':model.state==='telegraph'?'grab':'walk';
+   else if(model.type==='wingman')anim=model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':model.state==='hurt'?'hurt':'hover';
+   else anim=model.state==='hurt'?'hurt':model.state==='down'?'knockdown':model.state==='telegraph'||model.state==='rush'?'attack':model.state==='approach'?'walk':'idle';
+   if(!this.anims.exists(key+'_'+anim))anim=this.metas[key].anims[0].name.slice(key.length+1);
+   view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);if(model.type==='interventionist')view.sprite.setTint(model.phase>=2?0xffc4a8:0xffffff);view.sync();
   }
   for(const [m,v]of this.views)if(!live.has(m)){v.destroy();this.views.delete(m);}
   if(w.dad){if(!this.dadView)this.dadView=this.makeView(w.dad,'dad',.52);Object.assign(this.dadView,{x:w.dad.x,y:w.dad.y,z:0});this.dadView.play(w.dad.state,1,false);this.dadView.sync();}

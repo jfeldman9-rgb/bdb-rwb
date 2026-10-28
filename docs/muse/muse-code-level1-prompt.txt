@@ -1,0 +1,27 @@
+You are Muse Code implementing ONE level of Big Dick Bob (BDB) on the RWB Phaser lane-brawler. Workspace tip is local main at commit 7ae3448 (Dad Southie + Bob Benedict lines). Jason wants exactly ONE level coded at max effort: the weakest / first level per plan/BUILD-PLAN.md §3.2.
+
+## Scope (hard)
+- CODE / improve **Stage 1 only** — BOULEVARD OF BETTER JUDGMENT (`stage1-def.js`, key `boulevard`, related Stage-1 gameplay in `src/`, tests that cover Stage 1).
+- Do NOT implement or redesign Stage 2, Stage 3, Wingmen finale, shop, or new art pipelines.
+- Do NOT merge to main; leave changes as ordinary file edits in this workspace (branch name will be `muse-level-1` when synced elsewhere).
+- Contributor mode is OFF. Do not invent product decisions Jason already locked: lane brawler YES; shop CUT; Dad catchphrase exactly `Son, sometimes you just need to use the fly swatter to keep the women away!`; voices as wired; Bob walk may be 6 frames.
+- Prefer reading plan/BUILD-PLAN.md §3.2 Stage 1 + §4 mechanics that Stage 1 teaches, plan/STATUS.md, src/stage1-def.js, src/yettis.js, src/bob.js, src/eggplant.js, src/dad*.js, src/papacito*.js, tests/stage1-sim.test.mjs and related tests.
+
+## Goals for Stage 1 (weakest level)
+Make Stage 1 match the plan's teaching intent and feel good as a phone vertical slice:
+1. Zone 1: 2 walkers, then walker + guard — teach shield blocks shots; dash breaks shield.
+2. Zone 2: hover + walker, then charger + walker — teach jump over charge; first protein shakes ×3 → first PAPI charge.
+3. Zone 3: choir + 2 walkers + guard — teach kill choir first; first DAD charge here.
+4. Mini-boss "The Interventionist" (scaled/tinted Lecturer): grab + mash free; two phases; intervention voice if present.
+5. Checkpoints on zone clears; death respawns at last cleared zone with full hearts; unlimited continues.
+6. Keep eggplant vy=0; no aiming; no pit/fall deaths; no WoT/Riley leftovers in player-facing strings.
+7. Touch/Story defaults already exist — do not break phone TAP TO START / #touch controls / portrait rotate CTA.
+
+## Output / process
+- Edit source and tests as needed for Stage 1. Keep changes minimal outside Stage 1.
+- Write `docs/MUSE-LEVEL-1.md` summarizing: what you changed, why, files touched, remaining gaps, any quota/limit warning you saw.
+- If you hit a Muse quota warning, rate limit, allowance exhausted, or similar: STOP immediately, save whatever you have (including docs/MUSE-LEVEL-1.md), and do not start another pass.
+- One session only. No retries. No second attempt. No network installs. No git push. git may be unavailable — ignore remotes.
+- When done, print a one-line summary: LEVEL=1 FILES=N TESTS=note QUOTA=ok|warn.
+
+Use --reasoning-effort max settings already supplied by the runner.

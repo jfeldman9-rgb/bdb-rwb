@@ -3,7 +3,7 @@ import { STAGE2 } from './stage2-def.js';
 import { STAGE3 } from './stage3-def.js';
 export const STAGES = Object.freeze({ 1: STAGE1, 2: STAGE2, 3: STAGE3 });
 export const maxStage = 3;
-const shared = ['bob','dad','yetti_walker','yetti_guard','papi_runners'];
+const shared = ['bob','dad','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','papi_runners'];
 export const STAGE_CHARS = Object.freeze({ 1: [...shared,'interventionist'], 2: [...shared,'choirmaster'], 3: [...shared,'wingman','claudia'] });
 export const STAGE_TEXTURES = Object.freeze(Object.fromEntries(Object.values(STAGES).map(s=>[s.no,[s.bg]])));
 export const VOLLEY_BANDS = [[572,611],[612,650],[651,690]];

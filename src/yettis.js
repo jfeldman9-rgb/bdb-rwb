@@ -3,10 +3,10 @@ import { LANE_TOP, LANE_BOT, clamp } from './config.js';
 export const TYPES = Object.freeze({
   walker: { hp: 24, speed: 100, art: 'yetti_walker', tint: 0xffffff },
   guard: { hp: 48, speed: 65, art: 'yetti_guard', tint: 0xffe1a0 },
-  hover: { hp: 36, speed: 115, art: 'yetti_walker', tint: 0xc3dbff },
-  charger: { hp: 48, speed: 100, art: 'yetti_walker', tint: 0xffa6aa },
-  choir: { hp: 36, speed: 0, art: 'yetti_walker', tint: 0xd6b0ff },
-  lecturer: { hp: 48, speed: 95, art: 'yetti_guard', tint: 0x9bedd9 },
+  hover: { hp: 36, speed: 115, art: 'yetti_hover', tint: 0xc3dbff },
+  charger: { hp: 48, speed: 100, art: 'yetti_charger', tint: 0xffa6aa },
+  choir: { hp: 36, speed: 0, art: 'yetti_choir', tint: 0xd6b0ff },
+  lecturer: { hp: 48, speed: 95, art: 'yetti_lecturer', tint: 0x9bedd9 },
   interventionist: { hp: 216, speed: 95, art: 'interventionist', tint: 0xffffff, boss: true },
   choirmaster: { hp: 216, speed: 0, art: 'choirmaster', tint: 0xffffff, boss: true },
 });
@@ -43,13 +43,19 @@ export class Yetti {
     if (!this.alive) return;
     const b = world.bob, pace = world.difficulty.pace, buff = choirMultiplier(this, world.enemies);
     this.clock += dt; this.cooldown -= dt * buff;
+    if (this.type === 'hover') this.z = 65 + Math.sin(this.clock * 3) * 10;
     if (this.stun > 0) { this.stun -= dt; if (this.stun <= 0) this.state = 'approach'; return; }
     if (this.state === 'hold') { if (b.grabbedBy !== this) { this.state = 'approach'; this.cooldown = 2; } return; }
     if (this.state === 'telegraph') {
       this.timer -= dt;
       if (this.timer <= 0) {
-        if (this.type === 'charger') { this.state = 'rush'; this.timer = .65; }
+        if (this.type === 'charger') {
+          this.state = 'rush';
+          // Rush through Bob's telegraphed spot (plus overshoot) so the jump/step lesson is real.
+          this.timer = clamp((Math.abs(this.attackX - this.x) + 140) / (430 * pace), .65, 1.2);
+        }
         else {
+          let slammed = false;
           if (['guard','hover'].includes(this.type)) world.snowball(this.x, this.attackY, this.rushDir);
           else if (['choir','choirmaster'].includes(this.type)) {
             const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== this.volley++ % 3) : [Math.round((this.attackY-LANE_TOP)/59)];
@@ -58,8 +64,12 @@ export class Yetti {
           } else if (Math.abs(b.x-this.x) < 95 && Math.abs(b.y-this.attackY) < 35 && b.z < 65) {
             if (['lecturer','interventionist'].includes(this.type) && b.grab(this)) { this.state = 'hold'; world.emit('voice','lecturer_intervention'); return; }
             world.hurtBob();
+          } else if (this.type === 'interventionist' && this.phase >= 2) {
+            world.snowball(this.x, this.attackY, this.rushDir, 'shockwave'); slammed = true;
           }
-          this.state = 'recover'; this.timer = .6 * world.difficulty.recovery; this.cooldown = 1.3 / pace;
+          this.state = slammed ? 'slam' : 'recover';
+          this.timer = (slammed ? .45 : .6) * world.difficulty.recovery;
+          this.cooldown = ((this.type === 'interventionist' && this.phase >= 2) ? 1.1 : 1.3) / pace;
         }
       }
       return;
@@ -71,14 +81,14 @@ export class Yetti {
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = 2; }
       return;
     }
-    if (this.state === 'recover') { this.timer -= dt; if (this.timer <= 0) this.state = 'approach'; return; }
+    if (this.state === 'recover' || this.state === 'slam') { this.timer -= dt; if (this.timer <= 0) this.state = 'approach'; return; }
     const dx = b.x-this.x, dy=b.y-this.y; this.facing = Math.sign(dx) || this.facing;
     const ranged = ['guard','hover','choir','choirmaster'].includes(this.type), reach = ranged ? 580 : this.type === 'charger' ? 430 : 85;
     if (Math.abs(dx)<reach && Math.abs(dy)< (ranged ? 110 : 30) && this.cooldown<=0) {
-      this.state='telegraph'; this.timer=this.type==='charger' ? .72 : .65 / pace;
+      this.state='telegraph'; this.timer=(this.type==='charger' ? .72 : this.type==='interventionist' && this.phase>=2 ? .58 : .65) / pace;
       this.attackX=b.x; this.attackY=this.y; this.rushDir=this.facing; return;
     }
-    const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff;
+    const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff*(this.type==='interventionist'&&this.phase>=2?1.3:1);
     const oldX=this.x;
     if (Math.abs(dx)>pref) this.x += Math.sign(dx)*speed*dt;
     this.y = clamp(this.y+clamp(dy,-speed*.6*dt,speed*.6*dt),LANE_TOP,LANE_BOT);

@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "desk": {
+    "playing": true,
+    "scene": "gameplay",
+    "stage": 1,
+    "zone": 0,
+    "hud": true,
+    "canvas": true
+  },
+  "touch": {
+    "body": "touch playing",
+    "touchDisplay": "block",
+    "stickW": 124.796875,
+    "fire": true,
+    "stage": 1
+  },
+  "errors": []
+}
