@@ -33,11 +33,8 @@ export function buildParallax(scene, def) {
     .setDepth(-40)
     .setScrollFactor(1);
 
-  const title = scene.add.text(32, 490, def.title, {
-    fontFamily: 'Arial', fontSize: 18, color: '#ffe0a1', fontStyle: 'bold',
-  }).setScrollFactor(0).setAlpha(0.55).setDepth(-30);
-
-  const layers = { far, mids, floor, title, plan, stageNo: def.no, def };
+  // Zone titles arrive as banners; no permanent street label sits on the plates.
+  const layers = { far, mids, floor, title: null, plan, stageNo: def.no, def };
   syncParallax(layers, 0);
   return layers;
 }
