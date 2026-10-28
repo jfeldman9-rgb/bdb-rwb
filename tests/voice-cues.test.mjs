@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { Campaign } from '../src/campaign.js';
 import { Yetti } from '../src/yettis.js';
 import { Wingmen } from '../src/wingman.js';
@@ -26,6 +27,40 @@ test('wired lines keep their locked wording', () => {
   assert.equal(LINES.wingman_defeat[1], "We'll… reform.");
   assert.equal(LINES.dad_call_01[1], 'Bobby! Get behind me, kid!');
   assert.equal(LINES.dad_done_01[1], 'Call ya mothah.');
+  assert.equal(LINES.yetti_porkchop_01[1], 'Pork Chop Sandwiches!');
+  assert.equal(LINES.yetti_porkchop_02[1], 'Pork Chop Sandwiches!');
+  assert.equal(LINES.yetti_colombian_room_01[1], 'Stay away from the Colombians room.');
+  assert.equal(LINES.yetti_colombian_room_02[1], 'Stay away from the Colombians room.');
+  assert.equal(LINES.yetti_purple_car_01[1], 'Bob why is your car purple?');
+  assert.equal(LINES.yetti_purple_car_02[1], 'Bob why is your car purple?');
+  assert.equal(LINES.dad_catchphrase[1], 'Son, sometimes you just need to use the fly swatter to keep the women away!');
+});
+
+test('every locked quote is pinned in the captions and the voice manifest', async () => {
+  const locked = [
+    ['bdb_open', 'I brought the eggplant.'],
+    ['bdb_produce', 'Die, Yetti, die!'],
+    ['yetti_porkchop_01', 'Pork Chop Sandwiches!'],
+    ['yetti_porkchop_02', 'Pork Chop Sandwiches!'],
+    ['yetti_colombian_room_01', 'Stay away from the Colombians room.'],
+    ['yetti_colombian_room_02', 'Stay away from the Colombians room.'],
+    ['yetti_purple_car_01', 'Bob why is your car purple?'],
+    ['yetti_purple_car_02', 'Bob why is your car purple?'],
+    ['dad_catchphrase', 'Son, sometimes you just need to use the fly swatter to keep the women away!'],
+  ];
+  const manifest = JSON.parse(await readFile(new URL('../assets/audio/voice-manifest.json', import.meta.url), 'utf8'));
+  const files = new Map(manifest.files.map(file => [file.id, file.text]));
+  for (const [id, text] of locked) {
+    assert.equal(LINES[id][1], text);
+    assert.equal(files.get(id), text);
+  }
+  const papacito = "Hold on Claudia! Papacito is coming! It's eggplant time!";
+  const texts = [...Object.values(LINES).map(line => line[1]), ...files.values()];
+  for (const text of texts) {
+    if (/hold on claudia|eggplant time|papacito is coming/i.test(text)) assert.equal(text, papacito);
+  }
+  assert.equal(manifest.files.some(file => file.text.includes("Colombian's")), false);
+  assert.equal(manifest.files.some(file => file.text.includes('Bob, why')), false);
 });
 
 test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered id', () => {
@@ -151,4 +186,20 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   men.update(0.1, world);
   men.update(0.1, world);
   assert.deepEqual(said, ['wingman_defeat']);
+});
+
+test('flushVoice emits due lines in place', () => {
+  const w = new Campaign();
+  const queue = [{ id: 'bdb_open', at: 1 }, { id: 'nar_intro_01', at: 5 }];
+  w.voiceAt = queue;
+  w.elapsed = 0.5;
+  w.events = [];
+  w.flushVoice();
+  assert.equal(w.voiceAt, queue);
+  assert.equal(w.events.some(e => e.type === 'voice'), false);
+  w.elapsed = 1;
+  w.flushVoice();
+  assert.equal(w.voiceAt, queue);
+  assert.deepEqual(queue.map(v => v.id), ['nar_intro_01']);
+  assert.ok(w.events.some(e => e.type === 'voice' && e.data === 'bdb_open'));
 });

@@ -1,3 +1,36 @@
+# BDB Fix List — Pass 6 (from Pass 5 reviews)
+
+**Date:** 2026-10-28
+**Head reviewed:** `cursor/bdb-pass5-7e78` @ `a8a103c` (draft PR #16).
+**Sources:** Muse (`docs/REVIEW-MUSE-PASS5.md`, PR #17, branch `cursor/muse-pass5-review-63ea`, 6.5/10), Kimi (`docs/REVIEW-KIMI-PASS5.md`, PR #18, branch `cursor/kimi-review-pass5-c50e`, 9/10), Argon (`docs/REVIEW-ARGON-PASS5.md`, PR #19, branch `cursor/argon-review-pass5-e228`, 9.4/10), Claude (`docs/REVIEW-CLAUDE-PASS5.md`, PR #20, branch `cursor/claude-review-pass5-e7f4`, 7/10).
+**Locked, not on this list:** eggplant fires straight (`vy=0`, no aiming); `CAM_LEAD` stays 0.28; no upgrade shop; quoted lines and Dad's catchphrase stay exact; Choirmaster numbers stay (hp 1140 and the rest); `intro_v3.mp4`; Adventure stays 140–240 s per stage. The thirteen Pass 5 items are done. Do not reopen them, except the snowball special case in P5-13, which Pass 6 removes.
+
+| ID | Fix | Found by | Notes |
+|---|---|---|---|
+| **P6-1** | One Nightmare snowball clear at every step rate, and it is not more forgiving than Adventure (65). The device loop steps at 60 Hz, so a 50px 60 Hz special case shipped an easier Nightmare than Adventure and made 30/120 test a different rule. Rebalance Nightmare stage 3 to about 280–310 s at 30/60/120 Hz with Nightmare-only spawns or pressure. Do not touch Choirmaster numbers. | Claude F1; Muse P1; Kimi F1 | `snowClearZ` is 65 for every difficulty and every `dt`. A uniform HP or shot cut flipped which rate death-spiraled, so those multipliers stay at 1. Nightmare stage 3 drops the trailing lecturer from zone index 4, wave index 1 (`NIGHTMARE_S3_TRIMS`). Choirmaster numbers unchanged. Before and after are in the pass 6 status log. |
+| **P6-2** | Locked Yetti captions, exact: `Stay away from the Colombians room.` and `Bob why is your car purple?` (`src/voice-lines.js` and the voice manifest). Keep the existing audio files. A test pins every locked quote: `I brought the eggplant.`, `Die, Yetti, die!`, `Pork Chop Sandwiches!`, those two, Dad's catchphrase, and `Hold on Claudia! Papacito is coming! It's eggplant time!` if that line is present. | Muse quote audit; Kimi F2; Argon P2; Claude F5 | Jason's wording. Do not re-render audio. |
+| **P6-3** | A throw in `create()` after the title shows the error card, not a blank screen. Add a test. | Claude F2 | `assemble` throwing is the case the last two passes missed. |
+| **P6-4** | A regular `npm test` catches a duplicate texture key on the `GameScene.create` boot path. No browser. The smoke screenshot directory is configurable (`BDB_SMOKE_DIR`) instead of hardcoded to `/opt/cursor/artifacts`. | Claude F3; Kimi F4 | GameScene owns `'shadow'`. FX must not register it. |
+| **P6-5** | Adventure stage 3 at 60 Hz went from 206.5 s / 2 deaths to 225.4 s / 5 because of the separation change. Bring it back to about 200–210 s without undoing the hold/telegraph skip. Stay inside 140–240 s. | Claude F4; Kimi F3; Muse pacing | Hold and telegraph stay skipped. Skipping rush, stun, and down as well brought 60 Hz stage 3 back. `ADVENTURE_S3_DAMAGE` stays 1. |
+| **P6-6** | `separateEnemies` also skips rush, stun, and down. | Kimi F5 | Hold and telegraph stay skipped. Push stays 8px. |
+| **P6-7** | Drop the dead `bounds` argument at `campaign.js` and in the separation tests. | Kimi F4; Argon minor 2; Claude F7 | `separateEnemies` does not clamp. |
+| **P6-8** | A superseded clip's held lines stay on the new voice hold. `stopSceneAudio` must not cancel them in the same tick. | Argon minor 3; Claude F6 | The settle callback still receives `'abort'`. |
+| **P6-9** | `flushVoice` sweeps the queue in place instead of two `.filter()` passes. | Argon minor 4 | |
+| **P6-10** | P5-5's "clamp to the world" wording. Walkers clamp to `world.bounds`. Outside an arena that bounds is the camera view. | Claude F7 | The code was already the camera view. The list was wrong. |
+| **P6-11** | Wingmen must not fully occlude Bob. Depth behind him, and not fully opaque. | Muse P2 readability | Placeholder boss art stays. This is the overlap only. |
+| **P6-12** | The victory overlay must not bury Claudia's line. Her exact sentence sits above the eyebrow. | Muse P2 captions | Wording unchanged: `Let's leave before they reform.` |
+| **P6-13** | A small number of Story deaths, only if a small difficulty nudge does it safely. | Muse P2 flatness | Story eggplant damage 1.6 → 1.15. Pace, recovery, grace, and 5 hearts stay. The bot still clears every stage and takes about one death on stage 2. A smaller cut stayed deathless except one 120 Hz fluke. |
+
+### Deferred
+- Painted Interventionist and Wingman bodies. Still placeholder silhouettes.
+- A timed human Story and Adventure playthrough.
+- Real-device mobile frame time.
+- Recharge-banner punctuation.
+- Choirmaster fight numbers. Still waiting on Jason.
+- Node engine warning (`package.json` asks for `>=24`; the suite runs on 22).
+
+---
+
 # BDB Fix List — Pass 5 (from Pass 4 reviews)
 
 **Date:** 2026-10-28
@@ -11,7 +44,7 @@
 | **P5-2** | Phase-3 finisher is ready when every living Wingman is at 1 HP, including a sole survivor. A phase-3 floor is not "THE BOSS IS BRAGGING". `wingHp <= 0` stays dead when `wingDead` is omitted. | Claude B2; Argon 1; Kimi T1/T2 | Eggplants still pass through a floored Wingman. Both floored and alive still refuses with NO TARGETS IN SIGHT and does not spend a charge. |
 | **P5-3** | Freeze-guard strikes reset on a healthy `beat` and on a stage change. The stuck card's Reload listener is persistent, so a second card still reloads. | Claude B3/B4; Argon 3 | Two errors with no beat between them still trip. Startup's own Reload listener is left alone. |
 | **P5-4** | Gate ticks only on the continuous Interventionist/Choirmaster bar. Choir buff pulse draws even when the choir also has a ring. Render reads `choirBuff` cached on the sim step. `choirAura` is one frozen object. | Argon 2; Claude B5/B8; Kimi T5 | `choirMultiplier` stays 1.28. |
-| **P5-5** | `separateEnemies` skips hold and telegraph and does not clamp to the camera. Walkers still clamp to the world in `Yetti.update`. Push stays 8px per step. | Claude B7; Argon 4 | |
+| **P5-5** | `separateEnemies` skips hold and telegraph and does not clamp to the camera. Walkers still clamp to `world.bounds` in `Yetti.update`. Outside an arena that bounds is the camera view, not the world. Push stays 8px per step. | Claude B7; Argon 4 | Pass 6 also skips rush, stun, and down. The old "clamp to the world" sentence was wrong. |
 | **P5-6** | Hot per-frame copies: perf metadata is cached until resize/quality/search/renderer changes; `tick` does not stringify every frame; gun, shot, wingman, prompt, boom, and event-batch scans reuse buffers. | Argon 5; Claude B8 | |
 | **P5-7** | Superseding a clip invokes the previous settle callback with `'abort'` before the new hold is cleared. `CutscenePlayer.abort` still does not call `done`, so `destroy()` does not fire victory. A clip that finishes inside `play()` does not re-arm the hold. | Claude B6 | |
 | **P5-8** | A chapter `loaderror` sets `__bdbStartup.failed`, and `create()` returns before audio, the sim, and `started`. | Argon 6 | |

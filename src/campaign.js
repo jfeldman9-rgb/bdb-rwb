@@ -18,17 +18,33 @@ import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPa
 export const PACE_CAP = 1.25;
 
 /**
- * Snowball clear height. Adventure and Story stay at 65.
- * Nightmare at 30 Hz and 120 Hz clears at 58: that closes the old 58–64 lip.
- * A 60 Hz step still samples the jump on the way down at z≈53 while the
- * snowball overlaps, and stage 3 dies there again. 50 misses that one sample.
- * 30 Hz and 120 Hz stay at 58 so the other rates are not opened up.
+ * Snowball clear height. One value at every step rate.
+ * The device loop steps the sim at 60 Hz, so a rate-keyed clear would
+ * ship a different Nightmare than the 30 Hz and 120 Hz bot runs, and
+ * the lenient 60 Hz value was easier than Adventure. Nightmare is not
+ * more forgiving than Adventure's 65.
  */
-export function snowClearZ(difficultyKey, dt) {
-  if (difficultyKey !== 'nightmare') return 65;
-  if (dt && Math.round(1 / dt) === 60) return 50;
-  return 58;
+export function snowClearZ(_difficultyKey, _dt) {
+  return 65;
 }
+
+/**
+ * Nightmare stage 3 only. Choirmaster HP, adds, cooldowns, and the 1.28
+ * choir multiplier stay put. damageMul, minionHp, and shotMul stay at 1:
+ * a uniform cut flipped which step rate death-spiraled. The trim below
+ * is the pressure that keeps stage 3 near 280–310s at the shared 65px clear.
+ */
+export const NIGHTMARE_S3 = Object.freeze({ damageMul: 1, minionHp: 1, shotMul: 1 });
+/**
+ * Nightmare stage 3 only. Zone index 4 wave 1 is the 30 Hz death spiral
+ * (three deaths the 60 Hz bot does not take). Dropping its trailing lecturer
+ * is spawn pressure, not a Choirmaster change and not a step-rate clear.
+ */
+export const NIGHTMARE_S3_TRIMS = Object.freeze([
+  Object.freeze({ zone: 4, wave: 1, drop: 1 }),
+]);
+/** Adventure stage 3 only. Honest hold/telegraph skips added deaths at 60 Hz. */
+export const ADVENTURE_S3_DAMAGE = 1;
 
 /** Drop dead entries without allocating a replacement array. */
 function keep(list, pred) {
@@ -62,6 +78,8 @@ export class Campaign {
     // capped so Nightmare's own pace doesn't compound into unreadable snowball walls.
     const base = DIFFICULTIES[this.difficultyKey];
     this.difficulty = { ...base, pace: Math.max(base.pace, Math.min(PACE_CAP, base.pace * (this.def.pace ?? 1))) };
+    if (this.difficultyKey === 'adventure' && stage === 3) this.difficulty = { ...this.difficulty, damage: this.difficulty.damage * ADVENTURE_S3_DAMAGE };
+    if (this.difficultyKey === 'nightmare' && stage === 3) this.difficulty = { ...this.difficulty, damage: this.difficulty.damage * NIGHTMARE_S3.damageMul };
     this.bob = new Bob({ difficulty: this.difficultyKey });
     this.zoneIndex = 0; this.waveIndex = 0; this.locked = false; this.enemies = []; this.pending = []; this.projectiles = []; this.hostile = []; this.pickups = [];
     this.stageStart = this.elapsed;
@@ -101,7 +119,12 @@ export class Campaign {
    * Right-side entries stand in the arena's right half; left-side ones step in at Bob's back.
    */
   spawnWave() {
-    const zone=this.def.zones[this.zoneIndex], wave=zone.waves[this.waveIndex], gap=zone.spawnGap ?? 105;
+    const zone=this.def.zones[this.zoneIndex], gap=zone.spawnGap ?? 105;
+    let wave=zone.waves[this.waveIndex];
+    if (this.difficultyKey==='nightmare' && this.stageNo===3) {
+      const trim=NIGHTMARE_S3_TRIMS.find(t => t.zone===this.zoneIndex && t.wave===this.waveIndex);
+      if (trim) wave=wave.slice(0, Math.max(1, wave.length-trim.drop));
+    }
     this.enemies = []; this.pending = [];
     if (this.checkpoint.zone === this.zoneIndex) this.checkpoint.wave = this.waveIndex;
     wave.forEach((entry,i)=>{
@@ -130,7 +153,9 @@ export class Campaign {
     this.spawnWave();
   }
   spawnYetti(type,x,y) {
-    const e=new Yetti(type,x,y,this.def.hpScale??1);
+    let scale=this.def.hpScale??1;
+    if(this.difficultyKey==='nightmare'&&this.stageNo===3)scale*=NIGHTMARE_S3.minionHp;
+    const e=new Yetti(type,x,y,scale);
     // A third ranged body in one lane is how Nightmare zone 5 walls. Park the extra on a freer lane.
     if (RANGED_TYPES.has(type) && rangedInLane(this.enemies, laneOf(e.y), e) >= MAX_RANGED_PER_LANE) e.y = laneY(freestLane(this.enemies, e));
     this.enemies.push(e);
@@ -180,7 +205,10 @@ export class Campaign {
     for (let i=count;i<types.length;i++) this.spawnYetti(types[i],i%2?this.bounds.l+70:this.bounds.r-70,clamp(600+i*30,LANE_TOP,LANE_BOT));
   }
   summonWalkers() { this.summonAdds(['walker','walker']); }
-  snowball(x,y,dir,kind='snowball') { this.hostile.push({x,y,dir,kind,speed:kind==='halo'?260:320,alive:true}); }
+  snowball(x,y,dir,kind='snowball') {
+    const mul=this.difficultyKey==='nightmare'&&this.stageNo===3?NIGHTMARE_S3.shotMul:1;
+    this.hostile.push({x,y,dir,kind,speed:(kind==='halo'?260:320)*mul,alive:true});
+  }
   hurtBob(charger=false, srcX=null, dir=null) {
     const knock = dir ? Math.sign(dir) : (srcX == null ? 0 : (Math.sign(this.bob.x - srcX) || 1));
     if (this.bob.takeHit({charger, dir: knock})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); this.speakRot('hurt',['bob_hurt_01','bob_hurt_02','bob_hurt_03'],1.4); }
@@ -289,10 +317,14 @@ export class Campaign {
   }
   armVoice(id, delay = 0) { if (!id) return; (this.voiceAt ||= []).push({ id, at: this.elapsed + delay }); }
   flushVoice() {
-    if (!this.voiceAt?.length) return;
-    const due = this.voiceAt.filter(v => v.at <= this.elapsed);
-    this.voiceAt = this.voiceAt.filter(v => v.at > this.elapsed);
-    for (const v of due) this.emit('voice', v.id);
+    const list = this.voiceAt;
+    if (!list?.length) return;
+    let due = false;
+    for (let i = 0; i < list.length; i++) if (list[i].at <= this.elapsed) { due = true; break; }
+    if (!due) return;
+    const ready = [];
+    keep(list, (v) => { if (v.at > this.elapsed) return true; ready.push(v); return false; });
+    for (let i = 0; i < ready.length; i++) this.emit('voice', ready[i].id);
   }
   speak(id, cd = 0) {
     if (!id) return false;
@@ -403,7 +435,7 @@ export class Campaign {
     }
     keep(this.pickups, p => !p.gone);
     if(this.wingmen){const before=this.wingmen.phase;this.wingmen.update(dt,this);if(before!==this.wingmen.phase)this.stats.phases.push(`3:${this.wingmen.phase}`);}
-    separateEnemies(this.enemies, this.bounds);
+    separateEnemies(this.enemies);
     if(this.bossActive){
       if(this.wingmen?.complete || (!this.wingmen&&!this.enemies.some(e=>e.boss&&e.alive)))this.finishStage();
     } else if(this.locked&&!this.enemies.some(e=>e.alive)&&!this.pending.length){

@@ -166,8 +166,10 @@ test('create marks the stage started only after assemble, and a failed chapter l
   scene.game = { runSeq: 0 };
   scene.init({ world: { stageNo: 2 } });
   assert.equal(scene.started, false);
+  scene.mountTextures = () => { scene.booted = true; };
   scene.assemble = () => { scene.built = true; };
   scene.create();
+  assert.equal(scene.booted, true);
   assert.equal(scene.built, true);
   assert.equal(scene.started, true);
   const blocked = Object.create(GameScene.prototype);

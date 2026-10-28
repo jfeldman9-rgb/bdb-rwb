@@ -234,13 +234,51 @@ test('mercy before Dad arrives drops a shake trio instead of a charge', () => {
   assert.match(w.message, /CATCH YOUR BREATH/);
 });
 
-test('nightmare snowballs clear at 58, and at 50 on a 60 Hz step; adventure and story stay at 65', () => {
-  assert.equal(snowClearZ('nightmare'), 58);
-  assert.equal(snowClearZ('nightmare', 1 / 30), 58);
-  assert.equal(snowClearZ('nightmare', 1 / 60), 50);
-  assert.equal(snowClearZ('nightmare', 1 / 120), 58);
-  assert.equal(snowClearZ('adventure', 1 / 60), 65);
-  assert.equal(snowClearZ('story', 1 / 60), 65);
+test('snowballs clear at 65 on every difficulty and every step rate', () => {
+  for (const key of ['nightmare', 'adventure', 'story']) {
+    for (const dt of [undefined, 1 / 30, 1 / 60, 1 / 90, 1 / 120]) {
+      assert.equal(snowClearZ(key, dt), 65, `${key} @ ${dt}`);
+    }
+  }
+});
+
+function waveBodies(difficulty, stage, zone, wave) {
+  const w = new Campaign({ difficulty, stage });
+  w.zoneIndex = zone;
+  w.waveIndex = wave;
+  w.spawnWave();
+  return [...w.enemies, ...w.pending].map(e => e.type);
+}
+
+test('nightmare stage 3 drops only the pre-boss wave-1 lecturer', () => {
+  assert.deepEqual(waveBodies('nightmare', 3, 4, 1), ['choir', 'guard', 'charger']);
+  assert.deepEqual(waveBodies('adventure', 3, 4, 1), ['choir', 'guard', 'charger', 'lecturer']);
+  assert.deepEqual(waveBodies('story', 3, 4, 1), ['choir', 'guard', 'charger', 'lecturer']);
+  assert.equal(waveBodies('nightmare', 3, 4, 2).length, 6);
+  assert.equal(waveBodies('nightmare', 3, 4, 0).length, 4);
+  const authored = new Campaign({ difficulty: 'nightmare', stage: 2 }).def.zones[4].waves[1].length;
+  assert.equal(waveBodies('nightmare', 2, 4, 1).length, authored);
+});
+
+test('nightmare stage 3 pressure does not retune the choirmaster', async () => {
+  const { TYPES, BOSS_ADDS, choirMultiplier } = await import('../src/yettis.js');
+  const { NIGHTMARE_S3 } = await import('../src/campaign.js');
+  assert.equal(TYPES.choirmaster.hp, 1140);
+  assert.equal(choirMultiplier({ type: 'walker', alive: true }, []), 1);
+  const choir = { type: 'choir', alive: true, x: 0, y: 0 };
+  assert.equal(choirMultiplier({ type: 'walker', alive: true, x: 10, y: 0 }, [choir]), 1.28);
+  assert.deepEqual(BOSS_ADDS.choirmaster.map(row => row.slice()), [['walker', 'walker'], ['walker', 'hover', 'walker'], ['charger', 'hover', 'guard']]);
+  const s2 = new Campaign({ difficulty: 'nightmare', stage: 2 });
+  s2.snowball(0, 630, -1);
+  assert.equal(s2.hostile[0].speed, 320);
+  assert.equal(s2.difficulty.damage, 0.8);
+  const s3 = new Campaign({ difficulty: 'nightmare', stage: 3 });
+  s3.snowball(0, 630, -1);
+  assert.equal(s3.hostile[0].speed, 320 * NIGHTMARE_S3.shotMul);
+  assert.equal(s3.difficulty.damage, 0.8 * NIGHTMARE_S3.damageMul);
+  const minion = s3.spawnYetti('walker', 400, 630);
+  const { TYPES: T } = await import('../src/yettis.js');
+  assert.equal(minion.maxHp, Math.round(T.walker.hp * 2.2 * NIGHTMARE_S3.minionHp));
 });
 
 test('wingHp of 0 stays dead when wingDead is omitted, and one floored survivor can be finished', () => {
