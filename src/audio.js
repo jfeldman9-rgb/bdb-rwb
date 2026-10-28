@@ -2,7 +2,9 @@ let ctx = null, master, music, sfxBus, voiceBus, duckG, comp, noiseBuf;
 let muted = false, musicOn = true, musicEl = null, musicSrc = null;
 const clips = Object.create(null), gates = Object.create(null), oneShots = new Map();
 const clipDrop = new Set();
-let voiceSrc = null, voiceRequest = 0, voicePending = false, voicePendingAt = 0, voiceId = null;
+let voiceSrc = null, voiceRequest = 0, voicePending = false, voicePendingAt = 0, voiceId = null, voiceEndsAt = 0;
+/** Grace past the sounding line's end that a queued line survives; caps a stuck source. */
+export const VOICE_QUEUE_GRACE = 1, VOICE_QUEUE_MAX = 10;
 // Optional per-stage voice policy (Stage 8 only). null keeps the Stage 1-7 rule: every new line interrupts.
 let voicePolicy = null; const voiceQueue = [];
 let loopSrc = null, loopToken = 0, loopId = null;
@@ -93,6 +95,7 @@ function trackSource(source, ...nodes) {
     for (const node of nodes) node.disconnect();
     if (voiceSrc === source) {
       voiceSrc = null;
+      voiceEndsAt = 0;
       // A replacement line may already own voiceId. Only a natural end clears it.
       if (!voicePending && voiceId === source.clipId) voiceId = null;
       if (!source.stopped && !voicePending) playQueued();
@@ -454,8 +457,15 @@ export function say(id, onCaption, interrupt = true, fromQueue = false, options 
   // A stopped audio clock (autoplay lock, hidden tab) cannot finish a line, so the default rule applies.
   if (voicePolicy && !fromQueue && (voiceSrc || voicePending && !pendingStale()) && voiceId && audioLive()) {
     // A line already sounding or waiting is not restarted or queued twice.
-    const rule = voiceId === id || voiceQueue.some(q => q.id === id) ? 0 : options?.wait ?? voicePolicy(id, voiceId);
-    if (rule !== 'interrupt') { if (rule > 0) voiceQueue.push({ id, onCaption, until: audioNow() + rule, options }); return cap; }
+    // The budget covers the sounding line's remaining duration, not a fixed
+    // window, so a queued line survives long narrations instead of expiring.
+    const base = voiceId === id || voiceQueue.some(q => q.id === id) ? 0 : options?.wait ?? voicePolicy(id, voiceId);
+    if (base !== 'interrupt') {
+      const remaining = voiceSrc && voiceEndsAt > audioNow() ? voiceEndsAt - audioNow() : 0;
+      const rule = base > 0 ? Math.min(Math.max(base, remaining + VOICE_QUEUE_GRACE), VOICE_QUEUE_MAX) : 0;
+      if (rule > 0) voiceQueue.push({ id, onCaption, until: audioNow() + rule, behind: voiceId, queuedAt: audioNow(), options });
+      return cap;
+    }
   }
   if (options?.requires && !options.requires.started) return cap;
   const request = ++voiceRequest, shouldPlay = !muted;
@@ -469,6 +479,10 @@ export function say(id, onCaption, interrupt = true, fromQueue = false, options 
     voicePending = false;
     if (!buf || muted || !ctx) { if (voiceId === id) voiceId = null; settleClip(id); playQueued(); return; }
     const s = ctx.createBufferSource(); s.buffer = buf; s.clipId = id; s.connect(voiceBus); trackSource(s); voiceSrc = s; s.start();
+    voiceEndsAt = audioNow() + (buf?.duration || 0);
+    // Lines queued while this one was still loading waited behind it without a
+    // known duration; stretch their deadlines to its real end (capped).
+    for (const q of voiceQueue) if (q.behind === id) q.until = Math.min(Math.max(q.until, voiceEndsAt + VOICE_QUEUE_GRACE), q.queuedAt + VOICE_QUEUE_MAX);
     if (options?.ticket) options.ticket.started = true;
     duck(0.45, buf.duration, 0.4);
   });
