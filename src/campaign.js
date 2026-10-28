@@ -65,6 +65,12 @@ export class Campaign {
     if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
     const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
   }
+  /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
+  healZoneClear() {
+    if (this.difficultyKey !== 'nightmare') { this.bob.hp = this.bob.maxHp; return; }
+    const missing = this.bob.maxHp - this.bob.hp;
+    this.bob.hp = Math.min(this.bob.maxHp, this.bob.hp + Math.max(1, Math.ceil(missing / 2)));
+  }
   dropTrio(x, y = this.bob?.y ?? 630) { const laneY = clamp(y, LANE_TOP, LANE_BOT); for (let i=0;i<3;i++) this.pickups.push({ x: clamp(x+i*35,this.bounds.l+65,this.bounds.r-65), y: laneY, kind: 'shake' }); }
   /** Boss arena index: one past the last fight zone. */
   get bossZone() { return this.def.zones.length; }
@@ -79,7 +85,12 @@ export class Campaign {
     wave.forEach((entry,i)=>{
       const [type,side='R',delay=0]=typeof entry==='string'?[entry]:entry;
       const x=side==='L'?zone.l+70:Math.min(zone.r-70,zone.l+780+i*gap), y=630+((i%3)-1)*24;
-      if(delay>0)this.pending.push({type,x,y,t:delay});else this.spawnYetti(type,x,y);
+      // Zone 4 breaks the metronome: a small deterministic stagger on top of
+      // the authored delays so its waves never arrive on the same exact beat.
+      // Immediate spawns stay immediate; only staggered stragglers drift.
+      // Zone 5 keeps authored timing: the finale stays bot-clearable in band.
+      const jitter=delay>0&&this.zoneIndex===3?(((this.stageNo*31+this.zoneIndex*7+this.waveIndex*3+i)%5)-2)*0.1:0;
+      if(delay+jitter>0)this.pending.push({type,x,y,t:delay+jitter});else this.spawnYetti(type,x,y);
     });
     const teachKey = `${this.zoneIndex}:${this.waveIndex}`, teachText = TUTORIALS[this.zoneIndex]?.[this.waveIndex];
     const tutorial = this.stageNo===1 && this.save.bestScore===0 && teachText && !this.seenTutorials.has(teachKey);
@@ -346,7 +357,7 @@ export class Campaign {
     } else if(this.locked&&!this.enemies.some(e=>e.alive)&&!this.pending.length){
       const zone=this.def.zones[this.zoneIndex];this.waveIndex++;
       if(this.waveIndex<zone.waves.length)this.spawnWave();
-      else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.bob.hp=this.bob.maxHp;this.banner(STORY.checkpoint);this.emit('go',{plate:plateKeyForCam(this.def.zones[this.zoneIndex]?.l??this.def.boss.l,this.def)});updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false});}
+      else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.healZoneClear();this.banner(STORY.checkpoint);this.emit('go',{plate:plateKeyForCam(this.def.zones[this.zoneIndex]?.l??this.def.boss.l,this.def)});updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false});}
     }
   }
 }

@@ -89,7 +89,8 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   s2.dadCall.charges = 0;
   s2.events = [];
   assert.equal(s2.useDad(), false);
-  assert.match(s2.message, /COFFEE/);
+  assert.match(s2.message, /OUT OF SWATS/);
+  assert.match(s2.message, /0\/1/);
   assert.ok(voices(s2).includes('bob_dadwait_01'));
   s2.finishDadCallin();
   s2.dad.age = DAD_TIMING.total;

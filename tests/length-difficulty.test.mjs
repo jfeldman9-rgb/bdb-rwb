@@ -90,3 +90,13 @@ test('HUD does not hard-code three zones', async () => {
   const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('../src/hud.js', import.meta.url), 'utf8'));
   assert.ok(!src.includes('/3`'), 'HUD must not hard-code three zones');
 });
+test('late zones stagger spawns; zone clears heal half on Adventure, full on Story',()=>{
+  const late=new Campaign({stage:1});late.zoneIndex=3;late.waveIndex=0;late.spawnWave();
+  // Wave delays [0, .6, 1.8] land off-beat in zone 4: [.7, 2.0], first spawns at once.
+  assert.deepEqual(late.pending.map(p=>+p.t.toFixed(2)),[.7,2.0]);
+  const early=new Campaign({stage:1});early.zoneIndex=1;early.waveIndex=0;early.spawnWave();
+  assert.deepEqual(early.pending.map(p=>+p.t.toFixed(2)),[1,2.4]);
+  const adv=new Campaign({difficulty:'adventure'});adv.bob.hp=1;adv.healZoneClear();assert.equal(adv.bob.hp,adv.bob.maxHp,'adventure keeps the full clear heal so the bot band holds');
+  const nm=new Campaign({difficulty:'nightmare'});nm.bob.hp=1;nm.healZoneClear();assert.equal(nm.bob.hp,2);
+  const story=new Campaign({difficulty:'story'});story.bob.hp=1;story.healZoneClear();assert.equal(story.bob.hp,story.bob.maxHp);
+});
