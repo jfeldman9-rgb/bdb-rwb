@@ -6,6 +6,7 @@ import { GameScene } from './game-scene.js';
 import { loadSave,persistSave } from './save.js';
 import { resolveDifficulty } from './difficulty.js';
 import { createStoryPlayer } from './cutscene-hooks.js';
+import { beginChapter } from './title-flow.js';
 import { registerVoiceLines } from './voice-lines.js';
 import { installAudioLifecycle,unlock,toggleMute,isMuted } from './audio.js';
 import { installGraphicsLifecycle } from './graphics-lifecycle.js';
@@ -38,7 +39,8 @@ class Title extends Phaser.Scene {
   this.begin=()=>{if(this.starting)return;this.starting=true;unlock();this.game.story.bless();blessDadFromGesture();
    this.save={...this.save,difficulty:resolveDifficulty(difficulty.value,this.save.beaten,coarsePointer()),autoFire:doc.getElementById('auto-fire').checked};persistSave(this.save);
    doc.getElementById('title').hidden=true;this.game.inp.clear();
-   this.game.story.play((typeof q!=='undefined'&&q.get?.('intro')==='v2')?'intro_v2':'intro',()=>this.scene.start('gameplay',{stage:Number(chapter.value),difficulty:this.save.difficulty,save:this.save}));
+   const stage=Number(chapter.value);
+   beginChapter({stage,query:q,play:(key,done)=>this.game.story.play(key,done),start:()=>this.scene.start('gameplay',{stage,difficulty:this.save.difficulty,save:this.save})});
   };
   this.disposeTitleStart=wireTitleStart({doc,begin:()=>this.begin(),coarse:coarsePointer()});
   this.events.once('shutdown',()=>this.disposeTitleStart?.());
@@ -53,7 +55,7 @@ class Title extends Phaser.Scene {
 export function bootGame(){
  registerVoiceLines();const game=new Phaser.Game({type:Phaser.WEBGL,parent:'game',width:VW,height:VH,backgroundColor:'#101421',resolution:RS0,
   scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},render:{antialias:true,roundPixels:false},scene:[Boot,Title,GameScene],
-  callbacks:{preBoot:g=>{g.inp=new Input();installPressOwnership(g.inp);g.story=createStoryPlayer(q,globalThis,g.inp);}},audio:{noAudio:true}});
+  callbacks:{preBoot:g=>{g.inp=new Input();installPressOwnership(g.inp);g.story=createStoryPlayer(q,globalThis,g.inp,g);}},audio:{noAudio:true}});
  window.__game=game;installViewportFit(game);game.rs=RS0;window.__bdbPerf=perf;bindPerfLifecycle(perf);installAudioLifecycle(game);
  installGovernor(game,{q,rs0:RS0,vw:VW,vh:VH,meter:perf,floor:readQualityFloor()});
  installResumeCleanup(game,q);
