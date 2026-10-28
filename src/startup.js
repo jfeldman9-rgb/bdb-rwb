@@ -56,7 +56,9 @@ export function createStartupGuard(root = globalThis) {
   // The Reload card reopens the running stage instead of the title when a
   // stage was already in progress; otherwise it is a plain reload.
   const reload = () => { try { resumeGame(root, root.__game); } catch (e) { root.location?.reload(); } };
-  byId('startup-retry')?.addEventListener('click', reload);
+  const retry = byId('startup-retry');
+  if (retry) retry.__bdbResume = true;
+  retry?.addEventListener('click', reload);
   // Boot's create hook can run after the module import has resolved. Capture
   // those startup errors too, ignoring unrelated extension-origin errors.
   const onError = event => {

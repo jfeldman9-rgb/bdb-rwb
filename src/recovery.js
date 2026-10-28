@@ -28,7 +28,12 @@ export function showStuck(root, error, game) {
   set('startup-title', 'The game hit a snag');
   set('startup-description', 'This stage stopped running. Reload game picks up at the start of this stage.');
   set('startup-code', `Code: FRAME_ERROR ${error?.name || ''}`);
-  by('startup-retry')?.addEventListener?.('click', () => resumeGame(root, game));
+  const retry = by('startup-retry');
+  // startup.js already resumes from this button. A second listener fires reload twice.
+  if (retry && !retry.__bdbResume && !retry.__bdbStuck) {
+    retry.__bdbStuck = true;
+    retry.addEventListener?.('click', () => resumeGame(root, game), { once: true });
+  }
   card.hidden = false;
   return true;
 }
@@ -110,5 +115,16 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
 export function installStageRecovery(game, root = globalThis) {
   const freeze = installFreezeGuard(game, root);
   const notice = installGraphicsNotice(root, () => resumeGame(root, game));
-  return { notice, destroy() { freeze.destroy(); notice.destroy(); } };
+  let dead = false;
+  const api = {
+    notice,
+    destroy() {
+      if (dead) return;
+      dead = true;
+      freeze.destroy();
+      notice.destroy();
+    },
+  };
+  game?.events?.once?.('destroy', () => api.destroy());
+  return api;
 }

@@ -167,6 +167,50 @@ test('a stage is not marked started until create finishes', async () => {
   assert.match(String(GameScene.prototype.create), /this\.started=true/);
 });
 
+test('showStuck does not stack a second Reload listener', () => {
+  let n = 0;
+  const { els, root } = cardRoot({
+    location: { href: 'https://x.test/?stage=2', origin: 'https://x.test', replace() { n++; }, reload() {} },
+    __game: { scene: { getScene: () => ({ started: true, stageNo: 2 }) } },
+  });
+  const guard = createStartupGuard(root);
+  guard.ready();
+  const before = (els['startup-retry'].handlers.click || []).length;
+  showStuck(root, new Error('freeze'), root.__game);
+  showStuck(root, new Error('freeze'), root.__game);
+  assert.equal((els['startup-retry'].handlers.click || []).length, before);
+  els['startup-retry'].click();
+  assert.equal(n, 1);
+});
+
+test('stage recovery clears its timer when the game is destroyed', () => {
+  let cleared = 0;
+  const listeners = {};
+  const root = {
+    document: {
+      getElementById: () => ({ addEventListener() {}, removeEventListener() {}, hidden: true }),
+      querySelector() { return null; },
+      body: { classList: { add() {}, remove() {} } },
+    },
+    performance: { now: () => 0 },
+    setInterval: () => 7,
+    clearInterval() { cleared++; },
+    addEventListener() {},
+    removeEventListener() {},
+    location: { origin: 'https://x.test' },
+  };
+  const game = {
+    isPaused: false,
+    scene: { getScene: () => ({ started: true, world: { paused: false } }) },
+    events: { once(name, fn) { listeners[name] = fn; } },
+  };
+  const recovery = installStageRecovery(game, root);
+  assert.equal(typeof listeners.destroy, 'function');
+  listeners.destroy();
+  recovery.destroy();
+  assert.equal(cleared, 1);
+});
+
 test('graphics retry reopens the running stage', () => {
   let replaced = null;
   const button = { fn: null, addEventListener(e, fn) { if (e === 'click') this.fn = fn; }, removeEventListener() {} };
