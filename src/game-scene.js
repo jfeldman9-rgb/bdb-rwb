@@ -1,7 +1,7 @@
 import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
 import { Fighter } from './fighter.js';
-import { TYPES } from './yettis.js';
+import { TYPES, laneOf, laneY, LANE_H } from './yettis.js';
 import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
@@ -84,7 +84,7 @@ export class GameScene extends Phaser.Scene {
    this.stepAcc=(this.stepAcc||0)+dt;const every=b.state==='dash'?0.08:0.18;
    if(this.stepAcc>=every){this.stepAcc-=every;sfx.step();this.fx.dust.emitParticleAt(b.x,b.y,b.state==='dash'?8:4);}
   }else this.stepAcc=0;
-  const band=Math.round((b.y-572)/59);
+  const band=laneOf(b.y);
   if(this.prevBand!=null&&band!==this.prevBand&&b.z<8&&b.alive){this.fx.dust.emitParticleAt(b.x,b.y,7);sfx.step();}
   if((this.prevZ||0)>8&&b.z===0){sfx.land();this.fx.dust.emitParticleAt(b.x,b.y,10);}
   if((this.prevZ||0)<1&&b.z>8)sfx.jump();
@@ -132,7 +132,7 @@ export class GameScene extends Phaser.Scene {
    if(e.shield){g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(e.x+e.facing*48,e.y-82,34,110);}
    if(e.state==='telegraph'){
     g.fillStyle(0xff5575,.28);
-    if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,572+i*39,1280,36);}
+    if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,1280,LANE_H);}
     else if(e.type==='wingman'){g.fillEllipse(e.attackX,e.attackY,180,60);g.lineStyle(3,0xffccad);g.strokeEllipse(e.attackX,e.attackY,180,60);}
     else{const reach=e.type==='charger'||e.mode==='rush'?400:120;g.fillRect(Math.min(e.x,e.x+e.facing*reach),e.y-18,reach,36);}
    }
