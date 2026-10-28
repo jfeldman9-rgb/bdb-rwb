@@ -1,15 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VW, CAM_LEAD as CONFIG_LEAD } from '../src/config.js';
+import { VW, WORLD_W, CAM_LEAD as CONFIG_LEAD } from '../src/config.js';
 import {
   CAM_LEAD, cameraTarget, updateCamera, stepCamera, screenX, freeRoam,
+  moveBounds, lockSnaps, BOB_MAX_SCREEN, BOB_INSET,
 } from '../src/camera.js';
 import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
-import { plateIndexForCam, plateKeyForCam, STREAMS, plateKeys, plateRect } from '../src/zone-stream.js';
+import { plateIndexForCam, plateKeyForCam, plateAlphas, STREAMS, plateKeys, PLATE_FADE } from '../src/zone-stream.js';
 import { backdropPlan, ART_GAPS } from '../src/backdrop.js';
-import { FAR_SCROLL, MID_SCROLL } from '../src/parallax.js';
+import { FAR_SCROLL, MID_SCROLL, buildParallax, syncParallax, destroyParallax } from '../src/parallax.js';
 import { resolveStage, STAGE_TEXTURES } from '../src/stages.js';
+
+// Minimal Phaser stand-in: every setter chains; visible/alpha are recorded.
+function fakeScene() {
+  const obj = () => {
+    const state = { visible: true, alpha: 1 };
+    const self = new Proxy(state, { get(t, k) {
+      if (k in t) return t[k];
+      if (k === 'setVisible') return (v) => { t.visible = v; return self; };
+      if (k === 'setAlpha') return (v) => { t.alpha = v; return self; };
+      return () => self;
+    } });
+    return self;
+  };
+  return { add: { image: obj, tileSprite: obj, text: obj } };
+}
 
 test('CAM_LEAD keeps Bob in the left third of the screen', () => {
   assert.equal(CAM_LEAD, CONFIG_LEAD);
@@ -54,21 +70,86 @@ test('each stage ships 3+ mid plates; zone transitions change the plate', () => 
   assert.ok(ART_GAPS.length >= 3);
   for (const no of [1, 2, 3]) {
     const keys = plateKeys(no);
-    assert.ok(keys.filter((k) => k.includes('-mid')).length >= 3);
+    const mids = keys.filter((k) => k.includes('-mid'));
+    assert.ok(mids.length >= 3);
     assert.deepEqual(STAGE_TEXTURES[no], keys);
     const def = resolveStage(no);
     const plan = backdropPlan(def);
     assert.ok(plan.plates.length >= 3);
     assert.equal(plan.far, STREAMS[no].far);
+    // Each fight camera shows its own zone's plate, and every mid plate gets screen time.
     const seen = new Set();
-    for (const z of [...def.zones, def.boss]) {
-      seen.add(plateIndexForCam(z.l, def));
-      seen.add(plateKeyForCam(z.l, def));
+    for (const [i, z] of [...def.zones, def.boss].entries()) {
+      const cam = Math.min(z.l, WORLD_W - VW);
+      assert.equal(plateKeyForCam(cam, def), STREAMS[no].zones[i].plate, `stage ${no} zone ${i}`);
+      seen.add(plateKeyForCam(cam, def));
     }
-    assert.ok(seen.size >= 4, `stage ${no} saw ${[...seen]}`);
+    assert.deepEqual([...seen].sort(), [...mids].sort());
   }
-  assert.equal(plateIndexForCam(1000, { zones: [{ l: 0 }, { l: 1280 }, { l: 2560 }], boss: { l: 3920 } }), 1);
-  assert.ok(plateRect(1, { zones: [{ l: 0 }, { l: 1280 }, { l: 2560 }], boss: { l: 3920 } }).w > 1000);
+  const toy = { no: 1, zones: [{ l: 0 }, { l: 1280 }, { l: 2560 }], boss: { l: 3920 } };
+  assert.equal(plateIndexForCam(1000, toy), 0);
+  assert.equal(plateIndexForCam(1280, toy), 1);
+});
+
+test('mid plates cover the screen for their whole camera range (parallax space)', () => {
+  for (const no of [1, 2, 3]) {
+    const def = resolveStage(no);
+    for (const p of backdropPlan(def).plates) {
+      assert.ok(p.c1 > p.c0);
+      for (let cam = p.c0; cam <= p.c1; cam += 16) {
+        const left = p.x - cam * MID_SCROLL, right = left + p.w;
+        assert.ok(left <= 0 && right >= VW, `stage ${no} run ${p.run} cam ${cam}: ${left}..${right}`);
+      }
+      // A tile seam sits on screen x 0 at the fight camera, so the arena shows the plate's left edge.
+      const atAnchor = p.anchor * MID_SCROLL - p.x;
+      assert.ok(Math.abs(atAnchor / p.tileW - Math.round(atAnchor / p.tileW)) < 1e-9);
+    }
+  }
+});
+
+test('plate crossfade: incoming fades in over an opaque outgoing plate', () => {
+  const def = resolveStage(1);
+  const layers = buildParallax(fakeScene(), def);
+  assert.ok(layers.mids.length >= 4);
+  const at = (cam) => { syncParallax(layers, cam); return layers.mids.map((m) => (m.image.visible ? +m.image.alpha.toFixed(2) : 0)); };
+  assert.deepEqual(at(0), [1, 0, 0, 0]);
+  const mid = at(1280 - PLATE_FADE / 2);
+  assert.equal(mid[0], 1);
+  assert.equal(mid[1], 0.5);
+  assert.deepEqual(at(1280), [0, 1, 0, 0]);
+  assert.deepEqual(at(WORLD_W - VW), [0, 0, 0, 1]);
+  let prev = -1;
+  for (let cam = 0; cam <= WORLD_W - VW; cam += 40) {
+    const a = plateAlphas(cam, def);
+    assert.ok(a.some((v) => v >= 1), `no opaque plate at ${cam}`);
+    const top = a.reduce((k, v, i) => (v > 0 ? i : k), 0);
+    assert.ok(top >= prev);
+    prev = top;
+  }
+  destroyParallax(layers);
+});
+
+test('free roam: Bob cannot walk past the left third; arenas use the full screen', () => {
+  const state = { camX: 1000, bounds: { l: 1000, r: 1000 + VW }, locked: false };
+  const b = moveBounds(state, 1200);
+  assert.equal(b.r - BOB_INSET, 1000 + VW * BOB_MAX_SCREEN);
+  // Already past the line (zone just cleared): held in place, never shoved back.
+  assert.equal(moveBounds(state, 1900).r - BOB_INSET, 1900);
+  assert.deepEqual(moveBounds({ ...state, locked: true }, 1200), state.bounds);
+});
+
+test('zone lock eases from the walk camera instead of jumping; far teleports snap', () => {
+  const zone = { l: 1280, r: 2560 };
+  assert.equal(lockSnaps(1222, zone), false);
+  assert.equal(lockSnaps(0, zone), true);
+  const s = { camX: 1222, camMax: 1222 };
+  updateCamera(s, 0, { bobX: 1500, locked: true, zone });
+  assert.equal(s.camX, 1222);
+  updateCamera(s, 1 / 60, { bobX: 1500, locked: true, zone });
+  assert.ok(s.camX > 1222 && s.camX < 1280);
+  assert.ok(s.bounds.l >= zone.l);
+  for (let i = 0; i < 120; i++) updateCamera(s, 1 / 60, { bobX: 1500, locked: true, zone });
+  assert.ok(Math.abs(s.camX - 1280) < 1);
 });
 
 test('between zones camera follow keeps Bob near the left third', () => {
@@ -106,11 +187,16 @@ test('zone clear emits go and restores free-roam bounds', () => {
 
 test('Adventure bot clears Stage 1 under the scrolling camera', (t) => {
   const w = new Campaign({ save: { bestScore: 1 } }), bot = new Bot();
+  let maxRoamSx = 0;
   for (let i = 0; i < 480 * 60 && !w.stats.stages.includes(1); i++) {
+    const wasLocked = w.locked, beforeX = w.bob.x;
     w.update(1 / 60, bot.update(1 / 60, w));
     w.events = [];
+    if (!wasLocked && !w.locked && w.bob.x > beforeX) maxRoamSx = Math.max(maxRoamSx, screenX(w.bob.x, w.camX));
   }
   assert.deepEqual(w.stats.stages, [1]);
   assert.ok(w.camMax > 0);
-  t.diagnostic(JSON.stringify({ seconds: w.elapsed, camMax: w.camMax }));
+  // Advancing in free roam never takes Bob past the left third of the screen.
+  assert.ok(maxRoamSx <= VW / 3 + 1e-6, `max free-roam screen X ${maxRoamSx}`);
+  t.diagnostic(JSON.stringify({ seconds: w.elapsed, camMax: w.camMax, maxRoamSx }));
 });

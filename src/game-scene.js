@@ -42,7 +42,7 @@ export class GameScene extends Phaser.Scene {
  setPauseReason(reason,on){if(on)this.pauseReasons.add(reason);else this.pauseReasons.delete(reason);this.world.paused=this.pauseReasons.size>0;this.game.inp.clear();}
  makeView(model,key,scale,tint=0xffffff){const v=new Fighter(this,{key,prefix:key+'_',native:1,scale,anchorX:.5,hp:1,team:0,shadowW:135},model.x,model.y);v.sprite.setLighting(false).setTint(tint);return v;}
  syncViews(){
-  const w=this.world;this.bounds=w.bounds;this.cameras.main.setScroll(Math.round(w.camX),0);
+  const w=this.world;this.bounds=w.bounds;this.cameras.main.setScroll(Math.round(w.camX),0);this.backdrop?.update(w.camX);
   const live=new Set();
   for(const model of [w.bob,...w.enemies.filter(e=>e.alive)]){
    live.add(model);let view=this.views.get(model);const isBob=model===w.bob,key=isBob?'bob':model.type==='wingman'?'wingman':TYPES[model.type].art;

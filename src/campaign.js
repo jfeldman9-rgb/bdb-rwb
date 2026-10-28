@@ -9,7 +9,7 @@ import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
 import { normalizeSave, clearStage } from './save.js';
 import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W } from './config.js';
-import { updateCamera } from './camera.js';
+import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 
@@ -43,17 +43,17 @@ export class Campaign {
   }
   enterZone() {
     const zone=this.def.zones[this.zoneIndex]; this.locked=true;
-    this.camX=zone.l; this.camMax=Math.max(this.camMax||0,zone.l);
-    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,zone,snap:true});
+    this.camMax=Math.max(this.camMax||0,zone.l);
+    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,zone,snap:lockSnaps(this.camX,zone)});
     if (zone.dad) unlockDad(this.dadCall);
     if (zone.shakes) this.dropTrio(this.bob.x+40);
     this.spawnWave();
   }
   startBoss(phase = 1) {
     const z=this.def.boss; this.bossActive=true; this.locked=true;
-    this.camX=z.l; this.camMax=Math.max(this.camMax||0,z.l);
+    this.camMax=Math.max(this.camMax||0,z.l);
     this.checkpoint={zone:3,x:z.l+200,phase}; this.bob.x=Math.max(this.bob.x,z.l+120);
-    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,boss:z,snap:true});
+    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,boss:z,snap:lockSnaps(this.camX,z)});
     if (z.type==='wingman') { this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase); }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
@@ -134,7 +134,7 @@ export class Campaign {
     if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);return;}
     tickDadCall(this.dadCall,dt);
     if(this.bob.state==='grabbed' && input.presses){if(this.bob.mash(input.presses))this.banner(STORY.mash); input={};}
-    this.bob.update(dt,input,this.bounds);
+    this.bob.update(dt,input,moveBounds(this,this.bob.x));
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
@@ -170,7 +170,7 @@ export class Campaign {
     } else if(this.locked&&!this.enemies.some(e=>e.alive)){
       const zone=this.def.zones[this.zoneIndex];this.waveIndex++;
       if(this.waveIndex<zone.waves.length)this.spawnWave();
-      else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.bob.hp=this.bob.maxHp;this.banner(STORY.checkpoint);this.emit('go',{plate:plateKeyForCam(this.camX,this.def)});updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});}
+      else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.bob.hp=this.bob.maxHp;this.banner(STORY.checkpoint);this.emit('go',{plate:plateKeyForCam(this.def.zones[this.zoneIndex]?.l??this.def.boss.l,this.def)});updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false});}
     }
   }
 }

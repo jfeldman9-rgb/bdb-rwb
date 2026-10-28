@@ -1,10 +1,10 @@
 // Multi-plate parallax entry: wraps parallax.js and exposes backdropPlan for tests.
-import { buildParallax, destroyParallax, FAR_SCROLL, MID_SCROLL } from './parallax.js';
-import { STREAMS, streamZones, plateRect, plateKeys, plateIndexForCam } from './zone-stream.js';
+import { buildParallax, destroyParallax, syncParallax, FAR_SCROLL, MID_SCROLL } from './parallax.js';
+import { STREAMS, streamZones, plateRuns, plateRect, plateKeys, plateKeyForCam } from './zone-stream.js';
 
 export const ART_GAPS = Object.freeze([
   'Per-chapter far sky plate ≥2172×724 (RWB bg-far); current s*-far.webp are 1600×720 derivatives',
-  'Per-chapter mid street plates ≥2172×724 with unique zone art (current mids are 1280 crops/variants)',
+  'Stages 2 and 3 ship 3 mid plates; zone 3 and the boss arena share mid2 (stage 1 has 4)',
   'Per-chapter floor strips matching RWB bg-floor / bg-floor2 widths',
   'Optional world-space props (lamps, signs, cars) with normals for lit stages',
 ]);
@@ -18,8 +18,9 @@ export function backdropPlan(def) {
     stageNo: def.no,
     far: plan.far,
     floor: plan.floor,
-    plates: plan.zones.map((z, i) => ({
-      key: z.plate, index: i, ...plateRect(i, def), zoneL: zones[i].l, zoneR: zones[i].r,
+    plates: plateRuns(def).map((run, k) => ({
+      key: run.plate, index: run.from, run: k, anchor: run.anchor, ...plateRect(k, def),
+      zoneL: zones[run.from].l, zoneR: zones[run.to].r,
     })),
     keys: plateKeys(def.no),
     parallax: { far: FAR_SCROLL, mid: MID_SCROLL, floor: 1 },
@@ -30,10 +31,8 @@ export function buildBackdrop(scene, def) {
   const layers = buildParallax(scene, def);
   return {
     ...layers,
-    activePlate(camX) {
-      const i = plateIndexForCam(camX, def);
-      return layers.mids?.[Math.min(i, (layers.mids?.length || 1) - 1)]?.plate || null;
-    },
+    update(camX) { syncParallax(layers, camX); },
+    activePlate(camX) { return plateKeyForCam(camX, def); },
     destroy() { destroyParallax(layers); },
   };
 }
