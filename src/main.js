@@ -10,12 +10,11 @@ import { beginChapter } from './title-flow.js';
 import { registerVoiceLines } from './voice-lines.js';
 import { installAudioLifecycle,unlock,toggleMute,isMuted } from './audio.js';
 import { installGraphicsLifecycle } from './graphics-lifecycle.js';
-import { installGraphicsNotice } from './graphics-notice.js';
 import { perf, bindPerfLifecycle } from './perf.js';
 import { wireTitleStart } from './title-start.js';
 import { installPressOwnership } from './press-ownership.js';
 import { installGovernor, readQualityFloor } from './quality-governor.js';
-import { installResumeCleanup } from './recovery.js';
+import { installResumeCleanup, installStageRecovery } from './recovery.js';
 import { blessDadFromGesture } from './dad-call-cutscene.js';
 
 class Boot extends Phaser.Scene {
@@ -59,7 +58,7 @@ export function bootGame(){
  window.__game=game;installViewportFit(game);game.rs=RS0;window.__bdbPerf=perf;bindPerfLifecycle(perf);installAudioLifecycle(game);
  installGovernor(game,{q,rs0:RS0,vw:VW,vh:VH,meter:perf,floor:readQualityFloor()});
  installResumeCleanup(game,q);
- const notice=installGraphicsNotice();installGraphicsLifecycle({game,getStage:()=>game.scene.getScene('gameplay'),onLost:()=>notice.lost(),onRestored:()=>notice.restored()});
+ const recovery=installStageRecovery(game);installGraphicsLifecycle({game,getStage:()=>game.scene.getScene('gameplay'),onLost:()=>recovery.notice.lost(),onRestored:()=>recovery.notice.restored()});
  const pause=()=>{const scene=game.scene.getScene('gameplay');if(scene?.world)scene.setPauseReason('manual',!scene.pauseReasons.has('manual'));};
  document.getElementById('pause').onclick=pause;document.getElementById('mute').onclick=()=>{toggleMute();document.getElementById('mute').textContent=isMuted()?'Sound off':'Sound on';};
  document.getElementById('replay').onclick=()=>location.assign(location.pathname);

@@ -1,5 +1,6 @@
 // Freeze-guard recovery (restart fix). The Reload card reopens the stage the player was on instead of the title.
 // In the Stage 1 pre-fight sum (main.js imports it) and capped again under restartHotfix.
+import { installGraphicsNotice } from './graphics-notice.js';
 
 /** The current URL with ?stage=N&autostart=1&resume=1; every other parameter is kept. */
 export function resumeUrl(href, stage) {
@@ -50,4 +51,55 @@ export function installResumeCleanup(game, q, root = globalThis) {
   };
   game.events.on('step', check);
   return true;
+}
+
+/** How long a running, unpaused stage may go without a frame before the stuck card. */
+export const FREEZE_MS = 8000;
+
+/**
+ * Notices a stalled gameplay loop. The timer sits outside Phaser, so it still
+ * runs when the frame loop has died. GameScene.update calls `game.beat` each frame.
+ * A paused stage (manual, cutscene, rotate) is not a stall.
+ */
+export function installFreezeGuard(game, root = globalThis, opts = {}) {
+  const limit = opts.limit ?? FREEZE_MS;
+  const clock = () => root.performance?.now?.() ?? Date.now();
+  let last = clock();
+  let shown = false;
+  const scene = () => game?.scene?.getScene?.('gameplay');
+  const note = () => { last = clock(); };
+  const trip = (error) => {
+    if (shown) return;
+    if (!scene()?.started) return;
+    shown = true;
+    showStuck(root, error instanceof Error ? error : new Error(String(error || 'frame')), game);
+  };
+  if (game) game.beat = note;
+  const timer = root.setInterval?.(() => {
+    const s = scene();
+    if (!s?.started || s.world?.paused || game?.isPaused) { note(); return; }
+    if (clock() - last > limit) trip(new Error('freeze'));
+  }, opts.interval ?? 1000);
+  const onError = (event) => {
+    if (!scene()?.started) return;
+    const origin = root.location?.origin;
+    if (origin && event?.filename && !event.filename.startsWith(origin + '/')) return;
+    trip(event?.error || event?.message || 'error');
+  };
+  root.addEventListener?.('error', onError);
+  return {
+    note,
+    destroy() {
+      if (timer != null) root.clearInterval?.(timer);
+      if (game?.beat === note) game.beat = null;
+      root.removeEventListener?.('error', onError);
+    },
+  };
+}
+
+/** Freeze guard plus a graphics-retry that reopens the running stage. */
+export function installStageRecovery(game, root = globalThis) {
+  const freeze = installFreezeGuard(game, root);
+  const notice = installGraphicsNotice(root, () => resumeGame(root, game));
+  return { notice, destroy() { freeze.destroy(); notice.destroy(); } };
 }

@@ -16,7 +16,8 @@ export function createStartupGuard(root = globalThis) {
     get failed() { return failed; },
     get finished() { return finished; },
     fail(error, kind) {
-      if (failed || finished) return false;
+      // Title ready() detaches the boot listener. A later chapter can still miss a file.
+      if (failed || (finished && kind !== 'assets')) return false;
       failed = true;
       const message = typeof error === 'string' ? error : error?.message || '';
       const category = kind === 'assets' ? 'assets' : /webgl|graphics context/i.test(message) ? 'graphics' : 'startup';
@@ -37,7 +38,7 @@ export function createStartupGuard(root = globalThis) {
     ready() {
       if (failed) return false;
       finished = true; detach();
-      const retry = byId('startup-retry'); retry?.removeEventListener('click', reload);
+      // Keep the Reload listener. The card is reused once a stage is running.
       return true;
     },
     watchLoader(loader) {
