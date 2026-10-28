@@ -109,3 +109,43 @@ Done: P4-1 through P4-18.
 - P4-18 After the title, a missing chapter file says the chapter did not finish loading.
 
 Deferred: Choirmaster fight balance (Claude C3; waits for Jason). Muse Adventure zone-5 spike (no further heal cut). Kimi G5 real-device rotate (`bindRotatePause` is unit-tested). Claude R9 `grabPunish` handoff (the campaign consumes it the same step). Kimi minor 5 static export check. Muse Story flatness and the nocutscenes ear-check.
+
+## Pass 6: Grok 4.7 (Cursor)
+
+Branch `cursor/bdb-pass6-5619` @ `d496144`, draft PR #21 into `cursor/bdb-pass5-7e78`. No merge, no deploy.
+
+Fresh clone of `d496144` (`git clone`, `npm ci`, `npm test`). `npm ci` warns `EBADENGINE` (package asks for Node `>=24`; this clone ran Node v22.23.4) and then installs. `npm test` is 227/227. Browser smoke (`CHROME=/usr/local/bin/google-chrome`, `BDB_SMOKE_DIR=/opt/cursor/artifacts/browser-smoke`) reached victory with zero runtime or HTTP errors. Phaser 4.2.1. The live stage-1 shot is `/opt/cursor/artifacts/p6-gameplay.png` (Bob firing, the caption reads `Stay away from the Colombians room.`). The in-browser Adventure campaign matched the 60 Hz bot: 165.1 / 187.5 / 213.3 s, 4 deaths.
+
+Pass 5 published fresh stages, the before for this pass: Story 30 Hz 128.2 / 137.6 / 151.8, 60 Hz 128.6 / 141.1 / 155.6, 120 Hz 126.0 / 138.9 / 152.1, 0 deaths (campaigns 418.4 / 426.7 / 415.5). Adventure 30 Hz 182.7/2, 194.1/3, 197.0/2; 60 Hz 164.9/0, 188.9/2, 225.4/5; 120 Hz 161.3/0, 193.3/3, 213.1/3 (campaigns 582.1/6, 584.9/5, 573.5/5). Nightmare 30 Hz 247.5/6, 260.4/6, 326.6/10; 60 Hz 235.5/6, 263.6/6, 326.1/10; 120 Hz 235.5/7, 265.6/6, 328.4/11 (campaigns 869.6/23, 859.9/23, 871.3/27).
+
+Fresh-clone bot-sim after, fresh stage starts then the continued campaign:
+
+| | 30 Hz | 60 Hz | 120 Hz |
+|---|---|---|---|
+| Story S1 / S2 / S3 | 149.5/0, 163.2/1, 179.2/0 | 151.2/0, 168.1/1, 183.0/0 | 148.3/1, 164.4/1, 178.6/0 |
+| Story campaign | 499.1 s / 1 death (149.5 / 162.4 / 179.6) | 512.2 s / 1 (151.2 / 168.8 / 184.7) | 500.2 s / 2 (148.3 / 164.8 / 179.6) |
+| Adventure S1 / S2 / S3 | 163.8/0, 186.2/2, 196.9/2 | 165.1/0, 189.2/2, 209.0/3 | 161.2/0, 193.6/3, 205.7/3 |
+| Adventure campaign | 577.8 s / 6 (163.8 / 184.9 / 221.6) | 573.4 s / 4 (165.1 / 187.5 / 213.3) | 573.1 s / 5 (161.2 / 197.8 / 206.6) |
+| Nightmare S1 / S2 / S3 | 252.7/7, 280.6/8, 286.1/7 | 229.8/5, 304.0/9, 285.6/9 | 235.5/6, 285.7/9, 283.1/9 |
+| Nightmare campaign | 815.2 s / 21 (252.7 / 270.2 / 284.8) | 856.7 s / 25 (229.8 / 319.9 / 299.5) | 856.5 s / 27 (235.5 / 291.5 / 322.1) |
+
+Nightmare stage 3 fresh starts moved from 326.6/10, 326.1/10, 328.4/11 to 286.1/7, 285.6/9, 283.1/9. All three sit in 280–310 s. The continued 120 Hz campaign's stage 3 is 322.1 s (12 deaths against 9 on a fresh start). That run still has Dad and Papacito charges from the earlier chapters. Adventure stage 3 at 60 Hz fresh starts moved from 225.4 s / 5 deaths to 209.0 s / 3. Every Adventure fresh stage stays inside 140–240 s.
+
+Choirmaster HP stays 1140. The eggplant still fires straight (`vy` 0). `CAM_LEAD` is still 0.28. There is still no shop. `assets/cutscenes/intro_v3.mp4` is untouched.
+
+Done: P6-1 through P6-13.
+- P6-1 `snowClearZ` is 65 for every difficulty and every step rate. Nightmare stage 3 drops the trailing lecturer from zone index 4, wave index 1. Damage, minion HP, and shot multipliers stay at 1. A uniform cut flipped which rate death-spiraled.
+- P6-2 Captions are `Stay away from the Colombians room.` and `Bob why is your car purple?` The mp3s are the existing files. The locked-quote test covers the eggplant line, `Die, Yetti, die!`, `Pork Chop Sandwiches!`, those two, and Dad's catchphrase. The Papacito shout is not in the tree.
+- P6-3 A throw in `create()` after the title calls `showStuck`.
+- P6-4 `tests/scene-boot.test.mjs` fails on a second `'shadow'` texture and on an `assemble` throw. Smoke shots use `BDB_SMOKE_DIR` and `BDB_SMOKE_GAMEPLAY`.
+- P6-5 Hold and telegraph stay skipped. Skipping rush, stun, and down brought the 60 Hz Adventure stage 3 time back. `ADVENTURE_S3_DAMAGE` stays 1.
+- P6-6 `separateEnemies` also skips rush, stun, down, and a live stun timer. Push stays 8 px.
+- P6-7 The unused bounds argument is gone.
+- P6-8 An aborted clip's held lines carry onto the new voice hold. The settle callback still receives `'abort'`.
+- P6-9 `flushVoice` keeps the queue array and drops due lines in place.
+- P6-10 The list now says walkers clamp to `world.bounds`, which outside an arena is the camera view.
+- P6-11 Wingmen draw at alpha 0.78 and behind Bob on every lane.
+- P6-12 `Let's leave before they reform.` is the first line on the victory panel. The HUD caption is cleared.
+- P6-13 Story eggplant damage is 1.15. Pace 0.72, recovery 2.3, grace 0.19, and 5 hearts stay. The bot takes one death on stage 2 at every rate, plus one on stage 1 at 120 Hz, and still clears.
+
+Deferred: painted Interventionist and Wingman bodies. A timed human playthrough. Real-device mobile frame time. Recharge-banner punctuation. Choirmaster fight numbers, still waiting on Jason. Node engine warning (`>=24` vs the suite on 22).
