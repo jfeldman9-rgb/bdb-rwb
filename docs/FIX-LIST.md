@@ -1,3 +1,38 @@
+# BDB Fix List — Pass 3 (from Pass 2 reviews)
+
+**Date:** 2026-10-28  
+**Head reviewed:** `cursor/bdb-pass2-d377` @ `c9cf35a` (draft PR #2)  
+**Sources:** Muse (`docs/REVIEW-MUSE-PASS2.md`, branch `cursor/muse-pass2-review-bb6b`, 6.5/10), Argon (`docs/REVIEW-ARGON-PASS2.md`, branch `cursor/argon-review-pass2-e8b7`, 8.2/10), Claude (`docs/REVIEW-CLAUDE-PASS2.md`, branch `cursor/claude-review-pass2-7c00`, 7/10), plus Kimi F4–F8 still open from `docs/REVIEW-KIMI-PASS1.md` (`bdb-kimi-review-pass1`).  
+**Locked, not on this list:** eggplant fires straight (`vy=0`); `CAM_LEAD` 0.28; no upgrade shop; Dad's catchphrase and every quoted Bob/Yetti line stay exact; do not touch `assets/cutscenes/intro_v3.mp4`. Choirmaster fight numbers from PR #2 stay put until Jason signs off (Claude C3).
+
+| ID | Fix | Found by | Notes |
+|---|---|---|---|
+| **P3-1** | Nightmare full-stage finishability (S2 Choirmaster, S3 Wingmen). Full-stage bot-clear test. `tools/bot-sim` drains `dad_callin`. | Muse P0; Argon (bot-sim never drains the call-in) | Do not retune Choirmaster HP, volleys, or adds. S3's wall is respawn giving the Wingmen their HP back. |
+| **P3-2** | Voice-queue starvation: `bdb_open` dropped on S1, `claudia_open` on S3, `nar_ch2` killed by the kidnap cutscene, third queued line dropped. Tests per case. | Argon #1; Claude C5, C14 | Scripted lines wait behind whatever is sounding. Stretch every queued entry when a line starts. Emit the kidnap clip before `nar_ch2`. |
+| **P3-3** | Dad clip tap-to-unmute also skips the clip. Bless iOS sound before the first call. Listeners and the video element survive stages. | Claude C1, C2; Argon #2 | Drop the in-clip `pointerdown` bless. One Dad `CutscenePlayer` kept across `abortDadCall`. |
+| **P3-4** | Wingman telegraph lanes use the same lane constants as the halo (Kimi F6). | Muse P1 telegraph; Claude C9; Kimi F6 | `laneY` / `LANE_H`. Dust bands too. Not a Choirmaster balance change. |
+| **P3-5** | Dad catchphrase on the swatter impact, not on spawn. | Muse P1 | Emit from the `dadhit` resolve. Wording unchanged. |
+| **P3-6** | Chapter select does not replay the 61s intro. Pause Phaser behind the intro. | Muse P1; Argon #4; Claude C6 | Intro only for chapter 1. `createStoryPlayer.play` parks the loop. |
+| **P3-7** | `recovery.js` reachable after the title, plus `showStuck` callers. | Argon #3; Claude C8 | Keep the startup Reload listener. Graphics retry uses `resumeGame`. Freeze guard and gameplay errors call `showStuck`. |
+| **P3-8** | Papi wipe synced to the runner front, per enemy. | Muse P2; Argon #7; Claude C4 | `(screenX + 180) / 980`, shared with `papacito-fx.js`. |
+| **P3-9** | Lecturer grab: killing the grabber does not hurt Bob. Timeout goes through `hurtBob`. | Argon #6 | |
+| **P3-10** | Wingman HP bar overlap and W1/W2 labels. | Argon #5; Claude C11; Muse P2 bars | Side-by-side bars. A dead Wingman stays an empty labeled bar. |
+| **P3-11** | F7 mercy vs "already swatted this phase", and K3 `camMax` on respawn. | Argon #9; Claude C7; Kimi F7; Kimi K3 | Mercy clears that phase's `phaseCalls`. Respawn sets `camMax` to the checkpoint camera. |
+| **P3-12** | Per-frame `matchMedia` and DOM writes. Dead `FX.slowmo` / `FX.hitstop` (remove). Snowball knockback follows travel. Recoil is a kick. Distinct halo/shockwave shapes. | Argon #8; Muse (slow-mo, knockback, recoil, shapes); Kimi F4, F5; Kimi K6 | Presentation only. Bot step stays 60 Hz. |
+| **P3-13** | Regex-only tests become behaviour tests. | Argon test gaps; Claude C15 | `press-governor` pause, `recovery` boot wire, `input-map` title/Enter, `wingman-sim` HUD source match. Heal-test title matches the assertion. |
+
+### Deferred (not in the thirteen)
+- **Choirmaster fight balance** (Claude C3). The volley now fires and phase 1 no longer tops up adds. Jason signs off. Do not retune in this pass.
+- **Kimi F8** cosmetics: stage-2 music blip, mercy banner replacing the checkpoint banner, kill impacts splatting twice.
+- **Claude C10** refusal-banner nits (pre-unlock reads as spent; no 10-KO / 45s progress).
+- **Claude C12** Escape and P start the game from the title.
+- **Claude C13** plan docs still promise a second Dad swat.
+- **Muse readability leftovers:** choir aura, guard shield cracks, enemy separation, corpse hold for bosses.
+- **Kimi G5** rotate overlay only covered in the browser smoke tool.
+- **Muse** Adventure zone-5 spike: accepted, not another heal cut. Band stays 140–240s.
+
+---
+
 # BDB Fix List — merged review gate (bdb-scroll @ 51b6de6)
 
 **Date:** 2026-10-28 (America/Phoenix)  

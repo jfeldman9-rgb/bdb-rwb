@@ -10,16 +10,20 @@ test('delayed wipe staggers first and kills on the runner front',()=>{
  const r=papacitoEffect(s,enemies,{delay:.45});
  assert.equal(r.delayed,true);assert.equal(enemies[0].alive,true);assert.equal(enemies[0].state,'hurt');assert.ok(enemies[0].stun>=.45);
 });
-test('campaign papi shout comes first; the wipe lands with the runners',async()=>{
+test('the runner front reaches a near yetti before a far one',async()=>{
  const{Campaign}=await import('../src/campaign.js');
- const w=new Campaign();w.bob.x=300;w.enterZone();
- for(const e of w.enemies)e.cooldown=99;
- w.papi.charges=1;w.events=[];
+ const{papiHitTime}=await import('../src/papacito.js');
+ const w=new Campaign({stage:2});w.camX=0;w.enemies=[];
+ const near=w.spawnYetti('walker',100,630), far=w.spawnYetti('walker',1100,630);
+ w.papi.charges=1;w.events=[];w.score=0;
  assert.equal(w.usePapi(),true);
- assert.ok(w.enemies.some(e=>e.alive),'crowd still standing at the shout');
- assert.equal(w.stats.kos,0);
- const frames=Math.ceil(0.45*60)+2;
- for(let i=0;i<frames;i++)w.update(1/60,{});
- assert.ok(w.stats.kos>0,'wipe landed after the delay');
+ assert.equal(near.alive,true);assert.equal(w.stats.kos,0);
+ const nearAt=papiHitTime(100), farAt=papiHitTime(1100);
+ assert.ok(nearAt<0.4&&farAt>1.2);
+ for(let i=0;i<Math.ceil(0.4*60);i++)w.update(1/60,{});
+ assert.equal(near.alive,false);assert.equal(far.alive,true);
+ assert.equal(w.score,0,'score waits for the last body');
+ for(let i=0;i<Math.ceil((farAt-0.4)*60)+2;i++)w.update(1/60,{});
+ assert.equal(far.alive,false);assert.equal(w.score,1000);
  assert.ok(w.events.some(e=>e.type==='ko'));
 });

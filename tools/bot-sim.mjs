@@ -12,6 +12,8 @@ function run(opts, done, cap = 1800) {
   for (let i = 0; i < hz * cap && !done(w); i++) {
     w.update(1 / hz, bot.update(1 / hz, w));
     hurts += w.events.filter(e => e.type === 'hurt').length;
+    // Same drain as the headless clear tests: a call-in that is only counted never swats.
+    for (const e of w.events) if (e.type === 'dad_callin') w.finishDadCallin();
     w.events = [];
   }
   const { shots, papi, dad, kos, deaths, stages, phases, stageTimes } = w.stats;

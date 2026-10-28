@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { PORTRAIT_BLOCK, portraitBlocksPlay, syncRotatePause } from '../src/rotate-block.js';
+import { PORTRAIT_BLOCK, portraitBlocksPlay, syncRotatePause, bindRotatePause } from '../src/rotate-block.js';
 
 test('portrait phones block play, and an unchanged orientation does not clear input', () => {
   assert.equal(PORTRAIT_BLOCK, '(orientation:portrait) and (hover:none) and (pointer:coarse)');
@@ -26,6 +26,30 @@ test('portrait phones block play, and an unchanged orientation does not clear in
   assert.equal(reasons.has('rotate'), false);
   assert.equal(clears, 2);
   assert.equal(portraitBlocksPlay(() => { throw new Error('locked'); }), false);
+});
+
+test('the rotate listener is created once and follows later changes', () => {
+  let calls = 0;
+  const listeners = [];
+  const query = {
+    matches: false,
+    addEventListener(type, fn) { listeners.push(fn); },
+    removeEventListener() {},
+  };
+  const media = () => { calls++; return query; };
+  const reasons = new Set();
+  const scene = {
+    pauseReasons: reasons,
+    setPauseReason(reason, on) { if (on) reasons.add(reason); else reasons.delete(reason); },
+  };
+  const stop = bindRotatePause(scene, media);
+  assert.equal(calls, 1);
+  assert.equal(reasons.has('rotate'), false);
+  query.matches = true;
+  listeners[0]();
+  assert.equal(reasons.has('rotate'), true);
+  assert.equal(calls, 1, 'a change does not query matchMedia again');
+  stop();
 });
 
 test('index.html uses the RWB portrait block with no letterbox escape', async () => {

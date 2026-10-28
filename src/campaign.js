@@ -2,7 +2,7 @@ import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
 import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane } from './yettis.js';
 import { Wingmen } from './wingman.js';
-import { collectShake, papacitoEffect } from './papacito.js';
+import { collectShake, papacitoEffect, papiHitTime } from './papacito.js';
 import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
 import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
@@ -13,9 +13,6 @@ import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack } from './barks.js';
-
-/** Seconds from Papi's shout until the runner front lands the wipe. */
-export const PAPI_WIPE_DELAY = 0.45;
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -54,7 +51,12 @@ export class Campaign {
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.voiceAt = [];
-    this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
+    this.banner(this.def.title); this.emit('stage',stage);
+    // The kidnap clip stops scene audio. Chapter 2's narration has to be emitted
+    // after that event so the new scene holds it instead of starting it and cutting it off.
+    const openingKidnap = stage === 2 && !this.kidnapPlayed;
+    if (openingKidnap) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
+    this.emit('voice',`nar_ch${stage}`);
     if (stage === 1) {
       this.armVoice('bdb_open', 4);
       this.armVoice('nar_intro_01', 8);
@@ -62,7 +64,7 @@ export class Campaign {
       this.armVoice('nar_intro_03', 18);
     }
     if (stage === 3) this.armVoice('claudia_open', 2);
-    if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
+    if (openingKidnap) this.emit('voice', 'nar_kidnap');
     const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
@@ -126,9 +128,21 @@ export class Campaign {
     const z=this.def.boss; this.bossActive=true; this.locked=true; this.pending=[];
     this.camMax=Math.max(this.camMax||0,z.l);
     const bossHp=this.checkpoint.zone===this.bossZone?this.checkpoint.bossHp:undefined;
-    this.checkpoint={zone:this.bossZone,x:z.l+200,phase,bossHp}; this.bob.x=Math.max(this.bob.x,z.l+120);
+    // Wingmen used to respawn at full HP, so a death undid the whole phase and Nightmare never finished.
+    const wingHp=this.checkpoint.zone===this.bossZone?this.checkpoint.wingHp:undefined;
+    this.checkpoint={zone:this.bossZone,x:z.l+200,phase,bossHp,wingHp}; this.bob.x=Math.max(this.bob.x,z.l+120);
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,boss:z,snap:lockSnaps(this.camX,z)});
-    if (z.type==='wingman') { this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase); }
+    if (z.type==='wingman') {
+      this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase);
+      if (Array.isArray(wingHp)) {
+        const bosses=this.enemies.filter(e=>e.type==='wingman');
+        bosses.forEach((e,i)=>{
+          if (wingHp[i]==null) return;
+          const floor=phase>=3?1:0;
+          e.hp=Math.max(floor,Math.min(e.maxHp,wingHp[i]));
+        });
+      }
+    }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; boss.hp=Math.min(bossPhaseHp(boss.maxHp,phase),bossHp??Infinity); this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
     const rescue = this.stageNo === 3 && !this.rescuePreBossPlayed;
@@ -144,9 +158,9 @@ export class Campaign {
   }
   summonWalkers() { this.summonAdds(['walker','walker']); }
   snowball(x,y,dir,kind='snowball') { this.hostile.push({x,y,dir,kind,speed:kind==='halo'?260:320,alive:true}); }
-  hurtBob(charger=false, srcX=null) {
-    const dir = srcX == null ? 0 : (Math.sign(this.bob.x - srcX) || 1);
-    if (this.bob.takeHit({charger, dir})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); this.speakRot('hurt',['bob_hurt_01','bob_hurt_02','bob_hurt_03'],1.4); }
+  hurtBob(charger=false, srcX=null, dir=null) {
+    const knock = dir ? Math.sign(dir) : (srcX == null ? 0 : (Math.sign(this.bob.x - srcX) || 1));
+    if (this.bob.takeHit({charger, dir: knock})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); this.speakRot('hurt',['bob_hurt_01','bob_hurt_02','bob_hurt_03'],1.4); }
   }
   yellYettiAttack() { const id = barkYettiAttack(this.barks, this.elapsed); if (id) this.emit('voice', id); }
   recordKo(e, source = 'bob') {
@@ -187,7 +201,7 @@ export class Campaign {
   }
   usePapi() {
     const result=papacitoEffect(this.papi,this.enemies,{phase:this.wingmen?.phase||0,camX:this.camX,paused:this.paused,
-      dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,delay:PAPI_WIPE_DELAY});
+      dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,hitTime:e=>papiHitTime(e.x-this.camX)});
     if (!result.allowed) {
       this.banner(result.reason==='weaken'?'WEAKEN BOTH WINGMEN FIRST':result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
       if (result.reason==='protein') this.speak('bob_papiwait_01', 2.5);
@@ -195,8 +209,8 @@ export class Campaign {
       return false;
     }
     this.papiTime=2.5; this.stats.papi++;
-    // The wipe lands with the runners, not on the activation frame.
-    this.papiPending={t:PAPI_WIPE_DELAY,killed:result.killed,score:result.score};
+    // Each body falls when the front runner reaches it. Score lands with the last one.
+    this.papiPending={elapsed:0,schedule:result.schedule,score:result.score};
     this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice', barkPapacito(this.barks)); this.armVoice('papi_chorus', 1.4); return true;
   }
   useDad() {
@@ -218,12 +232,15 @@ export class Campaign {
   finishDadCallin() {
     if (this.dad) return;
     this.dad = new Dad(this.camX, this.bob.y, this.bob.x + 150);
-    this.emit('voice', 'dad_catchphrase');
     this.emit('dad');
   }
   /** Lose a life, keep progress: zones resume at the wave reached; a mini-boss keeps the damage dealt. */
   respawn() {
     this.stats.deaths++;
+    if (this.wingmen) {
+      const wings=this.enemies.filter(e=>e.type==='wingman');
+      if (wings.length) this.checkpoint.wingHp=wings.map(e=>e.alive?e.hp:0);
+    }
     const boss=this.bossActive&&!this.wingmen&&this.enemies.find(e=>e.boss&&e.alive);
     if(boss)this.checkpoint.bossHp=boss.hp;
     const cp={...this.checkpoint};
@@ -231,12 +248,12 @@ export class Campaign {
     let mercy = null;
     if (this.difficultyKey === 'nightmare') {
       const n = this.zoneDeaths[cp.zone] = (this.zoneDeaths[cp.zone] || 0) + 1;
-      if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall);
+      if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall, cp.zone===this.bossZone?`${this.stageNo}:${cp.phase}`:null);
     }
     this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.papiPending=null;this.shieldHintShown=false;
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.zoneIndex=cp.zone;this.waveIndex=cp.wave??0;this.locked=false;this.bossActive=false;
-    this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=Math.max(this.camMax||0,this.camX);
+    this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=this.camX;
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
     if(cp.zone===this.bossZone)this.startBoss(cp.phase);
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
@@ -297,20 +314,24 @@ export class Campaign {
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
       if(this.papiPending){
-        this.papiPending.t-=dt;
-        if(this.papiPending.t<=0){
-          const {killed,score}=this.papiPending; this.papiPending=null; this.score+=score;
-          for(const e of killed){ if(e.alive){ e.hp=0; e.alive=false; e.state='dead'; } this.recordKo(e,'papi'); }
+        const pending=this.papiPending; pending.elapsed+=dt;
+        for(const s of pending.schedule){
+          if(s.done||s.at>pending.elapsed)continue;
+          s.done=true; const e=s.e;
+          if(e.alive){ e.hp=0; e.alive=false; e.state='dead'; }
+          this.recordKo(e,'papi');
         }
+        if(pending.schedule.every(s=>s.done)){ this.score+=pending.score; this.papiPending=null; }
       }
       return;
     }
-    if(this.dad){this.dad.update(dt,()=>{this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;this.speakRot('dad_done',['dad_done_01','dad_done_02'],0);}return;}
+    if(this.dad){this.dad.update(dt,()=>{this.emit('voice','dad_catchphrase');this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;this.speakRot('dad_done',['dad_done_01','dad_done_02'],0);}return;}
     if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);this.latchInput(input);return;}
     input=this.takeLatch(input);
     tickDadCall(this.dadCall,dt);
     if(this.bob.state==='grabbed' && input.presses){if(this.bob.mash(input.presses))this.banner(STORY.mash); input={};}
     this.bob.update(dt,input,moveBounds(this,this.bob.x));
+    if(this.bob.grabPunish){const g=this.bob.grabPunish;this.bob.grabPunish=null;this.hurtBob(false,g?.x);}
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
@@ -340,7 +361,7 @@ export class Campaign {
     this.tickPending(dt);
     for(const e of [...this.enemies])e.update(dt,this);
     for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
-      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<65){this.hurtBob(false, p.x);p.alive=false;}
+      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<65){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
     this.hostile=this.hostile.filter(p=>p.alive);

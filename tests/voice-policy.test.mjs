@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { narrationYields } from '../src/audio.js';
+import { narrationYields, setVoicePolicy, voiceWait, presentStage } from '../src/audio.js';
 import { Campaign } from '../src/campaign.js';
 
 test('narration keeps the next line for 2.5s and any other line yields', () => {
   assert.equal(narrationYields('bob_where_claudia_01', 'nar_ch1'), 2.5);
   assert.equal(narrationYields('bob_cory_joke_01', 'nar_kidnap'), 2.5);
+  assert.equal(narrationYields('bdb_open', 'bob_where_claudia_01'), 2.5);
+  assert.equal(narrationYields('claudia_open', 'bob_where_claudia_01'), 2.5);
   assert.equal(narrationYields('yetti_purple_car_01', 'bob_where_claudia_01'), 0);
   assert.equal(narrationYields('bob_hurt_01', ''), 0);
 });
@@ -26,9 +27,11 @@ test('cory and yetti taunts roll about once a second, not every sim tick', () =>
   assert.ok(rolled.some(id => id.startsWith('yetti_purple_car_')));
 });
 
-test('the scene installs that policy before it handles the new stage events', async () => {
-  const src = await readFile('src/game-scene.js', 'utf8');
-  const create = src.slice(src.indexOf(' create()'), src.indexOf(' setBloom'));
-  assert.ok(create.includes('setVoicePolicy(narrationYields)'));
-  assert.ok(create.indexOf('setVoicePolicy(narrationYields)') < create.indexOf('this.handleEvents()'));
+test('stage open installs the narration policy before the scene handles its events', () => {
+  setVoicePolicy(() => 0);
+  assert.equal(voiceWait('bdb_open', 'bob_where_claudia_01'), 0);
+  let seen = null;
+  presentStage({ handleEvents() { seen = voiceWait('bdb_open', 'bob_where_claudia_01'); } });
+  assert.equal(seen, 2.5);
+  setVoicePolicy(null);
 });

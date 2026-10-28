@@ -1,31 +1,41 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { playDadCall, abortDadCall, installDadKeys } from '../src/dad-call-cutscene.js';
+import { playDadCall, abortDadCall, installDadKeys, installDadGestureBless, blessDadFromGesture, dadPlayerBlessed, dadVideoElement } from '../src/dad-call-cutscene.js';
 
-function fakeVideo() {
-  return {
+function fakeVideo(denySound) {
+  const video = {
     style: {},
     setAttribute() {}, removeAttribute() {},
     addEventListener() {}, removeEventListener() {},
-    play: () => Promise.resolve(), pause() {}, load() {},
+    play() {
+      if (denySound && !video.muted) return Promise.reject(Object.assign(new Error('nope'), { name: 'NotAllowedError' }));
+      return Promise.resolve();
+    },
+    pause() {}, load() {},
     muted: false, volume: 1, currentTime: 0, paused: false, ended: false,
   };
+  return video;
 }
 
-function fakeEl(video) {
+function fakeEl() {
+  const listeners = {};
   return {
-    style: {}, id: '', textContent: '',
+    style: {}, id: '', textContent: '', listeners,
     setAttribute() {}, appendChild() {},
-    addEventListener() {}, removeEventListener() {}, remove() {},
+    addEventListener(type, fn) { (listeners[type] ??= []).push(fn); },
+    removeEventListener(type, fn) { listeners[type] = (listeners[type] || []).filter((f) => f !== fn); },
+    remove() {},
+    emit(type, e) { for (const fn of [...(listeners[type] || [])]) fn(e); },
   };
 }
 
-function fakeRoot() {
+function fakeRoot({ denySound = false } = {}) {
   const listeners = {};
-  const video = fakeVideo();
+  const video = fakeVideo(denySound);
   let now = 0;
   const root = {
     listeners,
+    overlay: null,
     now: () => now,
     setNow: (t) => { now = t; },
     performance: { now: () => now },
@@ -37,13 +47,15 @@ function fakeRoot() {
     navigator: { getGamepads: () => [] },
     document: {
       createElement: (tag) => (tag === 'video' ? video : fakeEl()),
-      body: { appendChild() {} },
+      body: { appendChild(el) { root.overlay = el; } },
       addEventListener() {}, removeEventListener() {}, hidden: false,
     },
     console,
   };
   return root;
 }
+
+const flush = () => new Promise((res) => setImmediate(res));
 
 function fakeScene(root) {
   return {
@@ -79,15 +91,40 @@ test('a non-skip key does not end the dad clip', () => {
   abortDadCall(scene);
 });
 
-test('idle gestures bless the reused element; abort drops the key wiring', () => {
+test('an idle gesture blesses the dad video before the first call, and abort keeps the element', () => {
   const root = fakeRoot();
   const scene = fakeScene(root);
+  const off = installDadGestureBless(root);
+  assert.equal(dadPlayerBlessed(), false);
+  assert.equal(blessDadFromGesture(root), true);
+  assert.equal(dadPlayerBlessed(), true);
+  const video = dadVideoElement();
+  assert.ok(video);
   assert.equal(playDadCall(scene, () => {}), true);
   abortDadCall(scene);
   assert.equal(scene.cutscene, null);
-  // No handle: keydown must not throw and must not touch a dead clip.
+  assert.equal(dadVideoElement(), video, 'stage shutdown must not build a fresh unblessed element');
+  assert.equal(dadPlayerBlessed(), true);
+  root.setNow(5000);
   root.emit('keydown', { code: 'Space', preventDefault() {} });
+  off();
   assert.ok(typeof installDadKeys === 'function');
+});
+
+test('tapping a muted dad clip for sound does not skip it', async () => {
+  const root = fakeRoot({ denySound: true });
+  const scene = fakeScene(root);
+  const off = installDadGestureBless(root);
+  let done = null;
+  assert.equal(playDadCall(scene, (how) => { done = how; }), true);
+  await flush(); await flush();
+  root.setNow(5000);
+  root.emit('pointerdown', {});
+  root.overlay.emit('touchend', { type: 'touchend', preventDefault() {} });
+  assert.equal(done, null, 'the unmute tap must leave the clip running');
+  root.overlay.emit('touchend', { type: 'touchend', preventDefault() {} });
+  assert.equal(done, 'skip');
+  off();
 });
 
 test('pauseForClip owns the pause only when the game is running', async () => {

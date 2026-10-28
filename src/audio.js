@@ -419,8 +419,19 @@ export function residentClipIds() { return Object.keys(clips); }
  * 'interrupt', or the seconds the new line may wait for its turn (0 or 'skip' drops it). null restores the default.
  */
 export function setVoicePolicy(fn) { voicePolicy = typeof fn === 'function' ? fn : null; voiceQueue.length = 0; }
-/** A bark on the same frame as narration waits. Anything else yields so the line already playing finishes. */
-export function narrationYields(id, cur) { return /^nar_/.test(cur || '') ? 2.5 : 0; }
+/** How long the active policy holds `id` behind `cur`. 0 when no policy is installed. */
+export function voiceWait(id, cur) { return voicePolicy ? voicePolicy(id, cur) : 0; }
+/** Stage open: install the narration policy, then let the scene play the lines that just fired. */
+export function presentStage(scene) {
+  setVoicePolicy(narrationYields);
+  scene.handleEvents();
+}
+/** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
+ *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
+const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_)/;
+export function narrationYields(id, cur) {
+  return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
+}
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';
 const pendingStale = () => voicePending && audioNow() - voicePendingAt > 3;
 // Only opted-in speech gets a deadline; the audio clock pauses in background tabs.
@@ -482,7 +493,9 @@ export function say(id, onCaption, interrupt = true, fromQueue = false, options 
     voiceEndsAt = audioNow() + (buf?.duration || 0);
     // Lines queued while this one was still loading waited behind it without a
     // known duration; stretch their deadlines to its real end (capped).
-    for (const q of voiceQueue) if (q.behind === id) q.until = Math.min(Math.max(q.until, voiceEndsAt + VOICE_QUEUE_GRACE), q.queuedAt + VOICE_QUEUE_MAX);
+    // Every line still waiting, not only the one queued directly behind this id.
+    // Otherwise a third line expires while the second is still sounding.
+    for (const q of voiceQueue) q.until = Math.min(Math.max(q.until, voiceEndsAt + VOICE_QUEUE_GRACE), q.queuedAt + VOICE_QUEUE_MAX);
     if (options?.ticket) options.ticket.started = true;
     duck(0.45, buf.duration, 0.4);
   });

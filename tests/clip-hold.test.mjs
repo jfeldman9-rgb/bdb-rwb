@@ -16,6 +16,7 @@ globalThis.matchMedia = () => ({ matches: false, addEventListener: noop, removeE
 
 const { GameScene } = await import('../src/game-scene.js');
 const { registerVoiceLines } = await import('../src/voice-lines.js');
+const { Campaign } = await import('../src/campaign.js');
 registerVoiceLines();
 
 function sceneWith(events, play) {
@@ -32,19 +33,18 @@ function sceneWith(events, play) {
   return scene;
 }
 
-test('a real clip ducks and holds the voice that follows it', () => {
+test('stage 2 narration waits out the kidnap clip instead of being cut off', () => {
+  const w = new Campaign({ stage: 2 });
   let finish = null;
-  const scene = sceneWith(
-    [{ type: 'voice', data: 'nar_ch2' }, { type: 'cutscene', data: 'kidnap' }, { type: 'voice', data: 'nar_kidnap' }],
-    (key, done) => { scene.key = key; finish = done; },
-  );
+  const scene = sceneWith(w.events, (key, done) => { scene.key = key; finish = done; });
   scene.handleEvents();
   assert.equal(scene.key, 'kidnap');
   assert.equal(scene.pauseReasons.has('cutscene'), true);
-  assert.equal(scene.captions.length, 1, 'chapter narration starts before the clip');
-  assert.equal(scene.captions.includes('Heaven, it turns out, has opinions. And Yettis. With wings.'), false);
+  assert.equal(scene.voiceHold.includes('nar_ch2'), true);
+  assert.equal(scene.captions.some(line => line.includes('Chapter Two')), false, 'nar_ch2 must not start before stopSceneAudio');
   finish();
   assert.equal(scene.pauseReasons.has('cutscene'), false);
+  assert.ok(scene.captions.some(line => line.includes('Chapter Two')));
   assert.ok(scene.captions.includes('Heaven, it turns out, has opinions. And Yettis. With wings.'));
 });
 

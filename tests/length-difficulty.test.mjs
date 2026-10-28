@@ -90,7 +90,7 @@ test('HUD does not hard-code three zones', async () => {
   const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('../src/hud.js', import.meta.url), 'utf8'));
   assert.ok(!src.includes('/3`'), 'HUD must not hard-code three zones');
 });
-test('late zones stagger spawns; zone clears heal half on Adventure, full on Story',()=>{
+test('late zones stagger spawns; zone clears heal half on Nightmare, full on Story and Adventure',()=>{
   const late=new Campaign({stage:1});late.zoneIndex=3;late.waveIndex=0;late.spawnWave();
   // Wave delays [0, .6, 1.8] land off-beat in zone 4: [.7, 2.0], first spawns at once.
   assert.deepEqual(late.pending.map(p=>+p.t.toFixed(2)),[.7,2.0]);

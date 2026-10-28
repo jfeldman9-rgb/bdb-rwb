@@ -4,7 +4,7 @@ import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
 import { Bob } from '../src/bob.js';
 import { createShot } from '../src/eggplant.js';
-import { ZONE_MERCY_DEATHS } from '../src/dad-call.js';
+import { ZONE_MERCY_DEATHS, refuseReason } from '../src/dad-call.js';
 import { laneOf, MAX_RANGED_PER_LANE, RANGED_TYPES } from '../src/yettis.js';
 
 function die(w) {
@@ -89,6 +89,34 @@ test('nightmare mercy is the third death in that zone, not adventure and not the
   assert.equal(adventure.dadCall.charges, 0);
 });
 
+test('boss mercy clears that phase so the restored swat can be used', () => {
+  const w = new Campaign({ stage: 2, difficulty: 'nightmare' });
+  w.startBoss(1);
+  w.dadCall.phaseCalls['2:1'] = 1;
+  w.dadCall.charges = 0;
+  w.dadCall.calls = 1;
+  w.zoneDeaths[w.bossZone] = ZONE_MERCY_DEATHS - 1;
+  die(w);
+  assert.equal(w.dadCall.phaseCalls['2:1'], undefined);
+  assert.equal(refuseReason(w.dadCall, { hittable: true, bossPhase: '2:1' }), '');
+  assert.match(w.message, /MERCY/);
+});
+
+test('respawn drops the camera high-water mark back to the checkpoint', () => {
+  const w = new Campaign({ stage: 2 });
+  w.checkpoint = { zone: 1, x: 400, phase: 1 };
+  w.zoneIndex = 1;
+  w.camX = 2000;
+  w.camMax = 2000;
+  w.bob.hp = 0;
+  w.bob.alive = false;
+  w.bob.setState('dead', 0);
+  w.respawn();
+  assert.ok(w.camMax < 2000);
+  assert.equal(w.camMax, w.camX);
+  assert.ok(w.camX < 400);
+});
+
 function clearZone5(stage) {
   const w = new Campaign({ stage, difficulty: 'nightmare' });
   const bot = new Bot();
@@ -118,6 +146,40 @@ test('nightmare bot clears stage 2 and stage 3 zone 5 without a third ranged bod
     const result = clearZone5(stage);
     assert.equal(result.overflow, null, `stage ${stage} lane overlap ${result.overflow}`);
     assert.ok(result.zoneIndex > 4, `stage ${stage} zone 5 not clear in ${result.seconds}s (${result.deaths} deaths)`);
+  }
+});
+
+test('a Wingman keeps damage already dealt when Bob dies', () => {
+  const w = new Campaign({ stage: 3, difficulty: 'nightmare' });
+  w.startBoss(2);
+  const wing = w.enemies.find(e => e.type === 'wingman');
+  wing.hp = 40;
+  w.bob.hp = 1;
+  w.hurtBob(true);
+  for (let i = 0; i < 120 && w.stats.deaths === 0; i++) w.update(1 / 60, {});
+  const again = w.enemies.find(e => e.type === 'wingman' && e.alive);
+  assert.equal(w.stats.deaths, 1);
+  assert.equal(w.wingmen.phase, 2);
+  assert.equal(again.hp, 40);
+});
+
+function clearStage(stage, capSec = 600) {
+  const w = new Campaign({ stage, difficulty: 'nightmare' });
+  const bot = new Bot();
+  const cap = 60 * capSec;
+  for (let steps = 0; steps < cap && !w.stats.stages.includes(stage); steps++) {
+    w.update(1 / 60, bot.update(1 / 60, w));
+    for (const e of w.events) if (e.type === 'dad_callin') w.finishDadCallin();
+    for (const shot of w.projectiles) assert.equal(shot.vy, 0);
+    w.events = [];
+  }
+  return { cleared: w.stats.stages.includes(stage), seconds: w.elapsed, deaths: w.stats.deaths, zone: w.zoneIndex, boss: w.bossActive };
+}
+
+test('nightmare bot clears a full stage 2 and stage 3, Choirmaster and Wingmen included', () => {
+  for (const stage of [2, 3]) {
+    const result = clearStage(stage);
+    assert.equal(result.cleared, true, `stage ${stage} not clear in ${result.seconds.toFixed(1)}s (${result.deaths} deaths, zone ${result.zone}, boss ${result.boss})`);
   }
 });
 

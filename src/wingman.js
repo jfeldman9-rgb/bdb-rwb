@@ -17,7 +17,7 @@ export function isBossFinisherReady(
 
 
 import { actorId } from './actor-id.js';
-import { LANE_TOP } from './config.js';
+import { laneY } from './yettis.js';
 /** Per-Wingman HP by phase (phase III is the pair that the Papacito finisher ends). */
 export const WINGMAN_HP = Object.freeze({ 1: 360, 2: 360, 3: 200 });
 /** Minions the council calls in when a phase opens. */
@@ -49,7 +49,7 @@ export class Wingman {
         if (Math.abs(world.bob.x-this.x)<110 && Math.abs(world.bob.y-this.y)<32 && world.bob.z<90) world.hurtBob(true, this.x);
         for (const dir of [-1,1]) world.snowball(this.x,this.y,dir,'shockwave');
         world.banner('THE FLOOR LEFT THE CHAT.');
-      } else for (let i=0;i<3;i++) if (i!==this.safeBand) world.snowball(this.x,LANE_TOP+i*59,this.facing,'halo');
+      } else for (let i=0;i<3;i++) if (i!==this.safeBand) world.snowball(this.x,laneY(i),this.facing,'halo');
       this.state = 'recover'; this.timer = 1.2 * world.difficulty.recovery;
     } else { this.state = 'hover'; this.z = 70; this.timer = 1.4 / world.difficulty.pace; }
   }

@@ -166,6 +166,19 @@ export function createPerf({ now = () => globalThis.performance.now(), dateNow =
   return meter;
 }
 
+/** Attach the WebGL renderer string to the live meter instead of replacing it. */
+export function noteRenderer(renderer, root = globalThis) {
+  const software = /swiftshader|llvmpipe/i.test(renderer || '');
+  const meter = root.__perf;
+  if (meter && typeof meter.report === 'function') {
+    meter.renderer = renderer;
+    meter.software = software;
+    return meter;
+  }
+  root.__perf = { renderer, software };
+  return root.__perf;
+}
+
 export function bindPerfLifecycle(meter, root = globalThis) {
   const doc = root.document;
   if (!doc || !root.addEventListener) return () => {};

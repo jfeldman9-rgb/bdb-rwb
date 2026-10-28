@@ -47,12 +47,14 @@ export function takeCall(st, c) {
 }
 /** Third death in one zone. Nightmare only calls this. Restores a Dad charge, or a shake trio when he has not arrived yet. */
 export const ZONE_MERCY_DEATHS = 3;
-export function grantZoneMercy(dadCall) {
+export function grantZoneMercy(dadCall, phaseKey = null) {
   if (!dadCall?.unlocked) return 'breath';
   dadCall.charges = Math.max(1, dadCall.charges | 0);
   if (dadCall.calls >= DAD.maxCalls) dadCall.calls = DAD.maxCalls - 1;
   dadCall.on = false;
   dadCall.since = Math.max(dadCall.since || 0, DAD.recharge);
+  // The mercy charge has to be spendable. A spent phase used to refuse it immediately.
+  if (phaseKey) delete dadCall.phaseCalls[phaseKey];
   return 'dad';
 }
 export function bossFloor(e) { return e.phase >= 3 ? 1 : Math.max(1, Math.floor(e.maxHp * DAD.gates[(e.phase || 1) - 1])); }

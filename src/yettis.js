@@ -146,8 +146,8 @@ export class Yetti {
           if (['guard','hover'].includes(this.type)) world.snowball(this.x, this.attackY, this.rushDir);
           else if (['choir','choirmaster'].includes(this.type)) {
             const skip = this.volley++ % 3;
-            const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== skip) : [Math.round((this.attackY-LANE_TOP)/59)];
-            for (const band of bands) world.snowball(this.x, LANE_TOP + band*59, this.rushDir, 'halo');
+            const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== skip) : [laneOf(this.attackY)];
+            for (const band of bands) world.snowball(this.x, laneY(band), this.rushDir, 'halo');
             // Adds come from the roar and the phase timer only; the per-attack
             // telegraph no longer summons or the arena double-fills.
           } else if (Math.abs(b.x-this.x) < 95 && Math.abs(b.y-this.attackY) < 35 && b.z < 65) {
