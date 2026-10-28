@@ -5,6 +5,25 @@
 **Kimi:** merged below (score 6/10, `docs/REVIEW-KIMI.md`, reviewed `e99c7b0`).  
 **Commit reviewed:** `51b6de6` (Paint Yetti roles into KTX atlases).
 
+## Pass 1 status (Grok 4.7, branch `bdb-pass1-grok`)
+
+| ID | Status |
+|---|---|
+| **P0-1** | **Done.** Story player uses `STORY_MAX_MS` (90s), above every `STAGE_CLIPS` file. `tests/cutscene-cap.test.mjs` checks each clip. |
+| **P0-2** | Pending |
+| **P0-3** | Pending |
+| **P0-4** | Pending |
+| **P0-5** | Pending |
+| **K1** | Pending |
+| **P1-3** | Pending |
+| **P1-4** | Pending |
+| **P1-6** | Pending |
+| **P1-7** | Pending |
+| **P1-14** | Pending |
+| **P1-20** | **Done** on `bdb-scroll` `8c53d59` (private-origin remotes assertion). |
+| **K2** | Pending (press-ownership) |
+| Other P1/P2 | Deferred this pass unless noted above. |
+
 ## Locked rules (do not put conflicting items on this list)
 - Eggplant fires straight (`vy=0`); **no aiming**.
 - Locked lines stay word-for-word (`docs/BOB-LINES.md`, `src/voice-lines.js`), including Dad catchphrase.
