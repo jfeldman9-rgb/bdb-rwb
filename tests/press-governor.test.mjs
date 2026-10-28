@@ -61,3 +61,33 @@ test('a software-renderer downgrade uses the scene fx hooks without throwing', (
   assert.equal(st.bloom, false);
   assert.equal(st.lit, false);
 });
+
+test('story clips park the Phaser loop like the Dad call', async () => {
+  const scene = await readFile('src/game-scene.js', 'utf8');
+  assert.match(scene, /pauseForClip\(this\.game\)/);
+});
+
+test('a title-screen downgrade keeps the floor and lands on the fresh fx rig', () => {
+  const st = {
+    bloom: true, lit: true,
+    setBloom(on) { this.bloom = on; },
+    setBackdropLit(on) { this.lit = on; },
+    runId: 1, started: false,
+    cameras: { main: { setZoom() {} } },
+  };
+  const game = {
+    rs: 2,
+    scene: { getScene: () => st },
+    scale: { resize() {} },
+    renderer: { gl: null },
+  };
+  const gov = installGovernor(game, { q: { get: () => null }, rs0: 2, vw: 1280, vh: 720, meter: { lastSampleMs: 16 }, floor: 0, log() {} });
+  assert.doesNotThrow(() => game.keepLoweredQuality(true));
+  assert.equal(gov.level, 3);
+  assert.equal(st.bloom, false);
+  // Gameplay create() builds the fx rig; the next governor pass applies the kept tier.
+  st.fx = {};
+  st.started = true;
+  assert.doesNotThrow(() => game.governor());
+  assert.equal(st.fx.quality, 3);
+});

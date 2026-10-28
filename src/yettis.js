@@ -48,14 +48,17 @@ function laneLoad(enemies, lane, except) {
   }
   return n;
 }
-/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. */
+/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. Bosses hold their lane while their adds spread around them. */
 export function stepRangedLane(self, enemies, dy, speed, dt) {
+  if (self.boss) return;
   const mine = laneOf(self.y);
   if (self._laneGoal === mine) self._laneGoal = null;
   if (laneLoad(enemies, mine, self) >= MAX_RANGED_PER_LANE) {
     const pile = enemies.filter(e => e.alive && RANGED_TYPES.has(e.type) && (e._laneGoal ?? laneOf(e.y)) === mine);
-    pile.sort((a, b) => a.x - b.x || (a.id > b.id ? 1 : -1));
-    if (pile.slice(0, MAX_RANGED_PER_LANE).includes(self)) return;
+    // Pinned bosses keep their lane; the stay slots go to the leftmost others.
+    const rest = pile.filter(e => !e.boss).sort((a, b) => a.x - b.x || (a.id > b.id ? 1 : -1));
+    const pinned = pile.length - rest.length;
+    if (rest.slice(0, Math.max(0, MAX_RANGED_PER_LANE - pinned)).includes(self)) return;
     let best = -1, bestN = MAX_RANGED_PER_LANE;
     for (let i = 0; i < 3; i++) {
       if (i === mine) continue;
@@ -142,12 +145,14 @@ export class Yetti {
           let slammed = false;
           if (['guard','hover'].includes(this.type)) world.snowball(this.x, this.attackY, this.rushDir);
           else if (['choir','choirmaster'].includes(this.type)) {
-            const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== this.volley++ % 3) : [Math.round((this.attackY-LANE_TOP)/59)];
+            const skip = this.volley++ % 3;
+            const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== skip) : [Math.round((this.attackY-LANE_TOP)/59)];
             for (const band of bands) world.snowball(this.x, LANE_TOP + band*59, this.rushDir, 'halo');
-            if (this.type === 'choirmaster') world.summonAdds?.(BOSS_ADDS.choirmaster[this.phase - 1]);
+            // Adds come from the roar and the phase timer only; the per-attack
+            // telegraph no longer summons or the arena double-fills.
           } else if (Math.abs(b.x-this.x) < 95 && Math.abs(b.y-this.attackY) < 35 && b.z < 65) {
             if (['lecturer','interventionist'].includes(this.type) && b.grab(this)) { this.state = 'hold'; world.emit('voice','lecturer_intervention'); return; }
-            world.hurtBob();
+            world.hurtBob(false, this.x);
           } else if (this.type === 'interventionist' && this.phase >= 2) {
             // Phase III slams both ways, so backing off behind him is no longer safe.
             for (const dir of this.phase >= 3 ? [this.rushDir, -this.rushDir] : [this.rushDir]) world.snowball(this.x, this.attackY, dir, 'shockwave');
@@ -162,7 +167,7 @@ export class Yetti {
     }
     if (this.state === 'rush') {
       this.x += this.rushDir * 430 * pace * dt; this.timer -= dt;
-      if (Math.abs(b.x-this.x)<70 && Math.abs(b.y-this.y)<34 && b.z<70) world.hurtBob(true);
+      if (Math.abs(b.x-this.x)<70 && Math.abs(b.y-this.y)<34 && b.z<70) world.hurtBob(true, this.x);
       this.x = clamp(this.x, world.bounds.l+55, world.bounds.r-55);
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = this.boss ? 1 : 2; }
       return;

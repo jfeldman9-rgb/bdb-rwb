@@ -28,9 +28,9 @@ h1 span{color:#ddabec;font-size:1.25em}
 .touch .start{min-height:64px;font-size:clamp(18px,4.5vw,28px);padding:18px 22px}
 .footnote{margin-top:10px;font-size:clamp(9px,1vw,13px);color:#8c9fb9;letter-spacing:.02em;pointer-events:none}
 #boot{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#101421;letter-spacing:.18em;color:#f3cc91}
-#top-buttons{display:none;position:absolute;right:2%;top:17%;gap:8px;z-index:20}
+#top-buttons{display:none;position:absolute;right:max(2%,env(safe-area-inset-right));top:max(17%,env(safe-area-inset-top));gap:8px;z-index:20}
 .playing #top-buttons{display:flex}
-#top-buttons button{padding:7px 10px;font-size:12px;background:#101421b8}
+#top-buttons button{padding:7px 10px;font-size:12px;background:#101421b8;min-width:44px;min-height:44px}
 #touch{display:none;position:absolute;inset:0;pointer-events:none;z-index:15}
 .touch.playing #touch{display:block}
 #stick{position:absolute;left:max(3%,env(safe-area-inset-left));bottom:4%;width:18%;aspect-ratio:1;max-width:150px;border:2px solid #ccdfff66;border-radius:50%;background:#15223670;touch-action:none;pointer-events:auto;display:grid;place-items:center}

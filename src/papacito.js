@@ -45,6 +45,15 @@ export function papacitoEffect(state, enemies, context = {}) {
   const killed = result.finisher ? bosses.filter(e => e.alive) : visible.filter(e => !e.boss);
   if (!killed.length) return { allowed: false, reason: 'empty', finisher: false, killed: [], score: 0 };
   state.charges = result.charges;
+  // Delayed wipe: the runner front staggers the crowd first, and the kills
+  // land when the runners arrive instead of on the activation frame.
+  if (context.delay > 0) {
+    for (const e of killed) {
+      e.stun = Math.max(e.stun || 0, context.delay + 0.2);
+      if (!e.boss) e.state = 'hurt';
+    }
+    return { ...result, killed, score: result.finisher ? 4000 : killed.length * 500, delayed: true };
+  }
   for (const e of killed) { e.hp = 0; e.alive = false; e.state = 'dead'; }
   return { ...result, killed, score: result.finisher ? 4000 : killed.length * 500 };
 }

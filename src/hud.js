@@ -2,6 +2,14 @@ import { MASH_NEED } from './bob.js';
 export { MASH_NEED } from './bob.js';
 export const speakerColor = who => who==='Dad'?'#ffe3a3':who==='Narrator'?'#c8d4ee':'#ffc6df';
 export const bossLabel = w => w.bossActive ? `${w.def.boss.name} · PHASE ${w.wingmen?.phase||w.enemies.find(e=>e.boss)?.phase||1}` : '';
+/** Boss HP bars: one per Wingman when the pair is out, else the shared bar. Pure for tests. */
+export function bossBars(w){
+  const bosses=w.enemies.filter(e=>e.boss&&e.alive);
+  const wings=bosses.filter(e=>e.type==='wingman');
+  if(wings.length>1)return wings.map(e=>({label:e.role===2?'W2':'W1',ratio:e.hp/e.maxHp}));
+  if(bosses.length)return [{label:'BOSS',ratio:bosses.reduce((n,e)=>n+e.hp,0)/bosses.reduce((n,e)=>n+e.maxHp,0)}];
+  return [];
+}
 export const mashRing = b => ({visible:b.state==='grabbed',progress:Math.min(1,b.grabMash/MASH_NEED)});
 export function stagePrompt(w){
   if(w.bob.state==='grabbed')return `MASH ANY BUTTON  ${Math.min(6,Math.floor(w.bob.grabMash))}/6`;
@@ -32,8 +40,8 @@ export class HUD {
   this.boss.setText(bossLabel(w));
   this.prompt.setText(stagePrompt(w));
   if(performance.now()>this.captionUntil)this.caption.setText('');
-  const g=this.g;g.clear();g.fillStyle(0x101421,.92);g.fillRect(0,0,1280,116);g.lineStyle(1,0xbfa875,.55);g.lineBetween(0,116,1280,116);
-  const bosses=w.enemies.filter(e=>e.boss&&e.alive);if(bosses.length){const ratio=bosses.reduce((n,e)=>n+e.hp,0)/bosses.reduce((n,e)=>n+e.maxHp,0);g.fillStyle(0x372947);g.fillRoundedRect(390,79,500,13,5);g.fillStyle(0xd6a2ff);g.fillRoundedRect(390,79,Math.max(3,500*ratio),13,5);}
+  const g=this.g;g.clear();g.fillStyle(0x101421,.55);g.fillRect(0,0,1280,116);g.lineStyle(1,0xbfa875,.55);g.lineBetween(0,116,1280,116);
+  for(const [i,b]of bossBars(w).entries()){const y=79+i*16;g.fillStyle(0x372947);g.fillRoundedRect(390,y,500,13,5);g.fillStyle(0xd6a2ff);g.fillRoundedRect(390,y,Math.max(3,500*b.ratio),13,5);}
   if(w.bob.state==='grabbed'){g.lineStyle(8,0xffdc8c);g.beginPath();g.arc(640,620,32,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,w.bob.grabMash/6));g.strokePath();}
   for(const [id,label,count]of [['tbPapi','PAPI',w.papi.charges],['tbDad','DAD',w.dadCall.charges]]){const el=document.getElementById(id);if(el){el.textContent=`${label} ${count}`;el.classList.toggle('empty',!count);}}
  }

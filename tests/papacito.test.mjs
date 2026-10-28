@@ -5,3 +5,21 @@ test('packet: Papacito requires exactly two weakened live Wingmen and never wast
 test('wipe KOs visible non-bosses only and awards 500 each',()=>{const enemies=[{x:200,alive:true,hp:48},{x:1500,alive:true,hp:48},{x:800,alive:true,hp:216,boss:true}];const s={charges:1};const r=papacitoEffect(s,enemies);assert.equal(r.killed.length,1);assert.equal(r.score,500);assert.equal(enemies[1].alive,true);assert.equal(enemies[2].hp,216);assert.equal(s.charges,0);});
 test('every refusal is free, including boss-only phase 1 and 2 arenas',()=>{for(const c of [{paused:true},{cutscene:true},{dadActive:true},{active:true},{dead:true},{victory:true}]){const s={charges:1};assert.equal(papacitoEffect(s,[{alive:true,x:200}],c).allowed,false);assert.equal(s.charges,1);}for(const enemies of [[],[{alive:true,boss:true,hp:216,x:300}]]){const s={charges:1};assert.equal(papacitoEffect(s,enemies,{phase:2}).allowed,false);assert.equal(s.charges,1);}});
 test('finisher removes both Wingmen and grants 4000 only when ready',()=>{const es=[{alive:true,boss:true,hp:1,x:100},{alive:true,boss:true,hp:2,x:600}],s={charges:1};assert.equal(papacitoEffect(s,es,{phase:3}).allowed,false);assert.equal(s.charges,1);es[1].hp=1;const r=papacitoEffect(s,es,{phase:3});assert.equal(r.finisher,true);assert.equal(r.score,4000);assert.ok(es.every(e=>!e.alive));});
+test('delayed wipe staggers first and kills on the runner front',()=>{
+ const enemies=[{x:200,alive:true,hp:48,stun:0,state:'approach'}];const s={charges:1};
+ const r=papacitoEffect(s,enemies,{delay:.45});
+ assert.equal(r.delayed,true);assert.equal(enemies[0].alive,true);assert.equal(enemies[0].state,'hurt');assert.ok(enemies[0].stun>=.45);
+});
+test('campaign papi shout comes first; the wipe lands with the runners',async()=>{
+ const{Campaign}=await import('../src/campaign.js');
+ const w=new Campaign();w.bob.x=300;w.enterZone();
+ for(const e of w.enemies)e.cooldown=99;
+ w.papi.charges=1;w.events=[];
+ assert.equal(w.usePapi(),true);
+ assert.ok(w.enemies.some(e=>e.alive),'crowd still standing at the shout');
+ assert.equal(w.stats.kos,0);
+ const frames=Math.ceil(0.45*60)+2;
+ for(let i=0;i<frames;i++)w.update(1/60,{});
+ assert.ok(w.stats.kos>0,'wipe landed after the delay');
+ assert.ok(w.events.some(e=>e.type==='ko'));
+});

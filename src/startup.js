@@ -1,5 +1,6 @@
 // DOM-only startup recovery. Keep this independent of Phaser so a graphics or
 // module-load failure cannot strand the player behind an endless loading label.
+import { resumeGame } from './recovery.js';
 export function createStartupGuard(root = globalThis) {
   const doc = root.document;
   const byId = id => doc?.getElementById(id);
@@ -51,7 +52,9 @@ export function createStartupGuard(root = globalThis) {
     },
     destroy() { detach(); byId('startup-retry')?.removeEventListener('click', reload); },
   };
-  const reload = () => root.location?.reload();
+  // The Reload card reopens the running stage instead of the title when a
+  // stage was already in progress; otherwise it is a plain reload.
+  const reload = () => { try { resumeGame(root, root.__game); } catch (e) { root.location?.reload(); } };
   byId('startup-retry')?.addEventListener('click', reload);
   // Boot's create hook can run after the module import has resolved. Capture
   // those startup errors too, ignoring unrelated extension-origin errors.

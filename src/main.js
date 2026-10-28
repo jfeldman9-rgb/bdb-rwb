@@ -14,6 +14,7 @@ import { perf, bindPerfLifecycle } from './perf.js';
 import { wireTitleStart } from './title-start.js';
 import { installPressOwnership } from './press-ownership.js';
 import { installGovernor, readQualityFloor } from './quality-governor.js';
+import { installResumeCleanup } from './recovery.js';
 
 class Boot extends Phaser.Scene {
  constructor(){super('boot');}
@@ -46,7 +47,7 @@ class Title extends Phaser.Scene {
    this.begin();
   }
  }
- update(t,delta){this.game.inp.update(delta/1000);if(this.game.inp.take('start')||this.game.inp.take('fire'))this.begin();}
+ update(t,delta){this.game.inp.update(delta/1000);if(this.game.inp.take('start')||this.game.inp.take('fire')||this.game.inp.take('pause'))this.begin();}
 }
 export function bootGame(){
  registerVoiceLines();const game=new Phaser.Game({type:Phaser.WEBGL,parent:'game',width:VW,height:VH,backgroundColor:'#101421',resolution:RS0,
@@ -54,6 +55,7 @@ export function bootGame(){
   callbacks:{preBoot:g=>{g.inp=new Input();installPressOwnership(g.inp);g.story=createStoryPlayer(q,globalThis,g.inp);}},audio:{noAudio:true}});
  window.__game=game;installViewportFit(game);game.rs=RS0;window.__bdbPerf=perf;bindPerfLifecycle(perf);installAudioLifecycle(game);
  installGovernor(game,{q,rs0:RS0,vw:VW,vh:VH,meter:perf,floor:readQualityFloor()});
+ installResumeCleanup(game,q);
  const notice=installGraphicsNotice();installGraphicsLifecycle({game,getStage:()=>game.scene.getScene('gameplay'),onLost:()=>notice.lost(),onRestored:()=>notice.restored()});
  const pause=()=>{const scene=game.scene.getScene('gameplay');if(scene?.world)scene.setPauseReason('manual',!scene.pauseReasons.has('manual'));};
  document.getElementById('pause').onclick=pause;document.getElementById('mute').onclick=()=>{toggleMute();document.getElementById('mute').textContent=isMuted()?'Sound off':'Sound on';};

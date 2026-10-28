@@ -46,7 +46,7 @@ export class Wingman {
     } else if (this.state === 'telegraph') {
       if (this.phase === 2) {
         this.x = this.attackX; this.y = this.attackY; this.z = 0;
-        if (Math.abs(world.bob.x-this.x)<110 && Math.abs(world.bob.y-this.y)<32 && world.bob.z<90) world.hurtBob(true);
+        if (Math.abs(world.bob.x-this.x)<110 && Math.abs(world.bob.y-this.y)<32 && world.bob.z<90) world.hurtBob(true, this.x);
         for (const dir of [-1,1]) world.snowball(this.x,this.y,dir,'shockwave');
         world.banner('THE FLOOR LEFT THE CHAT.');
       } else for (let i=0;i<3;i++) if (i!==this.safeBand) world.snowball(this.x,LANE_TOP+i*59,this.facing,'halo');
