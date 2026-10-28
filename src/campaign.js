@@ -1,5 +1,5 @@
 import { Bob } from './bob.js';
-import { fireGun, stepShot } from './eggplant.js';
+import { fireGun, stepShot, GUN } from './eggplant.js';
 import { Yetti } from './yettis.js';
 import { Wingmen } from './wingman.js';
 import { collectShake, papacitoEffect } from './papacito.js';
@@ -32,7 +32,7 @@ export class Campaign {
   dropTrio(x) { for (let i=0;i<3;i++) this.pickups.push({ x: clamp(x+i*35,this.bounds.l+65,this.bounds.r-65), y: 630, kind: 'shake' }); }
   spawnWave() {
     const zone=this.def.zones[this.zoneIndex], wave=zone.waves[this.waveIndex];
-    this.enemies = wave.map((type,i)=>new Yetti(type,zone.l+780+i*105,590+(i%3)*40));
+    this.enemies = wave.map((type,i)=>new Yetti(type,zone.l+780+i*105,630+((i%3)-1)*24));
     const tutorial = this.stageNo===1 && this.save.bestScore===0 && !this.seenTutorials.has(this.zoneIndex);
     this.banner(tutorial ? TUTORIALS[this.zoneIndex] : `ZONE ${this.zoneIndex+1} · WAVE ${this.waveIndex+1}`);
     if(tutorial)this.seenTutorials.add(this.zoneIndex);
@@ -66,7 +66,7 @@ export class Campaign {
   }
   hit(e,damage,dir,bonk) {
     const result=e.takeHit(damage,dir,bonk);
-    if (result.blocked) { this.emit('shield',{x:e.x,y:e.y}); return; }
+    if (result.blocked) { this.emit('shield',{x:e.x,y:e.y}); if (result.shieldBroke) this.banner(STORY.shield); return; }
     if (result.accepted) { this.hitStop=4/60; this.emit('hit',{x:e.x,y:e.y,bonk}); }
     if (result.phase) {
       this.checkpoint.phase=result.phase; this.stats.phases.push(`${this.stageNo}:${result.phase}`);
@@ -125,8 +125,8 @@ export class Campaign {
       if(this.zoneIndex<3&&this.bob.x>=this.def.zones[this.zoneIndex].at)this.enterZone();
       else if(this.zoneIndex===3&&this.bob.x>=this.def.boss.at)this.startBoss();
     }
-    if(this.bob.dashTime>0)for(const e of this.enemies)if(e.alive&&Math.abs(e.x-this.bob.x)<85&&Math.abs(e.y-this.bob.y)<42&&e.breakShield?.())this.banner(STORY.shield);
-    const auto=this.save.autoFire && this.enemies.some(e=>e.alive&&(e.x-this.bob.x)*this.bob.facing>0&&Math.abs(e.y-this.bob.y)<42);
+    if(this.bob.dashTime>0)for(const e of this.enemies)if(e.alive&&Math.abs(e.x-this.bob.x)<85&&Math.abs(e.y-this.bob.y)<GUN.band&&e.breakShield?.())this.banner(STORY.shield);
+    const auto=this.save.autoFire && this.enemies.some(e=>e.alive&&(e.x-this.bob.x)*this.bob.facing>0&&Math.abs(e.y-this.bob.y)<GUN.band);
     const fired=fireGun(this.gun,dt,input.fire||auto,this.bob,this.enemies,this.difficulty.damage);
     if(fired){this.stats.shots++;this.emit('fire');if(fired.bonk)this.hit(fired.bonk,fired.damage,this.bob.facing,true);else this.projectiles.push(fired.shot);}
     for(const p of this.projectiles)stepShot(p,dt,this.enemies,(...args)=>this.hit(...args),this.camX);

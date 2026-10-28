@@ -23,14 +23,22 @@ export class Yetti {
   get canBeHit() { return this.alive && this.state !== 'split'; }
   takeHit(damage, dir, bonk = false) {
     if (!this.canBeHit) return { accepted: false };
-    if (this.shield && dir === -this.facing) return { accepted: false, blocked: true };
+    // Front shield blocks, but three eggplants shatter it so a phone player is never soft-locked.
+    if (this.shield && dir === -this.facing) {
+      this.shieldHits = (this.shieldHits || 0) + 1;
+      if (this.shieldHits >= 3) {
+        this.breakShield();
+        return { accepted: false, blocked: true, shieldBroke: true };
+      }
+      return { accepted: false, blocked: true };
+    }
     this.hp = Math.max(0, this.hp - damage);
     if (this.hp === 0 && this.boss && this.phase === 1) { this.phase = 2; this.hp = this.maxHp; return { accepted: true, phase: 2 }; }
     if (this.hp === 0) { this.alive = false; this.state = 'dead'; }
     else if (!this.boss) { this.state = 'hurt'; this.stun = bonk ? .4 : .14; this.x += dir * (bonk ? 65 : 12); }
     return { accepted: true, killed: !this.alive };
   }
-  breakShield() { if (!this.shield) return false; this.shield = false; this.state = 'hurt'; this.stun = .5; return true; }
+  breakShield() { if (!this.shield) return false; this.shield = false; this.shieldHits = 0; this.state = 'hurt'; this.stun = .5; return true; }
   update(dt, world) {
     if (!this.alive) return;
     const b = world.bob, pace = world.difficulty.pace, buff = choirMultiplier(this, world.enemies);

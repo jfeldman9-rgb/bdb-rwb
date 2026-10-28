@@ -1,4 +1,4 @@
-export const GUN = Object.freeze({ speed: 680, interval: .2, damage: 12, band: 42, bonkRange: 90 });
+export const GUN = Object.freeze({ speed: 680, interval: .2, damage: 12, band: 56, bonkRange: 90 });
 export function createShot(bob, multiplier = 1) {
   return { x: bob.x + bob.facing * 58, y: bob.y - bob.z - 150, gy: bob.y, dir: bob.facing,
     vx: bob.facing * GUN.speed, vy: 0, damage: GUN.damage * multiplier, alive: true, age: 0 };
