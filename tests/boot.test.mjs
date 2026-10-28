@@ -33,5 +33,12 @@ test('git remotes stay private (none, or only origin→jfeldman9-rgb/bdb-rwb)',(
  const out=execFileSync('git',['remote','-v'],{encoding:'utf8'}).trim();
  if(!out) return;
  const lines=out.split(/\n/).filter(Boolean);
- assert.ok(lines.every(l=>/^origin\thttps:\/\/github\.com\/jfeldman9-rgb\/bdb-rwb\.git \((fetch|push)\)$/.test(l)),out);
+ const repo='https://github.com/jfeldman9-rgb/bdb-rwb';
+ const ok=lines.every(l=>{
+  const m=l.match(/^origin\t(\S+) \((fetch|push)\)$/);
+  if(!m) return false;
+  const url=m[1].replace(/\.git$/,'').replace(/^https:\/\/[^/@]+@/,'https://');
+  return url===repo;
+ });
+ assert.ok(ok, lines.map(l=>l.replace(/\/\/[^/\s]+@/,'//')).join('\n'));
 });
