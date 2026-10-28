@@ -65,7 +65,7 @@ export class GameScene extends Phaser.Scene {
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
   this.game.inp.clear();preloadClips(stageLines(this.stageNo));playTrack(`stage${this.stageNo}`);
   this.events.once('shutdown',()=>{abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
-  this.syncViews();this.hud.update(this.world);
+  this.syncViews();this.handleEvents();this.hud.update(this.world);
  }
  setBloom(on){this.bloomEnabled=!!on;}
  setBackdropLit(on){this.backdropLit=on!==false;}
@@ -163,8 +163,8 @@ export class GameScene extends Phaser.Scene {
   if(inp.take('pause'))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
   this.accumulator+=dt;
   while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
-  this.handleEvents();
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
+  this.handleEvents();
   this.syncViews(dt);this.fx?.update(dt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(dt);this.stepDust(dt);}if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);
   perf.tick(performance.now(),{active:!w.paused&&!w.victory,inFight:w.locked&&!w.papiTime&&!w.dad,context:{stage:this.stageNo,mode:w.bossActive?'boss':'stage'}});
   this.game.governor?.();
