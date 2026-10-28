@@ -43,7 +43,10 @@ export class Bob {
       this.stateTime -= dt;
       if (this.difficulty === 'story') this.mash(3.5 * dt);
       if (this.state === 'grabbed' && (!this.grabbedBy?.alive || this.stateTime <= 0)) {
-        this.grabbedBy = null; this.setState('idle'); this.takeHit();
+        const grabber = this.grabbedBy;
+        // A dead grabber just lets go. A timeout is punished by the campaign via hurtBob.
+        this.grabPunish = this.stateTime <= 0 && grabber?.alive ? grabber : null;
+        this.grabbedBy = null; this.setState('idle');
       }
     } else if (this.busy) {
       this.stateTime -= dt;

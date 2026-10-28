@@ -331,6 +331,7 @@ export class Campaign {
     tickDadCall(this.dadCall,dt);
     if(this.bob.state==='grabbed' && input.presses){if(this.bob.mash(input.presses))this.banner(STORY.mash); input={};}
     this.bob.update(dt,input,moveBounds(this,this.bob.x));
+    if(this.bob.grabPunish){const g=this.bob.grabPunish;this.bob.grabPunish=null;this.hurtBob(false,g?.x);}
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
