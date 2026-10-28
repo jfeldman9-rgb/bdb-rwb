@@ -1,0 +1,383 @@
+{
+  "project": "bdb-rwb",
+  "generated": "2026-10-27 America/Phoenix",
+  "model": "eleven_multilingual_v2",
+  "format": "mono 24kHz 64kbps mp3 + loudnorm",
+  "cast": {
+    "Bob": {
+      "voice_id": "QZ1okeFI43NQd6lXAzQ5",
+      "name": "Michael Dalton - Modern Male Lead",
+      "reason": "Cool charismatic all-American lead; fits comic Big Dick Bob"
+    },
+    "Dad": {
+      "voice_id": "UZvBfqEdvCFLqsBOo9Zr",
+      "name": "Jerry B. - Conversational Boston Accent",
+      "reason": "Born-and-raised Boston; natural New England for older dad + catchphrase"
+    },
+    "Claudia": {
+      "voice_id": "5GR0JTHRVmv00OeaRI9u",
+      "name": "Maria - Playful Colombian Woman",
+      "reason": "Fluent English with smooth Colombian accent; playful sorta-girlfriend"
+    },
+    "Papi1": {
+      "voice_id": "Nggzl2QAXh3OijoXD116",
+      "name": "Candy - Girly and Sweet",
+      "reason": "Bubbly excited young woman for Papi yell layer 1"
+    },
+    "Papi2": {
+      "voice_id": "bshPAWYM9E3kueiqa6gJ",
+      "name": "Kate - Surprised & Excited",
+      "reason": "Bright surprised energy for Papi yell layer 2"
+    },
+    "Papi3": {
+      "voice_id": "wrxvN1LZJIfL3HHvffqe",
+      "name": "Bella - Bubbly Best Friend",
+      "reason": "Lively energetic layer 3 for chorus"
+    },
+    "Wingman": {
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "name": "Cornelius - Wise Sage",
+      "reason": "Comic angelic council authority"
+    },
+    "Interventionist": {
+      "voice_id": "L1aJrPa7pLJEyYlh3Ilq",
+      "name": "Oliver Haddington",
+      "reason": "Warm kind British with whimsical humor for therapy-lecturer mini-boss"
+    },
+    "Choirmaster": {
+      "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+      "name": "George - Warm Captivating Storyteller",
+      "reason": "Warm resonant conductor/choir feel"
+    },
+    "Yetti": {
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "name": "Daniel - Steady Broadcaster",
+      "reason": "Authoritative comic angel grunt / alert lines"
+    },
+    "Narrator": {
+      "voice_id": null,
+      "name": "Jason IndexTTS clone",
+      "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav \u2014 not quick this pass"
+    }
+  },
+  "credits": {
+    "jobs_batch_est": 560,
+    "samples_pass_est": 280,
+    "total_est": 840,
+    "note": "Creative TTS ~1 credit/char; samples double as first prod for 8 lines; no re-render of those"
+  },
+  "line_count": {
+    "rendered_prod": 32,
+    "present": 29,
+    "narrator_pending": 8
+  },
+  "present": [
+    "bdb_open",
+    "bdb_produce",
+    "bdb_laugh",
+    "claudia_open",
+    "claudia_question",
+    "claudia_leave",
+    "yetti_turnback",
+    "choir_serious",
+    "lecturer_intervention",
+    "wingman_council",
+    "dad_call_01",
+    "dad_call_02",
+    "dad_call_03",
+    "dad_done_01",
+    "dad_done_02",
+    "dad_catchphrase",
+    "papi_chorus",
+    "bob_papi_01",
+    "bob_hurt_01",
+    "bob_hurt_02",
+    "bob_hurt_03",
+    "bob_respawn_01",
+    "bob_dadwait_01",
+    "bob_papiwait_01",
+    "wingman_phase2",
+    "wingman_phase3",
+    "wingman_defeat",
+    "interventionist_intro",
+    "choirmaster_intro"
+  ],
+  "narrator_pending": [
+    "nar_intro_01",
+    "nar_intro_02",
+    "nar_intro_03",
+    "nar_kidnap",
+    "nar_ch1",
+    "nar_ch2",
+    "nar_ch3",
+    "nar_victory"
+  ],
+  "samples_for_jason": [
+    "assets/audio/voice/samples/sample_bob.mp3",
+    "assets/audio/voice/samples/sample_choirmaster.mp3",
+    "assets/audio/voice/samples/sample_claudia.mp3",
+    "assets/audio/voice/samples/sample_dad.mp3",
+    "assets/audio/voice/samples/sample_interventionist.mp3",
+    "assets/audio/voice/samples/sample_papi1.mp3",
+    "assets/audio/voice/samples/sample_wingman.mp3",
+    "assets/audio/voice/samples/sample_yetti.mp3"
+  ],
+  "files": [
+    {
+      "id": "bdb_laugh",
+      "path": "assets/audio/voice/bdb_laugh.mp3",
+      "bytes": 15596,
+      "speaker": "Bob",
+      "text": "Ha! Ha ha ha! Ha ha!",
+      "source": "job"
+    },
+    {
+      "id": "bdb_open",
+      "path": "assets/audio/voice/bdb_open.mp3",
+      "bytes": 11948,
+      "speaker": "Bob",
+      "text": "I brought options.",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "bdb_produce",
+      "path": "assets/audio/voice/bdb_produce.mp3",
+      "bytes": 10412,
+      "speaker": "Bob",
+      "text": "Legally, it's produce.",
+      "source": "job"
+    },
+    {
+      "id": "bob_dadwait_01",
+      "path": "assets/audio/voice/bob_dadwait_01.mp3",
+      "bytes": 11948,
+      "speaker": "Bob",
+      "text": "Dad's on his coffee break.",
+      "source": "job"
+    },
+    {
+      "id": "bob_hurt_01",
+      "path": "assets/audio/voice/bob_hurt_01.mp3",
+      "bytes": 5228,
+      "speaker": "Bob",
+      "text": "Oof!",
+      "source": "job"
+    },
+    {
+      "id": "bob_hurt_02",
+      "path": "assets/audio/voice/bob_hurt_02.mp3",
+      "bytes": 5612,
+      "speaker": "Bob",
+      "text": "Ow!",
+      "source": "job"
+    },
+    {
+      "id": "bob_hurt_03",
+      "path": "assets/audio/voice/bob_hurt_03.mp3",
+      "bytes": 5228,
+      "speaker": "Bob",
+      "text": "Ugh!",
+      "source": "job"
+    },
+    {
+      "id": "bob_papi_01",
+      "path": "assets/audio/voice/bob_papi_01.mp3",
+      "bytes": 18860,
+      "speaker": "Bob",
+      "text": "Ladies, please. One at a time.",
+      "source": "job"
+    },
+    {
+      "id": "bob_papiwait_01",
+      "path": "assets/audio/voice/bob_papiwait_01.mp3",
+      "bytes": 10412,
+      "speaker": "Bob",
+      "text": "Need more protein.",
+      "source": "job"
+    },
+    {
+      "id": "bob_respawn_01",
+      "path": "assets/audio/voice/bob_respawn_01.mp3",
+      "bytes": 20780,
+      "speaker": "Bob",
+      "text": "I'm fine. I'm great. That was on purpose.",
+      "source": "job"
+    },
+    {
+      "id": "choir_serious",
+      "path": "assets/audio/voice/choir_serious.mp3",
+      "bytes": 11180,
+      "speaker": "Choirmaster",
+      "text": "Papi, be serious.",
+      "source": "job"
+    },
+    {
+      "id": "choirmaster_intro",
+      "path": "assets/audio/voice/choirmaster_intro.mp3",
+      "bytes": 16748,
+      "speaker": "Choirmaster",
+      "text": "From the top! And-a-one, and-a\u2014",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "claudia_leave",
+      "path": "assets/audio/voice/claudia_leave.mp3",
+      "bytes": 15596,
+      "speaker": "Claudia",
+      "text": "Let's leave before they reform.",
+      "source": "job"
+    },
+    {
+      "id": "claudia_open",
+      "path": "assets/audio/voice/claudia_open.mp3",
+      "bytes": 31148,
+      "speaker": "Claudia",
+      "text": "Bob. Winged Yettis locked me in Moonlit Keep.",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "claudia_question",
+      "path": "assets/audio/voice/claudia_question.mp3",
+      "bytes": 13676,
+      "speaker": "Claudia",
+      "text": "Is that what I think it is?",
+      "source": "job"
+    },
+    {
+      "id": "dad_call_01",
+      "path": "assets/audio/voice/dad_call_01.mp3",
+      "bytes": 13292,
+      "speaker": "Dad",
+      "text": "Bobby! Get behind me, kid!",
+      "source": "job"
+    },
+    {
+      "id": "dad_call_02",
+      "path": "assets/audio/voice/dad_call_02.mp3",
+      "bytes": 23660,
+      "speaker": "Dad",
+      "text": "Yettis? In this economy? Get outta heah!",
+      "source": "job"
+    },
+    {
+      "id": "dad_call_03",
+      "path": "assets/audio/voice/dad_call_03.mp3",
+      "bytes": 20780,
+      "speaker": "Dad",
+      "text": "Wicked big swattah, wicked small bird-bums.",
+      "source": "job"
+    },
+    {
+      "id": "dad_catchphrase",
+      "path": "assets/audio/voice/dad_catchphrase.mp3",
+      "bytes": 36716,
+      "speaker": "Dad",
+      "text": "Son, sometimes you just need to use the fly swatter to keep the women away!",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "dad_done_01",
+      "path": "assets/audio/voice/dad_done_01.mp3",
+      "bytes": 11180,
+      "speaker": "Dad",
+      "text": "Call ya mothah.",
+      "source": "job"
+    },
+    {
+      "id": "dad_done_02",
+      "path": "assets/audio/voice/dad_done_02.mp3",
+      "bytes": 17516,
+      "speaker": "Dad",
+      "text": "BDB, baby. It's on the swattah.",
+      "source": "job"
+    },
+    {
+      "id": "interventionist_intro",
+      "path": "assets/audio/voice/interventionist_intro.mp3",
+      "bytes": 37100,
+      "speaker": "Interventionist",
+      "text": "Bob. We all love you. That's why we're here.",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "lecturer_intervention",
+      "path": "assets/audio/voice/lecturer_intervention.mp3",
+      "bytes": 15212,
+      "speaker": "Interventionist",
+      "text": "This is an intervention.",
+      "source": "job"
+    },
+    {
+      "id": "papi_chorus",
+      "path": "assets/audio/voice/papi_chorus.mp3",
+      "bytes": 14444,
+      "speaker": "Papi1/Candy",
+      "text": "Papi! Papi! PAPI!",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "papi_chorus_01",
+      "path": "assets/audio/voice/papi_chorus_01.mp3",
+      "bytes": 14444,
+      "speaker": "Papi1/Candy",
+      "text": "Papi! Papi! PAPI!",
+      "source": "alias of papi_chorus"
+    },
+    {
+      "id": "papi_chorus_02",
+      "path": "assets/audio/voice/papi_chorus_02.mp3",
+      "bytes": 12908,
+      "speaker": "Papi2/Kate",
+      "text": "Papi! Papi! PAPI!",
+      "source": "job"
+    },
+    {
+      "id": "papi_chorus_03",
+      "path": "assets/audio/voice/papi_chorus_03.mp3",
+      "bytes": 11564,
+      "speaker": "Papi3/Bella",
+      "text": "Papi! Papi! PAPI!",
+      "source": "job"
+    },
+    {
+      "id": "wingman_council",
+      "path": "assets/audio/voice/wingman_council.mp3",
+      "bytes": 18476,
+      "speaker": "Wingman",
+      "text": "The council denies this rescue.",
+      "source": "sample\u2192prod"
+    },
+    {
+      "id": "wingman_defeat",
+      "path": "assets/audio/voice/wingman_defeat.mp3",
+      "bytes": 18092,
+      "speaker": "Wingman",
+      "text": "We'll\u2026 reform.",
+      "source": "job"
+    },
+    {
+      "id": "wingman_phase2",
+      "path": "assets/audio/voice/wingman_phase2.mp3",
+      "bytes": 24428,
+      "speaker": "Wingman",
+      "text": "This is a divine performance review.",
+      "source": "job"
+    },
+    {
+      "id": "wingman_phase3",
+      "path": "assets/audio/voice/wingman_phase3.mp3",
+      "bytes": 29228,
+      "speaker": "Wingman",
+      "text": "Two wingmen. One terrible plan.",
+      "source": "job"
+    },
+    {
+      "id": "yetti_turnback",
+      "path": "assets/audio/voice/yetti_turnback.mp3",
+      "bytes": 11180,
+      "speaker": "Yetti",
+      "text": "Turn back Papi!",
+      "source": "sample\u2192prod"
+    }
+  ]
+}

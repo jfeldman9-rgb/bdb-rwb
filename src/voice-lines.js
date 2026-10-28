@@ -15,6 +15,6 @@ export const LINES = {
  bob_hurt_01:['Bob','Oof!'],bob_hurt_02:['Bob','Ow!'],bob_hurt_03:['Bob','Ugh!'],bob_respawn_01:['Bob',"I'm fine. I'm great. That was on purpose."],bob_dadwait_01:['Bob',"Dad's on his coffee break."],bob_papiwait_01:['Bob','Need more protein.'],
  wingman_phase2:['Wingman','This is a divine performance review.'],wingman_phase3:['Wingman','Two wingmen. One terrible plan.'],wingman_defeat:['Wingman',"We'll… reform."],interventionist_intro:['Interventionist',"Bob. We all love you. That's why we're here."],choirmaster_intro:['Choirmaster','From the top! And-a-one, and-a—'],
 };
-export const PRESENT = ['bdb_open','bdb_produce','bdb_laugh','claudia_open','claudia_question','claudia_leave','yetti_turnback','choir_serious','lecturer_intervention','wingman_council'];
+export const PRESENT = ["bdb_open", "bdb_produce", "bdb_laugh", "claudia_open", "claudia_question", "claudia_leave", "yetti_turnback", "choir_serious", "lecturer_intervention", "wingman_council", "dad_call_01", "dad_call_02", "dad_call_03", "dad_done_01", "dad_done_02", "dad_catchphrase", "papi_chorus", "bob_papi_01", "bob_hurt_01", "bob_hurt_02", "bob_hurt_03", "bob_respawn_01", "bob_dadwait_01", "bob_papiwait_01", "wingman_phase2", "wingman_phase3", "wingman_defeat", "interventionist_intro", "choirmaster_intro"];
 export const stageLines = n => Object.keys(LINES).filter(id=>!/^nar_ch/.test(id)||id===`nar_ch${n}`);
 export function registerVoiceLines(){registerLines(LINES);setVoiceFiles(Object.keys(LINES),PRESENT);}
