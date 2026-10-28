@@ -82,6 +82,8 @@ test('a missing chapter file still raises the card after the title is ready', ()
   assert.equal(guard.fail(null, 'assets'), true);
   assert.equal(els['startup-error'].hidden, false);
   assert.match(els['startup-code'].textContent, /REQUIRED_ASSET_FAILED/);
+  assert.doesNotMatch(els['startup-description'].textContent, /before the title screen/);
+  assert.match(els['startup-description'].textContent, /chapter/i);
 });
 
 function freezeRig() {
@@ -122,17 +124,93 @@ test('a stalled gameplay loop shows the stuck card; a pause does not', () => {
   guard.destroy();
 });
 
-test('a gameplay error shows the stuck card; a boot error and a foreign error do not', () => {
+test('a repeated gameplay error shows the stuck card; one error, a boot error, a foreign error, and an empty filename do not', () => {
   const { els, errors, gameplay, guard } = freezeRig();
   errors[0]({ error: new Error('boot'), filename: 'https://x.test/src/main.js' });
   assert.equal(els['startup-error'], undefined);
   gameplay.started = true;
   errors[0]({ error: new Error('boom'), filename: 'https://evil.test/x.js' });
-  assert.equal(els['startup-error'], undefined);
+  errors[0]({ error: new Error('script'), filename: '' });
+  errors[0]({ error: new Error('script') });
   errors[0]({ error: new Error('boom'), filename: 'https://x.test/src/campaign.js' });
+  assert.equal(els['startup-error'], undefined, 'one stray error while the loop can still run');
+  errors[0]({ error: new Error('boom again'), filename: 'https://x.test/src/campaign.js' });
   assert.equal(els['startup-error'].hidden, false);
   assert.match(els['startup-description'].textContent, /picks up at the start of this stage/);
   guard.destroy();
+});
+
+test('a preload longer than the freeze limit does not show the stuck card', () => {
+  const { els, now, timers, gameplay, game } = freezeRig();
+  gameplay.started = true;
+  gameplay.load = { isLoading: () => true };
+  game.beat();
+  now(20000);
+  timers[0]();
+  assert.equal(els['startup-error'], undefined, 'a slow chapter load is not a stall');
+  gameplay.started = false;
+  gameplay.load = { isLoading: () => false };
+  now(40000);
+  timers[0]();
+  assert.equal(els['startup-error'], undefined, 'init/preload has not started the stage');
+  gameplay.started = true;
+  now(40000 + 8001);
+  timers[0]();
+  assert.equal(els['startup-error'].hidden, false, 'a stall after the load still raises the card');
+});
+
+test('a stage is not marked started until create finishes', async () => {
+  globalThis.Phaser = globalThis.Phaser || { Scene: class {} };
+  const { GameScene } = await import('../src/game-scene.js');
+  const scene = Object.create(GameScene.prototype);
+  scene.game = { runSeq: 0 };
+  scene.init({ world: { stageNo: 2 } });
+  assert.equal(scene.started, false);
+  assert.match(String(GameScene.prototype.create), /this\.started=true/);
+});
+
+test('showStuck does not stack a second Reload listener', () => {
+  let n = 0;
+  const { els, root } = cardRoot({
+    location: { href: 'https://x.test/?stage=2', origin: 'https://x.test', replace() { n++; }, reload() {} },
+    __game: { scene: { getScene: () => ({ started: true, stageNo: 2 }) } },
+  });
+  const guard = createStartupGuard(root);
+  guard.ready();
+  const before = (els['startup-retry'].handlers.click || []).length;
+  showStuck(root, new Error('freeze'), root.__game);
+  showStuck(root, new Error('freeze'), root.__game);
+  assert.equal((els['startup-retry'].handlers.click || []).length, before);
+  els['startup-retry'].click();
+  assert.equal(n, 1);
+});
+
+test('stage recovery clears its timer when the game is destroyed', () => {
+  let cleared = 0;
+  const listeners = {};
+  const root = {
+    document: {
+      getElementById: () => ({ addEventListener() {}, removeEventListener() {}, hidden: true }),
+      querySelector() { return null; },
+      body: { classList: { add() {}, remove() {} } },
+    },
+    performance: { now: () => 0 },
+    setInterval: () => 7,
+    clearInterval() { cleared++; },
+    addEventListener() {},
+    removeEventListener() {},
+    location: { origin: 'https://x.test' },
+  };
+  const game = {
+    isPaused: false,
+    scene: { getScene: () => ({ started: true, world: { paused: false } }) },
+    events: { once(name, fn) { listeners[name] = fn; } },
+  };
+  const recovery = installStageRecovery(game, root);
+  assert.equal(typeof listeners.destroy, 'function');
+  listeners.destroy();
+  recovery.destroy();
+  assert.equal(cleared, 1);
 });
 
 test('graphics retry reopens the running stage', () => {

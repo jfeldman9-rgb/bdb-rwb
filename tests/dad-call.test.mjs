@@ -2,7 +2,7 @@ import test from'node:test';import assert from'node:assert/strict';import{DAD,cr
 test('first charge is locked until explicitly granted',()=>{const s=createDadCall(false);for(let i=0;i<20;i++)noteBobKo(s);tickDadCall(s,60);assert.equal(s.charges,0);unlockDad(s);assert.equal(s.charges,1);assert.equal(DAD.maxCalls,3);});
 test('recharge requires both 10 Bob KOs and 45 seconds; max three calls',()=>{const s=createDadCall();for(let call=0;call<3;call++){assert.equal(takeCall(s,{hittable:true}).ok,true);s.on=false;for(let i=0;i<9;i++)noteBobKo(s);tickDadCall(s,45);assert.equal(s.charges,0);noteBobKo(s);tickDadCall(s,.01);assert.equal(s.charges,call<2?1:0);}assert.equal(s.calls,3);const t=createDadCall();takeCall(t,{hittable:true});t.on=false;for(let i=0;i<10;i++)noteBobKo(t);tickDadCall(t,44);assert.equal(t.charges,0);tickDadCall(t,1);assert.equal(t.charges,1);});
 test('all refusal reasons spend nothing',()=>{assert.equal(refuseReason(null),'nostate');for(const [why,c,mutate]of [
- ['paused',{paused:true}],['paused',{cutscene:true}],['victory',{victory:true}],['victory',{dead:true}],['busy',{strike:true}],['busy',{},s=>s.on=true],['papi-active',{papiActive:true}],['empty',{hittable:false}],['boss-invulnerable',{bossInvuln:true}],['boss-invulnerable',{bossBeat:true}],['spent',{},s=>s.charges=0],['spent',{},s=>s.calls=3],['phase',{bossPhase:'3:2'},s=>s.phaseCalls['3:2']=1]]){const s=createDadCall();mutate?.(s);const before=JSON.stringify(s);assert.deepEqual(takeCall(s,{hittable:true,...c}),{ok:false,why});assert.equal(JSON.stringify(s),before);}});
+ ['paused',{paused:true}],['paused',{cutscene:true}],['victory',{victory:true}],['victory',{dead:true}],['busy',{strike:true}],['busy',{},s=>s.on=true],['papi-active',{papiActive:true}],['empty',{hittable:false}],['boss-invulnerable',{bossInvuln:true}],['boss-invulnerable',{bossBeat:true}],['locked',{},s=>{s.unlocked=false;s.charges=0;}],['spent',{},s=>s.charges=0],['spent',{},s=>s.calls=3],['phase',{bossPhase:'3:2'},s=>s.phaseCalls['3:2']=1]]){const s=createDadCall();mutate?.(s);const before=JSON.stringify(s);assert.deepEqual(takeCall(s,{hittable:true,...c}),{ok:false,why});assert.equal(JSON.stringify(s),before);}});
 test('regulars faint, elites lose 60 percent and shield, bosses respect phase floors',()=>{for(const type of ['walker','hover','choir']){const e={type,alive:true,hp:36,maxHp:36};assert.equal(callEffect(e).killed,true);}for(const type of ['guard','charger','lecturer']){const e={type,alive:true,hp:48,maxHp:48,shield:true};callEffect(e);assert.ok(Math.abs(e.hp-19.2)<1e-8);assert.equal(e.shield,false);assert.equal(e.stun,1.6);}for(const phase of [1,2,3]){const e={alive:true,boss:true,maxHp:216,hp:216,phase};callEffect(e);assert.ok(Math.abs(e.hp-203.04)<1e-8);e.hp=bossFloor(e)+1;callEffect(e);assert.equal(e.hp,bossFloor(e));e.hp=1;callEffect(e);assert.equal(e.hp,1);}});
 test('per-phase budget is scoped to the chapter and phase',()=>{const s=createDadCall();takeCall(s,{hittable:true,bossPhase:'1:1'});s.on=false;s.charges=1;assert.equal(refuseReason(s,{hittable:true,bossPhase:'1:1'}),'phase');assert.equal(refuseReason(s,{hittable:true,bossPhase:'2:1'}),'');});
 test('Dad timeline is enter 6@12 → swat 8@16 → exit 6@12; duration is the sum of the anims',()=>{
@@ -23,10 +23,16 @@ test('Dad jogs in to his stand mark, swats in place, then jogs out fading',()=>{
  d.update(DAD_TIMING.swat,()=>{});assert.equal(d.state,'exit');assert.ok(d.x>1400);d.update(DAD_TIMING.exit-.02,()=>{});assert.ok(d.alpha<.2);
 });
 test('every refusal reason names its own banner; spent keeps charge numbers',()=>{
- const banners=new Set(['paused','victory','busy','papi-active','empty','boss-invulnerable','spent','phase','nostate'].map(w=>refusalBanner(createDadCall(),w)));
- assert.equal(banners.size,9,'each why gets distinct wording');
+ const banners=new Set(['paused','victory','busy','papi-active','empty','boss-invulnerable','spent','phase','nostate','locked'].map(w=>refusalBanner(createDadCall(),w)));
+ assert.equal(banners.size,10,'each why gets distinct wording');
  const s=createDadCall();s.charges=0;s.calls=3;
  assert.match(refusalBanner(s,'spent'),/0\/1/);assert.match(refusalBanner(s,'spent'),/3\/3/);
+ assert.doesNotMatch(refusalBanner(s,'spent'),/KOs/);
+ const recharge=createDadCall();recharge.charges=0;recharge.calls=1;recharge.kos=4;recharge.since=10;
+ assert.match(refusalBanner(recharge,'spent'),/4\/10 KOs/);assert.match(refusalBanner(recharge,'spent'),/35s/);
+ const locked=createDadCall(false);
+ assert.equal(refuseReason(locked,{hittable:true}),'locked');
+ assert.equal(refusalBanner(locked,'locked'),'DAD ARRIVES IN ZONE 3.');
 });
 test('Dad stand mark stays on screen near the right wall',()=>{
  const near=new Dad(6480,630,7900);assert.ok(near.standX<=6480+1280-200,`stand ${near.standX}`);

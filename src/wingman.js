@@ -28,7 +28,12 @@ export class Wingman {
       hp: WINGMAN_HP[phase], maxHp: WINGMAN_HP[phase], alive: true,
       facing: -1, state: 'hover', timer: 1.5, attackX: x, attackY: y, volley: 0 });
   }
-  get canBeHit() { return this.alive && this.state !== 'split'; }
+  get canBeHit() {
+    // Phase III floors at 1 HP until Papacito. A floored Wingman that still
+    // soaks eggplants hides the partner, and at a 30 Hz step the bot never
+    // gets both of them to the finisher.
+    return this.alive && this.state !== 'split' && !(this.phase === 3 && this.hp <= 1);
+  }
   takeHit(amount) {
     if (!this.canBeHit) return { accepted: false };
     const result = applyBossDamage(this.phase, this.hp, amount); this.hp = result.hp;
@@ -68,7 +73,10 @@ export class Wingmen {
       for (const e of world.enemies.filter(e=>e.type==='wingman')) { e.state='split'; e.timer=this.phase===3?2:1; }
       world.banner(this.phase===2?'PHASE II: HEAVENLY HR VIOLATION':'PHASE III: TWO WINGMEN. ONE TERRIBLE PLAN.');
       world.emit('voice',this.phase===2?'wingman_phase2':'wingman_phase3');
-      world.dropTrio(world.bob.x+50); world.checkpoint.phase=this.phase; world.summonAdds?.(WINGMAN_ADDS[this.phase]);
+      world.dropTrio(world.bob.x+50); world.checkpoint.phase=this.phase;
+      // The new phase has new bodies. The previous phase's HP must not be applied to them.
+      world.checkpoint.wingHp=undefined; world.checkpoint.wingDead=undefined;
+      world.summonAdds?.(WINGMAN_ADDS[this.phase]);
       bosses=world.enemies.filter(e=>e.type==='wingman');
     }
     const ready=isBossFinisherReady(this.phase,bosses);

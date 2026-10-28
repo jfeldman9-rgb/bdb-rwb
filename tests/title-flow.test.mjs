@@ -87,6 +87,25 @@ test('the intro parks Phaser and resumes it when the clip ends', () => {
   story.destroy();
 });
 
+test('a second clip resumes the pause the first one took', () => {
+  const root = fakeRoot();
+  let pauses = 0, resumes = 0, paused = false;
+  const game = {
+    get isPaused() { return paused; },
+    pause() { paused = true; pauses++; },
+    resume() { paused = false; resumes++; },
+  };
+  const story = createStoryPlayer(new URLSearchParams('cutscenes=1'), root, null, game);
+  story.play('kidnap', () => {});
+  assert.equal(pauses, 1);
+  story.play('rescue_pre_boss', () => {});
+  assert.equal(resumes, 1, 'the live clip releases its pause');
+  assert.equal(pauses, 2);
+  assert.equal(game.isPaused, true);
+  story.destroy();
+  assert.equal(game.isPaused, false);
+});
+
 test('a clip that was already paused does not resume the game early', () => {
   const root = fakeRoot();
   let paused = true;

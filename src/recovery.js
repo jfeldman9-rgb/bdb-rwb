@@ -28,7 +28,12 @@ export function showStuck(root, error, game) {
   set('startup-title', 'The game hit a snag');
   set('startup-description', 'This stage stopped running. Reload game picks up at the start of this stage.');
   set('startup-code', `Code: FRAME_ERROR ${error?.name || ''}`);
-  by('startup-retry')?.addEventListener?.('click', () => resumeGame(root, game));
+  const retry = by('startup-retry');
+  // startup.js already resumes from this button. A second listener fires reload twice.
+  if (retry && !retry.__bdbResume && !retry.__bdbStuck) {
+    retry.__bdbStuck = true;
+    retry.addEventListener?.('click', () => resumeGame(root, game), { once: true });
+  }
   card.hidden = false;
   return true;
 }
@@ -66,7 +71,10 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
   const clock = () => root.performance?.now?.() ?? Date.now();
   let last = clock();
   let shown = false;
+  let strikes = 0;
+  let pendingError = null;
   const scene = () => game?.scene?.getScene?.('gameplay');
+  const loading = (s) => typeof s?.load?.isLoading === 'function' && s.load.isLoading();
   const note = () => { last = clock(); };
   const trip = (error) => {
     if (shown) return;
@@ -77,14 +85,20 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
   if (game) game.beat = note;
   const timer = root.setInterval?.(() => {
     const s = scene();
-    if (!s?.started || s.world?.paused || game?.isPaused) { note(); return; }
+    // A chapter download is not a stall. started stays false until create, and a loader still in flight is ignored.
+    if (!s?.started || loading(s) || s.world?.paused || game?.isPaused) { note(); return; }
+    if (strikes >= 2) { trip(pendingError || new Error('error')); return; }
     if (clock() - last > limit) trip(new Error('freeze'));
   }, opts.interval ?? 1000);
   const onError = (event) => {
     if (!scene()?.started) return;
     const origin = root.location?.origin;
-    if (origin && event?.filename && !event.filename.startsWith(origin + '/')) return;
-    trip(event?.error || event?.message || 'error');
+    const file = event?.filename || '';
+    // Empty filename is the cross-origin "Script error." A one-off throw while the loop still beats is not a stall.
+    if (!file || (origin && !file.startsWith(origin + '/'))) return;
+    strikes++;
+    pendingError = event?.error || event?.message || 'error';
+    if (strikes >= 2) trip(pendingError);
   };
   root.addEventListener?.('error', onError);
   return {
@@ -101,5 +115,16 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
 export function installStageRecovery(game, root = globalThis) {
   const freeze = installFreezeGuard(game, root);
   const notice = installGraphicsNotice(root, () => resumeGame(root, game));
-  return { notice, destroy() { freeze.destroy(); notice.destroy(); } };
+  let dead = false;
+  const api = {
+    notice,
+    destroy() {
+      if (dead) return;
+      dead = true;
+      freeze.destroy();
+      notice.destroy();
+    },
+  };
+  game?.events?.once?.('destroy', () => api.destroy());
+  return api;
 }

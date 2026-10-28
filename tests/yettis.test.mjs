@@ -1,10 +1,12 @@
-import test from'node:test';import assert from'node:assert/strict';import{Yetti,TYPES,choirMultiplier}from'../src/yettis.js';import{Campaign}from'../src/campaign.js';
+import test from'node:test';import assert from'node:assert/strict';import{Yetti,TYPES,choirMultiplier,choirAura,separateEnemies,laneY,laneOf}from'../src/yettis.js';import{Campaign}from'../src/campaign.js';
 test('packet HP scales by twelve for all six roles',()=>{assert.deepEqual(Object.fromEntries(['walker','guard','hover','charger','choir','lecturer'].map(k=>[k,TYPES[k].hp])),{walker:24,guard:48,hover:36,charger:48,choir:36,lecturer:48});});
 test('guard front blocks, rear hits, and dash breaks the shield',()=>{const e=new Yetti('guard',100,630);assert.ok(e.takeHit(12,1).blocked);assert.equal(e.hp,48);assert.ok(e.takeHit(12,-1).accepted);assert.equal(e.hp,36);assert.ok(e.breakShield());assert.ok(e.takeHit(12,1).accepted);});
-test('guard shield shatters after three frontal eggplants',()=>{const e=new Yetti('guard',100,630);assert.ok(e.takeHit(12,1).blocked);assert.ok(e.takeHit(12,1).blocked);const third=e.takeHit(12,1);assert.ok(third.blocked);assert.ok(third.shieldBroke);assert.equal(e.shield,false);assert.equal(e.hp,48);assert.ok(e.takeHit(12,1).accepted);assert.equal(e.hp,36);});
+test('guard shield shatters after three frontal eggplants',()=>{const e=new Yetti('guard',100,630);assert.ok(e.takeHit(12,1).blocked);assert.equal(e.shieldHits,1);assert.ok(e.takeHit(12,1).blocked);assert.equal(e.shieldHits,2);const third=e.takeHit(12,1);assert.ok(third.blocked);assert.ok(third.shieldBroke);assert.equal(e.shield,false);assert.equal(e.hp,48);assert.ok(e.takeHit(12,1).accepted);assert.equal(e.hp,36);});
+test('shield chips reach the banner event and the clang rises',async()=>{const {clangPitch}=await import('../src/audio.js');const w=new Campaign(),e=new Yetti('guard',400,630);w.enemies=[e];w.hit(e,12,1,false);const chip=w.events.filter(ev=>ev.type==='shield').at(-1);assert.equal(chip.data.chips,1);w.hit(e,12,1,false);assert.equal(w.events.filter(ev=>ev.type==='shield').at(-1).data.chips,2);w.hit(e,12,1,false);assert.equal(w.events.filter(ev=>ev.type==='shield').at(-1).data.chips,3);assert.equal(clangPitch(1),1250);assert.ok(clangPitch(2)>clangPitch(1));assert.ok(clangPitch(3)>clangPitch(2));assert.equal(e.shield,false);});
 test('hover is hittable on its shadow lane',()=>{const e=new Yetti('hover',100,630);assert.ok(e.z>0);assert.equal(e.y,630);assert.ok(e.takeHit(12,1).accepted);});
 test('charger holds its 0.72 second tell before rushing',()=>{const w=new Campaign(),e=new Yetti('charger',400,630);w.enemies=[e];e.cooldown=0;e.update(.01,w);assert.equal(e.state,'telegraph');e.update(.7,w);assert.equal(e.state,'telegraph');e.update(.021,w);assert.equal(e.state,'rush');});
 test('choir buff is 1.28 inside 300px and ends on KO',()=>{const e=new Yetti('walker',0,630),choir=new Yetti('choir',299,630);assert.equal(choirMultiplier(e,[e,choir]),1.28);choir.x=301;assert.equal(choirMultiplier(e,[e,choir]),1);choir.x=100;choir.alive=false;assert.equal(choirMultiplier(e,[e,choir]),1);});
+test('a living choir draws a 300px aura; the buff number stays 1.28',()=>{const choir=new Yetti('choir',0,630),boss=new Yetti('choirmaster',0,630),walker=new Yetti('walker',0,630);assert.deepEqual(choirAura(choir),{r:300,notes:3});assert.deepEqual(choirAura(boss),{r:300,notes:3});choir.alive=false;assert.equal(choirAura(choir),null);assert.equal(choirAura(walker),null);assert.equal(choirMultiplier(walker,[walker,boss]),1.28);});
 test('lecturer telegraphs then grabs; mash releases both actors',()=>{const w=new Campaign(),e=new Yetti('lecturer',w.bob.x+60,630);w.enemies=[e];e.cooldown=0;e.update(.01,w);e.update(.7,w);assert.equal(w.bob.state,'grabbed');assert.equal(e.state,'hold');w.bob.mash(6);assert.equal(w.bob.state,'idle');assert.equal(e.state,'hurt');});
 test('mini-bosses run one long bar through three phases with a roar at each gate',()=>{for(const type of ['interventionist','choirmaster']){const w=new Campaign(),e=new Yetti(type,800,630),max=e.maxHp;assert.ok(max>=1000,`${type} bar ${max}`);w.enemies=[e];
  assert.equal(e.takeHit(max*.3,1).phase,undefined);assert.equal(e.phase,1);
@@ -22,4 +24,20 @@ test('hover bobs above its shadow lane while staying hittable there',()=>{const 
 test('Interventionist phase two moves faster and slams a shockwave on a whiffed grab',()=>{const w1=new Campaign(),p1=new Yetti('interventionist',1000,630);p1.cooldown=999;w1.enemies=[p1];p1.update(1,w1);const d1=1000-p1.x;const w2=new Campaign(),p2=new Yetti('interventionist',1000,630);p2.phase=2;p2.cooldown=999;w2.enemies=[p2];p2.update(1,w2);assert.ok(1000-p2.x>d1*1.2,`phase2 ${1000-p2.x} vs phase1 ${d1}`);const w=new Campaign();w.bob.x=1000;const e=new Yetti('interventionist',800,630);e.phase=2;e.state='telegraph';e.timer=0;e.attackY=630;e.rushDir=1;w.enemies=[e];e.update(.01,w);assert.equal(e.state,'slam');assert.equal(w.hostile.length,1);assert.equal(w.hostile[0].kind,'shockwave');});
 test('choirmaster telegraph volleys halos without summoning; roar still calls adds',()=>{const w=new Campaign();const e=new Yetti('choirmaster',800,630);e.phase=2;e.state='telegraph';e.timer=0;e.attackY=630;e.rushDir=-1;w.enemies=[e];e.update(.01,w);assert.equal(e.state,'recover');assert.ok(w.hostile.length>=2,'halo volley still fires');assert.equal(w.enemies.length,1,'telegraph summons nothing');
  const r=new Campaign();const b=new Yetti('choirmaster',800,630);r.enemies=[b];assert.equal(b.takeHit(b.maxHp*.3,1).phase,undefined);b.takeHit(b.maxHp*.1,1);assert.equal(b.state,'roar');for(let i=0;i<90;i++)b.update(1/60,r);assert.ok(r.enemies.some(a=>!a.boss&&a.alive),'roar still calls minions');});
+test('same-lane yettis under 46px separate in actorId order; bosses stay put',()=>{
+ const a=new Yetti('walker',500,laneY(1)),b=new Yetti('walker',510,laneY(1)),boss=new Yetti('choirmaster',505,laneY(1));
+ const other=new Yetti('walker',500,laneY(0));other.x=508;
+ const bx=boss.x,by=boss.y,ox=other.x;
+ const bounds={l:0,r:4000};
+ for(let i=0;i<8;i++)separateEnemies([b,boss,a,other],bounds);
+ assert.ok(Math.abs(a.x-b.x)>=46,`gap ${Math.abs(a.x-b.x)}`);
+ assert.equal(laneOf(a.y),laneOf(b.y));
+ assert.equal(boss.x,bx);assert.equal(boss.y,by);
+ assert.equal(other.x,ox,'a different lane is not pushed');
+ const stacked=[new Yetti('walker',800,laneY(1)),new Yetti('walker',800,laneY(1))];
+ for(let i=0;i<8;i++)separateEnemies(stacked,bounds);
+ const [left,right]=stacked.slice().sort((p,q)=>p.id-q.id);
+ assert.ok(left.x<right.x,'lower actorId is pushed left when they share an x');
+ assert.ok(Math.abs(left.x-right.x)>=46);
+});
 test('the choirmaster holds his lane while his adds spread around him',()=>{const w=new Campaign();const boss=new Yetti('choirmaster',900,631);const adds=[new Yetti('guard',700,631),new Yetti('hover',750,631)];w.enemies=[boss,...adds];for(const e of w.enemies)e.cooldown=99;const y=boss.y;for(let i=0;i<120;i++)for(const e of w.enemies)e.update(1/60,w);assert.equal(boss.y,y,'boss never lane-shoved');const lanes=adds.map(e=>e.y);assert.ok(lanes.some(y=>y!==boss.y),'adds spread off the boss lane');});

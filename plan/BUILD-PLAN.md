@@ -190,7 +190,7 @@ All Yettis are **angelic, winged, white-furred, and comic**. Deaths are a feathe
   - Bob gets 2 s of i-frames.
 - **Presentation:** two layers, mirroring Stage 7/8.
   1. **Video (when cutscenes are enabled):** `dad-call-cutscene.js` is a copy of `call8-cutscene.js`. It has a `bag8` shuffle of `assets/cutscenes/dad/D1..D3.mp4` (≤8 s each), prefetched to a blob after the first gesture, with `maxMs: 11000`. The game freezes during the strike (`freezeStrike/thawStrike` pattern) and the effect resolves at t=0.65 s.
-  2. **In-engine fallback (bot, `?nocutscenes=1`, quality ≥4, video fail):** `dad.js` copies `loial.js`. Dad jogs in from the left edge, lane-tracks the nearest group, makes 2 big overhead swats (screen shake 0.3, "BDB" engraving visible on the swatter face), and leaves right. Voice at start and end.
+  2. **In-engine fallback (bot, `?nocutscenes=1`, quality ≥4, video fail):** `dad.js` copies `loial.js`. Dad jogs in from the left edge, lane-tracks the nearest group, and makes one overhead swat (the packed atlas is a single swat; v1 does not add a second), then leaves right. Voice at start and end.
 - **Character:** Bob's dad, built from the reference photo at `/workspace/bdb-art/ref/bobs-dad-photo.jpg` (path only; not opened for this plan). Older guy, Boston sports gear (generic, no team logos), giant fly swatter with "BDB" stamped on the mesh. Lines are Boston-accent ElevenLabs (§5.4).
 
 ### 4.5 Difficulty (`difficulty.js`)

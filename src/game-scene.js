@@ -1,7 +1,7 @@
 import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
 import { Fighter } from './fighter.js';
-import { TYPES, laneOf, laneY, LANE_H } from './yettis.js';
+import { TYPES, laneOf, laneY, LANE_H, choirAura, choirMultiplier } from './yettis.js';
 import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
@@ -14,11 +14,16 @@ import { stageLines } from './voice-lines.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cutscene.js';
-import { pauseForClip } from './cutscene-hooks.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
-import { RECOIL_KICK, stepRecoil, hostileShape } from './shot-feel.js';
+import { RECOIL_KICK, stepRecoil, hostileShape, killImpact } from './shot-feel.js';
+
+/** Opening bed. A cutscene already queued on this load fades the track the same frame, so leave it silent until the clip ends. */
+export function trackForStageStart(stageNo, events) {
+  if (events?.some(e => e.type === 'cutscene')) return null;
+  return `stage${stageNo}`;
+}
 
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
 function roleAnim(m) {
@@ -45,7 +50,7 @@ function roleAnim(m) {
 
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
- init(data){this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=true;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.particles=[];this.dadView=null;this.switching=false;this.finished=false;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;}
+ init(data){this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.switching=false;this.finished=false;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;}
  preload(){
   const prev=this.game.residentChars||[],next=STAGE_CHARS[this.stageNo],delta=residencyDelta(prev,next);
   releaseChars(this,delta.release);queueCharPages(this,next);this.game.residentChars=next;
@@ -66,11 +71,15 @@ export class GameScene extends Phaser.Scene {
   if(this.stageNo===3){const bl=this.world.def.boss.l,m=this.metas.claudia,a=m.anims[0];this.claudia=this.add.sprite(bl+970,490,m.pages[0],a.frames[0]).setOrigin(.5,.95).setScale(.27).setTint(0xffb4d7).play(a.name);
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);this.claudiaCage=cage;}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
-  this.game.inp.clear();preloadClips(stageLines(this.stageNo));playTrack(`stage${this.stageNo}`);
+  this.game.inp.clear();preloadClips(stageLines(this.stageNo));
+  const opening=trackForStageStart(this.stageNo,this.world.events);
+  if(opening)playTrack(opening);
   this.offDadBless=installDadGestureBless(globalThis);
   this.offRotate=bindRotatePause(this);
   this.events.once('shutdown',()=>{this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();presentStage(this);this.hud.update(this.world);
+  // Preload can sit here for seconds on a slow phone. The freeze guard waits until the stage is actually running.
+  this.started=true;
  }
  setBloom(on){this.bloomEnabled=!!on;}
  setBackdropLit(on){this.backdropLit=on!==false;}
@@ -97,9 +106,11 @@ export class GameScene extends Phaser.Scene {
  makeView(model,key,scale,tint=0xffffff){const v=new Fighter(this,{key,prefix:key+'_',native:1,scale,anchorX:.5,hp:1,team:0,shadowW:135},model.x,model.y);v.sprite.setLighting(false).setTint(tint);return v;}
  syncViews(dt=0){
   const w=this.world;this.bounds=w.bounds;this.cameras.main.setScroll(Math.round(w.camX),0);this.backdrop?.update(w.camX);
-  const live=new Set();
-  for(const model of [w.bob,...w.enemies.filter(e=>e.alive)]){
-   live.add(model);let view=this.views.get(model);const isBob=model===w.bob,key=isBob?'bob':model.type==='wingman'?'wingman':TYPES[model.type].art;
+  // Membership, not model.alive: a phase change drops a Wingman from the array while he is still alive, and that view has to become a corpse.
+  const live=this.liveSet||(this.liveSet=new Set());live.clear();live.add(w.bob);
+  for(const e of w.enemies)if(e.alive)live.add(e);
+  for(const model of live){
+   let view=this.views.get(model);const isBob=model===w.bob,key=isBob?'bob':model.type==='wingman'?'wingman':TYPES[model.type].art;
    if(!view){view=this.makeView(model,key,isBob ? .46 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
    view.corpse=null;view.corpsePlayed=false;
    Object.assign(view,{x:model.x,y:model.y,z:model.z||0,state:model.state});view.face(model.facing);
@@ -108,10 +119,10 @@ export class GameScene extends Phaser.Scene {
    if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':model.state==='hold'?'hold':['roar','slam'].includes(model.state)?'slam':'walk'):model.state==='roar'?'ring':'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
    view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
   }
-  for(const [m,v] of [...this.views]){
+  for(const [m,v] of this.views){
    if(live.has(m))continue;
    if(m===w.bob){v.destroy();this.views.delete(m);continue;}
-   if(!v.corpse)v.corpse=beginCorpse();
+   if(!v.corpse)v.corpse=beginCorpse(!!m.boss);
    v.corpse=stepCorpse(v.corpse,dt);
    v.state='dead';
    if(!v.corpsePlayed){const key=v.def.key;v.play(this.anims.exists(key+'_knockdown')?'knockdown':'hurt',1,false);v.corpsePlayed=true;}
@@ -130,9 +141,16 @@ export class GameScene extends Phaser.Scene {
   // Procedural paddle only for the old silhouette stand-in; the packed swat frames carry the BDB swatter.
   const paddle=!!w.dad&&!this.anims.exists('dad_swat');this.dadLabel.setVisible(paddle);
   if(paddle){const d=w.dad,swing=d.state==='swat'?Math.sin(d.age*12)*65:0,x=d.x+135+swing,y=d.y-230;g.lineStyle(12,0xd5bc82);g.lineBetween(d.x+45,d.y-100,x,y);g.lineStyle(6,0xffe3a5);g.strokeRoundedRect(x-44,y-70,88,90,12);for(let i=-25;i<=25;i+=12){g.lineStyle(1,0xffe3a5);g.lineBetween(x+i,y-64,x+i,y+14);}this.dadLabel.setPosition(x-22,y-42);}
-  for(const e of w.enemies.filter(e=>e.alive)){
+  for(const e of w.enemies){if(!e.alive)continue;
+   const aura=choirAura(e);
+   if(aura){
+    const spin=w.elapsed||0;g.lineStyle(2,0xffd56a,.45+.2*Math.sin(spin*2));
+    const steps=24;
+    for(let i=0;i<steps;i+=2){g.beginPath();g.arc(e.x,e.y,aura.r,(i/steps)*Math.PI*2,((i+1)/steps)*Math.PI*2,false);g.strokePath();}
+    for(let n=0;n<aura.notes;n++){const ang=spin*1.4+n*2.0943951023931953,nx=e.x+Math.cos(ang)*72,ny=e.y-168+Math.sin(ang)*16;g.fillStyle(0xfff1a8,.9);g.fillEllipse(nx,ny,8,6);g.fillRect(nx+4,ny-14,2,14);}
+   }else if(choirMultiplier(e,w.enemies)>1){g.lineStyle(3,0xffd56a,.35+.35*Math.sin((w.elapsed||0)*6));g.strokeEllipse(e.x,e.y-90,78,160);}
    if(e.type==='hover'){g.lineStyle(3,0x9de1ff,.9);g.strokeEllipse(e.x,e.y,90,20);}
-   if(e.shield){g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(e.x+e.facing*48,e.y-82,34,110);}
+   if(e.shield){const sx=e.x+e.facing*48,sy=e.y-82;g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(sx,sy,34,110);const chips=e.shieldHits||0;if(chips>=1){g.lineStyle(2,0x6a4a12,.95);g.lineBetween(sx-10,sy-28,sx+8,sy+6);}if(chips>=2){g.lineBetween(sx+12,sy-22,sx-6,sy+18);}}
    if(e.state==='telegraph'){
     g.fillStyle(0xff5575,.28);
     if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,1280,LANE_H);}
@@ -144,18 +162,17 @@ export class GameScene extends Phaser.Scene {
   for(const p of w.projectiles){g.fillStyle(0x491b7d);g.fillEllipse(p.x,p.y,48,19);g.fillStyle(0xba77ed);g.fillEllipse(p.x-5*p.dir,p.y-4,26,6);g.fillStyle(0x9bcc63);g.fillTriangle(p.x+22*p.dir,p.y,p.x+32*p.dir,p.y-9,p.x+33*p.dir,p.y+4);}
   for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else{g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-65,28,32);}}
   for(const p of w.pickups){g.fillStyle(0xfff1bb);g.fillRoundedRect(p.x-12,p.y-38,24,32,5);g.fillStyle(0xcc8fde);g.fillRect(p.x-9,p.y-30,18,13);g.fillStyle(0x7bd6c7);g.fillRect(p.x-10,p.y-43,20,6);}
-  for(const p of this.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);}
-  this.particles=this.particles.filter(p=>p.life>0);
+  const parts=this.particles;let kept=0;
+  for(let i=0;i<parts.length;i++){const p=parts[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);if(p.life>0)parts[kept++]=p;}
+  parts.length=kept;
  }
  playHeld(ids){(ids||[]).forEach((id,i)=>{say(id,(who,line)=>this.hud?.say(who,line),true,false,i?{wait:2.5*i}:null);if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);});}
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
   this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
-  // Full-screen video: park the Phaser loop too, like the Dad call does.
-  const unpause=pauseForClip(this.game);
+  // The story player owns pauseForClip, so destroy() can resume the loop it paused.
   this.game.story.play(key,()=>{
    this.holdingVoice=false;this.setPauseReason('cutscene',false);const held=this.voiceHold||[];this.voiceHold=[];
-   unpause();
    if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
    done?.(held);
   });
@@ -175,7 +192,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
-  if(type==='shield')sfx.clang();
+  if(type==='shield')sfx.clang(data?.chips||1);
   if(type==='boss')playTrack(`boss${this.stageNo}`);if(type==='clear')sfx.levelClear();
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
@@ -185,7 +202,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='dad')sfx.dadHorn();
   if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);this.fx?.impact('finisher',data.x,data.y-40,-1);sfx.hit(true);
    for(let i=0;i<18;i++)this.particles.push({x:data.x-85+Math.random()*60-30,y:data.y-12,vx:Math.random()*360-180,vy:-80-Math.random()*240,life:.35+Math.random()*.35,color:i%3?0xfff3b0:0xffffff});}
-  if(type==='hit'||type==='ko'){sfx.hit(type==='ko');const kind=type==='ko'?'heavy':(data?.kind||'light');if(type==='hit')this.fx?.impact(kind,data.x,data.y-90,data.dir||1);this.fx?.splat(data.x,data.y-70);for(let i=0;i<(type==='ko'?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}
+  if(type==='hit'||type==='ko'){const impact=killImpact(type,data);if(impact){sfx.hit(impact.heavy);const kind=data?.kind||(impact.heavy?'heavy':'light');if(impact.kick)this.fx?.impact(kind,data.x,data.y-90,data.dir||1);if(impact.splat)this.fx?.splat(data.x,data.y-70);for(let i=0;i<(impact.heavy?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}}
  }}
  update(time,delta){
   this.game.beat?.();

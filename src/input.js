@@ -5,9 +5,12 @@ export const KEYS = Object.freeze({
   KeyQ:'papi',KeyC:'papi',KeyL:'papi',KeyR:'dad',KeyV:'dad',Escape:'pause',KeyP:'pause',Enter:'start',
 });
 export const PAD_MAP = Object.freeze({0:'jump',1:'dash',2:'fire',3:'papi',4:'dad',5:'dash',9:'pause'});
-/** Title Start / Fire / Pause (Enter, a face button, or gamepad Start) begins the chapter. */
+/** Title Start / Fire begins the chapter. Gamepad Start is pause while the pad button is held. Escape and P do not start a run. */
 export function titleWantsBegin(input) {
-  return !!(input.take('start') || input.take('fire') || input.take('pause'));
+  if (input.take('start') || input.take('fire')) return true;
+  const fromPad = !!input.padHeld?.pause;
+  const pause = input.take('pause');
+  return fromPad && pause;
 }
 /** Gameplay Enter (start) and Escape/Start (pause) toggle the pause. */
 export function gameplayWantsPause(input) {

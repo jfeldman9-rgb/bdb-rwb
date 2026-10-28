@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Campaign } from '../src/campaign.js';
 import { HUD } from '../src/hud.js';
-import { RECOIL_KICK, RECOIL_DECAY, stepRecoil, hostileShape } from '../src/shot-feel.js';
+import { RECOIL_KICK, RECOIL_DECAY, stepRecoil, hostileShape, killImpact } from '../src/shot-feel.js';
 import { createPerf, noteRenderer, deviceMetadata } from '../src/perf.js';
 import { FX } from '../src/fx.js';
 
@@ -11,6 +11,15 @@ test('recoil is a kick that is gone before the next shot', () => {
   assert.ok(stepRecoil(RECOIL_KICK, 1 / 60) > 0);
   assert.equal(stepRecoil(RECOIL_KICK, RECOIL_KICK / RECOIL_DECAY), 0);
   assert.ok(RECOIL_KICK / RECOIL_DECAY < 0.2);
+});
+
+test('a killing eggplant splats once; Papi and Dad still splat on the ko', () => {
+  assert.equal(killImpact('ko', { source: 'bob' }), null);
+  assert.equal(killImpact('hit', { kind: 'heavy' }).splat, true);
+  assert.equal(killImpact('hit', { kind: 'heavy' }).heavy, true);
+  assert.equal(killImpact('hit', { kind: 'light' }).heavy, false);
+  assert.equal(killImpact('ko', { source: 'papi' }).splat, true);
+  assert.equal(killImpact('ko', { source: 'dad' }).kick, false);
 });
 
 test('hostile projectiles use three different shapes', () => {

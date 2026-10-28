@@ -140,6 +140,10 @@ function duck(depth = 0.5, hold = 0.18, rel = 0.45) {
   if (!ctx || muted) return; const t = ctx.currentTime, g = duckG.gain;
   g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(depth, t + 0.025); g.setValueAtTime(depth, t + 0.025 + hold); g.linearRampToValueAtTime(1, t + 0.025 + hold + rel);
 }
+/** First chip stays at 1250 Hz. Each later chip steps up so the break is brighter. */
+export function clangPitch(chip = 1) {
+  return 1250 + Math.max(0, (chip | 0) - 1) * 180;
+}
 export const sfx = {
   swing() { if (!gate('swing', 40)) return; noise({ f0: vary(1900), f1: 380, dur: 0.08, vol: 0.13, filter: 'bandpass', q: 0.9 }); },
   whiff() { if (!gate('whiff', 60)) return; noise({ f0: vary(2600), f1: 500, dur: 0.12, vol: 0.12, filter: 'bandpass', q: 1.2 }); },
@@ -175,7 +179,7 @@ export const sfx = {
   fall() { tone({ f0: 1800, f1: 500, dur: 0.7, vol: 0.12, type: 'sine' }); },
   grumble() { if (!gate('grumble', 300)) return; tone({ f0: vary(85, 0.15), f1: 60, dur: 0.45, vol: 0.16, type: 'sawtooth' }); noise({ f0: 380, f1: 160, dur: 0.4, vol: 0.12, attack: 0.06 }); },
   // Stage 2 (cloud) cues
-  clang() { if (!gate('clang', 70)) return; tone({ f0: vary(1250), f1: 880, dur: 0.11, vol: 0.14, type: 'square' }); tone({ f0: vary(1870), dur: 0.22, vol: 0.09, type: 'triangle' }); noise({ f0: 5200, f1: 2000, dur: 0.08, vol: 0.18, filter: 'highpass' }); },
+  clang(chip = 1) { if (!gate('clang', 70)) return; const f0 = clangPitch(chip), lift = (f0 - 1250) / 180; tone({ f0: vary(f0), f1: 880 + lift * 80, dur: 0.11, vol: 0.14, type: 'square' }); tone({ f0: vary(1870 + lift * 90), dur: 0.22, vol: 0.09, type: 'triangle' }); noise({ f0: 5200, f1: 2000, dur: 0.08, vol: 0.18, filter: 'highpass' }); },
   glint() { if (!gate('glint', 200)) return; tone({ f0: 2600, f1: 3400, dur: 0.16, vol: 0.06, type: 'sine' }); tone({ f0: 3900, dur: 0.1, delay: 0.06, vol: 0.04, type: 'sine' }); },
   dread() { if (!gate('dread', 350)) return; tone({ f0: 55, f1: 40, dur: 0.18, vol: 0.22, type: 'sine' }); tone({ f0: 82, f1: 48, dur: 0.12, vol: 0.08, type: 'triangle', delay: 0.08 }); },
   shaken() { if (!gate('shaken', 200)) return; tone({ f0: 520, f1: 90, dur: 0.2, vol: 0.28, type: 'sawtooth' }); noise({ f0: 1800, f1: 200, dur: 0.16, vol: 0.2, filter: 'bandpass' }); },
@@ -428,7 +432,7 @@ export function presentStage(scene) {
 }
 /** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
-const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_)/;
+const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
   return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
 }

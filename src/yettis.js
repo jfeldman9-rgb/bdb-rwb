@@ -83,6 +83,39 @@ const HEAVY = ['guard', 'charger', 'lecturer'];
 export function choirMultiplier(e, enemies) {
   return enemies.some(a => a !== e && a.alive && ['choir','choirmaster'].includes(a.type) && Math.hypot(a.x-e.x,a.y-e.y) <= 300) ? 1.28 : 1;
 }
+/** Dashed ring and note marks for a living choir. Radius matches the buff. The multiplier stays 1.28. */
+export function choirAura(e) {
+  if (!e?.alive || (e.type !== 'choir' && e.type !== 'choirmaster')) return null;
+  return { r: 300, notes: 3 };
+}
+/** Same-lane minions closer than this overlap into one sprite. Bosses stay put. */
+export const SEPARATE_GAP = 46;
+const SEPARATE_PUSH = 8;
+const separateScratch = [];
+/** Push same-lane non-bosses apart. actorId order keeps the step deterministic. At most 8px per body per pair. */
+export function separateEnemies(enemies, bounds) {
+  separateScratch.length = 0;
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    if (e?.alive && !e.boss) separateScratch.push(e);
+  }
+  separateScratch.sort((a, b) => (a.id | 0) - (b.id | 0));
+  const lo = bounds ? bounds.l + 55 : -Infinity;
+  const hi = bounds ? bounds.r - 55 : Infinity;
+  for (let i = 0; i < separateScratch.length; i++) {
+    for (let j = i + 1; j < separateScratch.length; j++) {
+      const a = separateScratch[i], b = separateScratch[j];
+      if (laneOf(a.y) !== laneOf(b.y)) continue;
+      const dx = b.x - a.x;
+      const dist = Math.abs(dx);
+      if (dist >= SEPARATE_GAP) continue;
+      const push = Math.min(SEPARATE_PUSH, (SEPARATE_GAP - dist) / 2);
+      const sign = dx > 0 || (dx === 0 && (a.id | 0) <= (b.id | 0)) ? 1 : -1;
+      a.x = clamp(a.x - sign * push, lo, hi);
+      b.x = clamp(b.x + sign * push, lo, hi);
+    }
+  }
+}
 export class Yetti {
   constructor(type, x, y, hpScale = 1) {
     const t = TYPES[type]; if (!t) throw new Error(`Unknown Yetti: ${type}`);

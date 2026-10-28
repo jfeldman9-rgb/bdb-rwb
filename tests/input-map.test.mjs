@@ -23,4 +23,14 @@ test('title begins on gamepad Start; gameplay pauses on Enter',()=>{
  other.root.emit('keydown',{code:'KeyR'});
  assert.equal(gameplayWantsPause(other.input),false);
 });
+test('Escape and P do not start the title; gameplay still pauses',()=>{
+ for(const code of ['Escape','KeyP']){
+  const title=setup();
+  title.root.emit('keydown',{code});
+  assert.equal(titleWantsBegin(title.input),false,code);
+  const play=setup();
+  play.root.emit('keydown',{code});
+  assert.equal(gameplayWantsPause(play.input),true,code);
+ }
+});
 test('touch pause/mute meet 44pt with safe-area; a grab prompts a mash',async()=>{const{readFile}=await import('node:fs/promises');const html=await readFile('index.html','utf8');assert.match(html,/#top-buttons button\{[^}]*min-width:44px/);assert.match(html,/#top-buttons button\{[^}]*min-height:44px/);assert.match(html,/#top-buttons\{[^}]*safe-area-inset-right/);const{stagePrompt}=await import('../src/hud.js');assert.match(stagePrompt({bob:{state:'grabbed',grabMash:3}}),/MASH/);});

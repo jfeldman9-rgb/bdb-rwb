@@ -251,9 +251,9 @@ Key verified gaps this plan leans on (read from source, 2026-10-28): `playDadCal
 - Implementation: map `refuseReason` results (`src/dad-call.js`) to specific banners in `Campaign.useDad()` (`NO TARGETS`, `BOSS IS UNTOUCHABLE`, `DAD ALREADY SWATTED THIS PHASE`, recharge shows KOs remaining) + `bob_dadwait_01` on `spent`; keep the Stage-1 `DAD ARRIVES IN ZONE 3.` special case. Extend `tests/dad-call.test.mjs`.
 - Effort: S · Priority: P1
 
-**46. Second swat for crowded screens (the plan promised two)**
-- Why: BUILD-PLAN §4.4 specifies 2 overhead swats; `dad.js` plays one 8-frame swat, so a full screen dies in a single blink with no rhythm.
-- Implementation: if ≥4 hittables are on screen, loop the `swat` segment once before `exit` (extend `DAD_TIMING`/state machine in `src/dad.js`), resolving half the targets per swat in `Campaign` — or, cheaper, resolve all on swat 1 and use swat 2 as a pure flourish on the farthest cluster. Keep total freeze ≤2.2 s.
+**46. Second swat for crowded screens (the plan promised two) — not in v1**
+- Why: an early BUILD-PLAN draft specified 2 overhead swats. The packed atlas is one swat, and `dad.js` plays that single 8-frame swat. v1 does not add a second.
+- Implementation: do not loop the swat. Tests in `tests/dad-call.test.mjs` pin enter 6@12, swat 8@16, exit 6@12.
 - Effort: M · Priority: P2
 
 **47. Dad targets the densest cluster, not just `bob.x + 150`**

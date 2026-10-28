@@ -10,6 +10,7 @@ export function createStartupGuard(root = globalThis) {
   const messages = {
     graphics: ['Graphics could not start', 'This browser could not create the WebGL graphics context Bob needs. Try Reload game once. If this returns, open this same preview in a WebGL-capable browser or device.'],
     assets: ['Some game files could not load', 'The game stopped before the title screen because a required file did not load. Check your connection, then reload this same preview.'],
+    chapter: ['A chapter file could not load', 'This chapter did not finish loading. Check your connection, then reload this same preview.'],
     startup: ['The game could not start', 'A startup error stopped the game before the title screen. Try Reload game. If it happens again, share this preview link and the error code below.'],
   };
   const guard = {
@@ -21,7 +22,7 @@ export function createStartupGuard(root = globalThis) {
       failed = true;
       const message = typeof error === 'string' ? error : error?.message || '';
       const category = kind === 'assets' ? 'assets' : /webgl|graphics context/i.test(message) ? 'graphics' : 'startup';
-      const [title, detail] = messages[category];
+      const [title, detail] = category === 'assets' && finished ? messages.chapter : messages[category];
       const boot = byId('boot'); if (boot) boot.hidden = true;
       const overlay = byId('startup-error'); if (overlay) overlay.hidden = false;
       const heading = byId('startup-title'); if (heading) heading.textContent = title;
@@ -56,7 +57,9 @@ export function createStartupGuard(root = globalThis) {
   // The Reload card reopens the running stage instead of the title when a
   // stage was already in progress; otherwise it is a plain reload.
   const reload = () => { try { resumeGame(root, root.__game); } catch (e) { root.location?.reload(); } };
-  byId('startup-retry')?.addEventListener('click', reload);
+  const retry = byId('startup-retry');
+  if (retry) retry.__bdbResume = true;
+  retry?.addEventListener('click', reload);
   // Boot's create hook can run after the module import has resolved. Capture
   // those startup errors too, ignoring unrelated extension-origin errors.
   const onError = event => {

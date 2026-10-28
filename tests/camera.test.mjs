@@ -45,6 +45,13 @@ test('CAM_LEAD keeps Bob in the left third of the screen', () => {
   assert.ok(sx >= VW * 0.15);
 });
 
+test('respawn uses CAM_LEAD instead of a copied 0.28', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/campaign.js', import.meta.url), 'utf8');
+  assert.match(src, /cp\.x-VW\*CAM_LEAD/);
+  assert.doesNotMatch(src, /VW\*0\.28/);
+});
+
 test('updateCamera scrolls the world; Bob stays near left third when unlocked', () => {
   const state = { camX: 0, camMax: 0, bounds: { l: 0, r: VW } };
   const bobX = 2800;

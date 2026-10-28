@@ -48,6 +48,8 @@ const LINES = {
   line_a: ['Narrator', 'One.'],
   line_b: ['Claudia', 'Two.'],
   line_c: ['Bob', 'Three.'],
+  dad_call_02: ['Dad', 'Yettis? In this economy? Get outta heah!'],
+  dad_catchphrase: ['Dad', 'Son, sometimes you just need to use the fly swatter to keep the women away!'],
 };
 audio.registerLines(LINES);
 audio.setVoiceFiles(Object.keys(LINES), Object.keys(LINES));
@@ -125,6 +127,21 @@ test('stage 3 claudia_open outlasts the where-bark that starts after it was queu
   sources.at(-1).end();
   await flush(); await flush();
   assert.ok(started.includes('claudia_open'));
+  reset();
+});
+
+test('the Dad catchphrase waits behind the call line instead of being dropped', async () => {
+  durations = [3.2, 4.61];
+  const cap = () => {};
+  audio.say('dad_call_02', cap);
+  audio.say('dad_catchphrase', cap);
+  await flush(); await flush();
+  assert.deepEqual(started, ['dad_call_02']);
+  assert.equal(audio.voiceBusy('dad_catchphrase'), true, 'impact line stays queued while the call is sounding');
+  now = 3.2;
+  sources.at(-1).end();
+  await flush(); await flush();
+  assert.ok(started.includes('dad_catchphrase'));
   reset();
 });
 
