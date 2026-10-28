@@ -3,7 +3,7 @@
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { dirname, extname, join, normalize } from 'node:path';
 import assert from 'node:assert/strict';
 
 const root = process.cwd();
@@ -12,7 +12,9 @@ const MIME = {
   '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp',
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg', '.svg': 'image/svg+xml',
 };
-const shotDir = '/opt/cursor/artifacts/browser-smoke';
+// BDB_SMOKE_DIR overrides the screenshot directory. The default is repo-local
+// so a laptop without /opt/cursor/artifacts can still run the smoke.
+const shotDir = process.env.BDB_SMOKE_DIR || join(root, 'docs/shots/browser-smoke');
 
 function startServer() {
   const server = createServer(async (req, res) => {
@@ -98,7 +100,9 @@ try {
   assert.equal(advanced.stage, 1);
   assert.ok(advanced.elapsed > boot.elapsed, `frames did not advance (${boot.elapsed} -> ${advanced.elapsed})`);
   await shot('stage1');
-  await copyFile(`${shotDir}/stage1.png`, '/opt/cursor/artifacts/p5-gameplay.png');
+  const gameplayShot = process.env.BDB_SMOKE_GAMEPLAY || join(shotDir, 'gameplay.png');
+  await mkdir(dirname(gameplayShot), { recursive: true });
+  await copyFile(`${shotDir}/stage1.png`, gameplayShot);
   let bossShot = false, splitShot = false, status;
   for (let i = 0; i < 600; i++) {
     status = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};for(let i=0;i<90&&!s.switching&&!s.world.victory;i++)s.update(0,1000/60);const card=document.getElementById('startup-error');return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.wingmen?.phase,victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats};})()`);

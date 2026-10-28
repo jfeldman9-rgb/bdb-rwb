@@ -18,8 +18,8 @@ export const LINES = {
  bob_where_claudia_01:['Bob','Where is Claudia???'],bob_where_claudia_02:['Bob','Where is Claudia???'],
  bob_cory_joke_01:['Bob','Why does Cory like guys?'],bob_cory_joke_02:['Bob','Why does Cory like guys?'],
  yetti_porkchop_01:['Yetti','Pork Chop Sandwiches!'],yetti_porkchop_02:['Yetti','Pork Chop Sandwiches!'],
- yetti_colombian_room_01:['Yetti',"Stay away from the Colombian's room!"],yetti_colombian_room_02:['Yetti',"Stay away from the Colombian's room!"],
- yetti_purple_car_01:['Yetti','Bob, why is your car purple?'],yetti_purple_car_02:['Yetti','Bob, why is your car purple?'],
+ yetti_colombian_room_01:['Yetti','Stay away from the Colombians room.'],yetti_colombian_room_02:['Yetti','Stay away from the Colombians room.'],
+ yetti_purple_car_01:['Yetti','Bob why is your car purple?'],yetti_purple_car_02:['Yetti','Bob why is your car purple?'],
 };
 export const PRESENT = ["bdb_open", "bdb_produce", "bdb_laugh", "claudia_open", "claudia_question", "claudia_leave", "yetti_turnback", "choir_serious", "lecturer_intervention", "wingman_council", "dad_call_01", "dad_call_02", "dad_call_03", "dad_done_01", "dad_done_02", "dad_catchphrase", "papi_chorus", "bob_papi_01", "bob_hurt_01", "bob_hurt_02", "bob_hurt_03", "bob_respawn_01", "bob_dadwait_01", "bob_papiwait_01", "wingman_phase2", "wingman_phase3", "wingman_defeat", "interventionist_intro", "choirmaster_intro", "nar_intro_01", "nar_intro_02", "nar_intro_03", "nar_kidnap", "nar_ch1", "nar_ch2", "nar_ch3", "nar_victory", "bob_papacito_01", "bob_papacito_02", "bob_where_claudia_01", "bob_where_claudia_02", "bob_cory_joke_01", "bob_cory_joke_02", "yetti_porkchop_01", "yetti_porkchop_02", "yetti_colombian_room_01", "yetti_colombian_room_02", "yetti_purple_car_01", "yetti_purple_car_02"];
 export const stageLines = n => Object.keys(LINES).filter(id=>!/^nar_ch/.test(id)||id===`nar_ch${n}`);

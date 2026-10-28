@@ -99,13 +99,14 @@ export function choirAura(e) {
 export const SEPARATE_GAP = 46;
 const SEPARATE_PUSH = 8;
 const separateScratch = [];
-/** Push same-lane non-bosses apart. actorId order keeps the step deterministic. At most 8px per body per pair. */
+/** Push same-lane non-bosses apart. actorId order keeps the step deterministic. At most 8px per body per pair.
+ *  Hold, telegraph, rush, stun, and down stay put so a tell or a crossing is not shoved off its mark. */
 export function separateEnemies(enemies) {
   separateScratch.length = 0;
   for (let i = 0; i < enemies.length; i++) {
     const e = enemies[i];
     if (!e?.alive || e.boss) continue;
-    if (e.state === 'hold' || e.state === 'telegraph') continue;
+    if (e.state === 'hold' || e.state === 'telegraph' || e.state === 'rush' || e.state === 'stun' || e.state === 'down' || e.stun > 0) continue;
     separateScratch.push(e);
   }
   separateScratch.sort((a, b) => (a.id | 0) - (b.id | 0));

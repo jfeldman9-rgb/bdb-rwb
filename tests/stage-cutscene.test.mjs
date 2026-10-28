@@ -146,7 +146,8 @@ test('superseding a held clip still plays the lines it was holding', async () =>
   scene.startHeldClip('kidnap', (held) => { played = held.slice(); });
   scene.voiceHold = ['wingman_council'];
   scene.startHeldClip('rescue_pre_boss', () => {});
-  assert.deepEqual(played, ['wingman_council']);
+  assert.equal(played, null, 'abort does not speak the held line into the audio stop');
+  assert.deepEqual(scene.voiceHold, ['wingman_council']);
   assert.equal(scene.holdingVoice, true);
   story.destroy();
 });

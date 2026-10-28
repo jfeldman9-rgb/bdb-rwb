@@ -10,7 +10,8 @@ import { PapacitoFX } from './papacito-fx.js';
 import { q } from './config.js';
 import { gameplayWantsPause } from './input.js';
 import { say,sfx,playTrack,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
-import { stageLines } from './voice-lines.js';
+import { stageLines, LINES } from './voice-lines.js';
+import { showStuck } from './recovery.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cutscene.js';
@@ -29,6 +30,25 @@ export function trackForStageStart(stageNo, events) {
 export function bossTrackForBatch(stageNo, events) {
   if (events?.some(e => e.type === 'cutscene')) return null;
   return `boss${stageNo}`;
+}
+
+/** Wingmen paint behind Bob and not fully solid, so a silhouette cannot cover him. */
+export const WINGMAN_ALPHA = 0.78;
+export function fighterDepth(model) {
+  const y = model?.y || 0;
+  return (model?.type === 'wingman' ? 700 : 1000) + y;
+}
+
+/** GameScene owns the fighter shadow. FX must not register that key: a second createCanvas returns null and create() throws. */
+export function bootOwnedTextures(scene) {
+  if (!scene.textures.exists('shadow')) {
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x03050c, .5);
+    g.fillEllipse(32, 32, 63, 60);
+    g.generateTexture('shadow', 64, 64);
+    g.destroy();
+  }
+  return new FX(scene);
 }
 
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
@@ -69,17 +89,22 @@ export class GameScene extends Phaser.Scene {
  }
  create(){
   if(globalThis.__bdbStartup?.failed)return;
-  this.assemble();
-  // Preload can sit here for seconds on a slow phone. The freeze guard waits until the stage is actually running.
-  this.started=true;
+  try{
+   this.mountTextures();
+   this.assemble();
+   // Preload can sit here for seconds on a slow phone. The freeze guard waits until the stage is actually running.
+   this.started=true;
+  }catch(error){
+   this.started=false;
+   showStuck(globalThis,error instanceof Error?error:new Error(String(error)),this.game);
+  }
  }
+ mountTextures(){this.fx=bootOwnedTextures(this);}
  assemble(){
   this.game.campaign=this.world;this.metas=makeCharAnims(this,STAGE_CHARS[this.stageNo]);
   this.backdrop=buildBackdrop(this,this.world.def);
-  if(!this.textures.exists('shadow')){const g=this.make.graphics({x:0,y:0},false);g.fillStyle(0x03050c,.5);g.fillEllipse(32,32,63,60);g.generateTexture('shadow',64,64);g.destroy();}
   this.dadLabel=this.add.text(0,0,'BDB',{fontFamily:'Arial',fontSize:20,fontStyle:'bold',color:'#fff0ad',stroke:'#192235',strokeThickness:4}).setDepth(19001).setVisible(false);
   this.g=this.add.graphics().setDepth(19000);this.hud=new HUD(this);this.papiFX=new PapacitoFX(this);
-  this.fx=new FX(this);
   if(this.stageNo===3){const bl=this.world.def.boss.l,m=this.metas.claudia,a=m.anims[0];this.claudia=this.add.sprite(bl+970,490,m.pages[0],a.frames[0]).setOrigin(.5,.95).setScale(.27).setTint(0xffb4d7).play(a.name);
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);this.claudiaCage=cage;}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
@@ -128,6 +153,7 @@ export class GameScene extends Phaser.Scene {
     roleAnim(model);
    if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':model.state==='hold'?'hold':['roar','slam'].includes(model.state)?'slam':'walk'):model.state==='roar'?'ring':'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
    view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
+   if(model.type==='wingman'){view.sprite.setAlpha(WINGMAN_ALPHA);view.sprite.setDepth(fighterDepth(model));}
   }
   for(const [m,v] of this.views){
    if(live.has(m))continue;
@@ -182,23 +208,30 @@ export class GameScene extends Phaser.Scene {
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
   // Play first so a superseded clip can still read the lines it was holding.
+  // Abort keeps those lines on the new hold. Speaking them here loses the audio
+  // to the stopSceneAudio that ducks the clip which just took over.
   // A clip that finishes inside play() must not re-arm that hold and swallow the next line.
   // The story player owns pauseForClip, so destroy() can resume the loop it paused.
   let finished=false;
-  this.game.story.play(key,()=>{
-   finished=true;this.holdingVoice=false;this.setPauseReason('cutscene',false);const held=this.voiceHold||[];this.voiceHold=[];
+  this.game.story.play(key,(how)=>{
+   finished=true;const held=this.voiceHold||[];this.voiceHold=[];this.holdingVoice=false;this.setPauseReason('cutscene',false);
+   if(how==='abort'){this._carryVoice=(this._carryVoice||[]).concat(held);return;}
    if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
-   done?.(held);
+   const carry=this._carryVoice||[];this._carryVoice=null;done?.([...carry,...held]);
   });
   if(finished)return;
-  this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
+  const carried=this._carryVoice||[];this._carryVoice=null;
+  this.voiceHold=carried.slice();this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
  }
  freeClaudia(){this.claudiaCage?.destroy();this.claudiaCage=null;this.claudia?.play('claudia_freed');}
  presentVictory(){
   if(this.finished)return;this.finished=true;this.freeClaudia?.();
   this.startHeldClip('victory',held=>{
    this.playHeld(held);
-   const panel=document.getElementById('victory'),score=document.getElementById('victory-score');
+   const panel=document.getElementById('victory'),score=document.getElementById('victory-score'),line=document.getElementById('victory-line');
+   // Claudia's line sits in the panel, above the eyebrow. The canvas caption would render under that overlay.
+   if(line)line.textContent=LINES.claudia_leave[1];
+   this.hud?.caption?.setText?.('');
    if(score)score.textContent=`${Math.floor(this.world.score)} points · Nightmare unlocked`;
    if(panel)panel.hidden=false;document.body.classList.remove('playing');
   });

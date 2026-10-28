@@ -34,17 +34,7 @@ node --test tests/*.test.mjs
 
 Tests cover packet rule parity, every animation frame, input ownership, Bob, the gun, all Yetti roles, Dad, checkpoints, saves, resource release, graphics recovery and complete Adventure campaigns at 30/60/120 Hz. The browser and tests share `src/campaign.js`; the bot changes only ordinary inputs.
 
-Screenshots and the browser report are in [docs/shots](docs/shots). To repeat the browser smoke test, use an already installed Chromium, start the HTTP server above, then run:
-
-```sh
-google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
-  --use-angle=swiftshader --enable-unsafe-swiftshader \
-  --remote-debugging-port=9226 --user-data-dir=/tmp/bdb-smoke-profile about:blank
-# In another terminal, with Node 24:
-node tools/browser-smoke.mjs
-```
-
-This smoke test advances normal scene updates faster than real time, captures the campaign, sends simultaneous touch events, and checks pause, rotation, context recovery and inline video skipping. SwiftShader captures do not establish iPhone or hardware performance. A live frame report is available as `window.__bdbPerf.report()`.
+`node tools/browser-smoke.mjs` launches its own static server and headless Chrome, clicks through to live gameplay, and writes screenshots plus `browser-report.json`. The shot directory defaults to `docs/shots/browser-smoke`. Set `BDB_SMOKE_DIR` to put them somewhere else, and `BDB_SMOKE_GAMEPLAY` for the gameplay still. `CHROME` overrides the browser binary. SwiftShader captures do not establish iPhone or hardware performance. A live frame report is available as `window.__bdbPerf.report()`.
 
 Rebuild assets using the existing Python/Pillow installation:
 
