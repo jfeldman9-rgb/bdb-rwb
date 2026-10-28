@@ -182,7 +182,7 @@ export class Campaign {
   hit(e,damage,dir,bonk) {
     const result=e.takeHit(damage,dir,bonk);
     if (result.blocked) {
-      this.emit('shield',{x:e.x,y:e.y});
+      this.emit('shield',{x:e.x,y:e.y,chips:result.shieldBroke?3:(e.shieldHits||0)});
       if (result.shieldBroke) {
         this.banner(STORY.shield);
         const kind = hitTier({ shieldBroke: true });

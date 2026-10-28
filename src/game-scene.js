@@ -150,7 +150,7 @@ export class GameScene extends Phaser.Scene {
     for(let n=0;n<aura.notes;n++){const ang=spin*1.4+n*2.0943951023931953,nx=e.x+Math.cos(ang)*72,ny=e.y-168+Math.sin(ang)*16;g.fillStyle(0xfff1a8,.9);g.fillEllipse(nx,ny,8,6);g.fillRect(nx+4,ny-14,2,14);}
    }else if(choirMultiplier(e,w.enemies)>1){g.lineStyle(3,0xffd56a,.35+.35*Math.sin((w.elapsed||0)*6));g.strokeEllipse(e.x,e.y-90,78,160);}
    if(e.type==='hover'){g.lineStyle(3,0x9de1ff,.9);g.strokeEllipse(e.x,e.y,90,20);}
-   if(e.shield){g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(e.x+e.facing*48,e.y-82,34,110);}
+   if(e.shield){const sx=e.x+e.facing*48,sy=e.y-82;g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(sx,sy,34,110);const chips=e.shieldHits||0;if(chips>=1){g.lineStyle(2,0x6a4a12,.95);g.lineBetween(sx-10,sy-28,sx+8,sy+6);}if(chips>=2){g.lineBetween(sx+12,sy-22,sx-6,sy+18);}}
    if(e.state==='telegraph'){
     g.fillStyle(0xff5575,.28);
     if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,1280,LANE_H);}
@@ -192,7 +192,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
-  if(type==='shield')sfx.clang();
+  if(type==='shield')sfx.clang(data?.chips||1);
   if(type==='boss')playTrack(`boss${this.stageNo}`);if(type==='clear')sfx.levelClear();
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
