@@ -46,7 +46,7 @@ class Title extends Phaser.Scene {
    this.begin();
   }
  }
- update(t,delta){this.game.inp.update(delta/1000);if(this.game.inp.take('start')||this.game.inp.take('fire'))this.begin();}
+ update(t,delta){this.game.inp.update(delta/1000);if(this.game.inp.take('start')||this.game.inp.take('fire')||this.game.inp.take('pause'))this.begin();}
 }
 export function bootGame(){
  registerVoiceLines();const game=new Phaser.Game({type:Phaser.WEBGL,parent:'game',width:VW,height:VH,backgroundColor:'#101421',resolution:RS0,

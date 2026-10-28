@@ -185,7 +185,7 @@ export class GameScene extends Phaser.Scene {
  }}
  update(time,delta){
   if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;syncRotatePause(this);inp.update(dt);
-  if(inp.take('pause'))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
+  if(inp.take('pause')||inp.take('start'))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
   this.accumulator+=dt;
   while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
