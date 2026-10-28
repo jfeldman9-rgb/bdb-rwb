@@ -75,3 +75,37 @@ Deferred: Choirmaster fight balance (Claude C3; Jason signs off). Kimi F8 (stage
 ## Pass 3 boot follow-up
 
 `1eb6f3a` did not boot. `src/game-scene.js` imported `./shot-feel.js`, which was never committed, and `bindRotatePause` (`src/rotate-block.js`) and `noteRenderer` (`src/perf.js`) were imported without exports (the behaviour-test commit called them, the exports stayed in the working tree). A clean checkout of that SHA was 179/184. The 192/192 figure above was that dirty tree, not the pushed commit. `FX.slowmo` / `FX.hitstop` were still written and never read, and hostile knockback still used the projectile's x. This follow-up commits `src/shot-feel.js`, `tests/presentation.test.mjs`, those two exports, and a zero-dependency `package-lock.json` so `npm ci` can run. FX no longer stores slow-mo or hit-stop. A hostile hit calls `hurtBob(false, null, p.dir)`. Choirmaster numbers and `assets/cutscenes/intro_v3.mp4` are unchanged. Fresh clone of `b360d53` (`git clone`, `npm ci`, `npm test`) is 192/192. The browser entry (`lib/phaser.min.js`, then `src/bootstrap.js`) imports through `main.js` with `shot-feel.js`, `bindRotatePause`, and `noteRenderer` resolved.
+
+## Pass 4: Grok 4.7 (Cursor)
+
+Branch `cursor/bdb-pass4-cfe0`, draft PR #11 into `cursor/bdb-pass3-7221` (parent `298879e`). No merge, no deploy.
+
+The missing-file P0 scored on PR #6 was already fixed at `298879e` (`src/shot-feel.js`, `bindRotatePause`, `noteRenderer`). Confirmed, then skipped. The pass-4 list is `docs/FIX-LIST.md`, merged from the four Pass 3 reviews plus the Pass 3 deferrals, with each reviewer credited.
+
+Fresh clone of `54984a9` (`git clone`, `npm ci`, `npm test`) is 210/210. The browser entry loads `lib/phaser.min.js` and then `src/bootstrap.js`, which imports `main.js`. `shot-feel.js`, `bindRotatePause`, and `noteRenderer` resolve.
+
+Adventure clears from that clone stay inside 140–240 s. Fresh stages: 60 Hz 165.1 / 189 / 206.5 s, 30 Hz 165 / 194.1 / 198.2 s, 120 Hz 161.4 / 193.3 / 203.8 s. Full-campaign stage times: 60 Hz 165.1 / 187.1 / 212.9 s, 30 Hz 165 / 184.7 / 206.6 s, 120 Hz 161.4 / 197.6 / 206.9 s.
+
+Choirmaster HP stays 1140. The eggplant still fires straight (`vy` 0). `CAM_LEAD` is still 0.28. There is still no shop. Dad's catchphrase and the quoted lines are unchanged. `assets/cutscenes/intro_v3.mp4` is untouched.
+
+Done: P4-1 through P4-18.
+- P4-1 A phase-3 Wingman at 1 HP no longer soaks eggplants. Nightmare clears cover every stage at 60 Hz and at 30 Hz, including Stage 1.
+- P4-2 The stuck card stays off a slow chapter load and off the first stray error. An empty filename does not trip. A repeat does.
+- P4-3 `dad_catchphrase` waits with the scripted lines. Wording unchanged.
+- P4-4 A dead Wingman stays dead when phase 3 respawns. Phase advance clears the HP snapshot.
+- P4-5 `showStuck` does not stack a second Reload listener. The freeze guard clears on `game.destroy`.
+- P4-6 The story player is the only clip pause. A second clip aborts the first.
+- P4-7 `syncViews`, effects, particles, and the sim's dead-entry sweeps reuse their lists. Boss bars tick the 66% and 33% gates.
+- P4-8 Stage music does not start when a cutscene is already queued, so Stage 2 does not blip under the kidnap clip.
+- P4-9 Respawn uses `CAM_LEAD`. The value stays 0.28.
+- P4-10 A mercy respawn keeps the checkpoint line. A Bob kill splats once. Papi and Dad still splat on the ko.
+- P4-11 A locked Dad is not reported as spent. A recharging call shows the 10-KO and 45 s progress.
+- P4-12 Escape and P do not start the title. Pad Start and Enter still begin. Gameplay pause is unchanged.
+- P4-13 The plan docs match the single packed swat. No second swat was added.
+- P4-14 A living choir draws a 300 px ring, note marks, and a gold pulse on buffed enemies. `choirMultiplier` stays 1.28.
+- P4-15 Shield chips 1 and 2 crack the ellipse. The clang rises per chip. The break is still the third hit.
+- P4-16 Same-lane non-boss Yettis under 46 px are pushed apart in `actorId` order, at most 8 px per body per pair. Bosses stay put.
+- P4-17 A boss corpse stays fully opaque through the minion hold (0.5 s), then fades. Minion hold stays 0.5 s.
+- P4-18 After the title, a missing chapter file says the chapter did not finish loading.
+
+Deferred: Choirmaster fight balance (Claude C3; waits for Jason). Muse Adventure zone-5 spike (no further heal cut). Kimi G5 real-device rotate (`bindRotatePause` is unit-tested). Claude R9 `grabPunish` handoff (the campaign consumes it the same step). Kimi minor 5 static export check. Muse Story flatness and the nocutscenes ear-check.
