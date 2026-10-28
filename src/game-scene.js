@@ -14,6 +14,7 @@ import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall } from './dad-call-cutscene.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
+import { syncRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
 
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
@@ -158,7 +159,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='hit'||type==='ko'){sfx.hit(type==='ko');const kind=type==='ko'?'heavy':(data?.kind||'light');if(type==='hit')this.fx?.impact(kind,data.x,data.y-90,data.dir||1);this.fx?.splat(data.x,data.y-70);for(let i=0;i<(type==='ko'?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}
  }}
  update(time,delta){
-  if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;inp.update(dt);
+  if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;syncRotatePause(this);inp.update(dt);
   if(inp.take('pause'))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
   this.accumulator+=dt;
   while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}

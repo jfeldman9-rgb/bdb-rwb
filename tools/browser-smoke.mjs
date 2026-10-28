@@ -45,9 +45,13 @@ await shot('touch-stage1');
 await evaluate('document.getElementById("pause").click()');
 const pausedAt=await evaluate('window.__game.campaign.elapsed');await sleep(150);assert.equal(await evaluate('window.__game.campaign.elapsed'),pausedAt);
 await evaluate('document.getElementById("pause").click()');
-await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(100);
-assert.equal(await evaluate('getComputedStyle(document.getElementById("rotate")).display'),'grid');
-await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true});await sleep(100);
+await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+await send('Emulation.setEmulatedMedia',{features:[{name:'orientation',value:'portrait'},{name:'hover',value:'none'},{name:'pointer',value:'coarse'}]});
+await sleep(100);
+assert.equal(await evaluate('getComputedStyle(document.getElementById("rotate")).display'),'flex');
+await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true});
+await send('Emulation.setEmulatedMedia',{features:[{name:'orientation',value:'landscape'},{name:'hover',value:'none'},{name:'pointer',value:'coarse'}]});
+await sleep(100);
 
 const touch=await evaluate(`({touch:document.body.classList.contains('touch'),buttons:[...document.querySelectorAll('.tb')].map(e=>({id:e.id,width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height})),canvas:document.querySelector('canvas').getBoundingClientRect().toJSON()})`);console.log('Touch layout',JSON.stringify(touch));
 // Exercise the actual WebGL context recovery with the same live scene.

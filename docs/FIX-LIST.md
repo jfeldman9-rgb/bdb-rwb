@@ -13,7 +13,7 @@
 | **P0-2** | **Done.** Nightmare: third death in a zone restores Dad (or a shake trio before he arrives). At most two ranged Yettis share a lane. Bot clears S2 zone 5 (~56s, 2 deaths) and S3 zone 5 (~91s, 5 deaths). `vy` stays 0. |
 | **P0-3** | **Done.** Dead enemies keep their view for 0.5s, play knockdown, then fade. `tests/corpses.test.mjs`. |
 | **P0-4** | **Done.** `GameScene` owns `FX`: muzzle flash, visual recoil, eggplant splat, lane-step dust. Hit-stop uses `HITSTOP` tiers (light stays 4 frames). Presses during the freeze are latched. `setBloom`, `setBackdropLit`, and `runId` exist so a later governor install does not throw. `tests/feel.test.mjs`. |
-| **P0-5** | Pending |
+| **P0-5** | **Done.** Portrait phones (`orientation:portrait`, `hover:none`, `pointer:coarse`) keep `#rotate` up during play, same as RWB. Gameplay pauses on `rotate` only when that block flips. The letterbox escape hint is gone. `#rotate-start` stays for the title and hides once `.playing`. |
 | **K1** | Pending |
 | **P1-3** | Pending |
 | **P1-4** | Pending |
