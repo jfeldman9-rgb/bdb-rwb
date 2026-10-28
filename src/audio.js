@@ -419,6 +419,13 @@ export function residentClipIds() { return Object.keys(clips); }
  * 'interrupt', or the seconds the new line may wait for its turn (0 or 'skip' drops it). null restores the default.
  */
 export function setVoicePolicy(fn) { voicePolicy = typeof fn === 'function' ? fn : null; voiceQueue.length = 0; }
+/** How long the active policy holds `id` behind `cur`. 0 when no policy is installed. */
+export function voiceWait(id, cur) { return voicePolicy ? voicePolicy(id, cur) : 0; }
+/** Stage open: install the narration policy, then let the scene play the lines that just fired. */
+export function presentStage(scene) {
+  setVoicePolicy(narrationYields);
+  scene.handleEvents();
+}
 /** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
 const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_)/;

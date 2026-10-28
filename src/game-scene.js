@@ -8,15 +8,17 @@ import { buildBackdrop } from './backdrop.js';
 import { HUD } from './hud.js';
 import { PapacitoFX } from './papacito-fx.js';
 import { q } from './config.js';
-import { say,sfx,playTrack,preloadClips,releaseClips,stopSceneAudio,setVoicePolicy,narrationYields } from './audio.js';
+import { gameplayWantsPause } from './input.js';
+import { say,sfx,playTrack,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
 import { stageLines } from './voice-lines.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cutscene.js';
 import { pauseForClip } from './cutscene-hooks.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
-import { syncRotatePause } from './rotate-block.js';
+import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
+import { RECOIL_KICK, stepRecoil, hostileShape } from './shot-feel.js';
 
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
 function roleAnim(m) {
@@ -64,10 +66,11 @@ export class GameScene extends Phaser.Scene {
   if(this.stageNo===3){const bl=this.world.def.boss.l,m=this.metas.claudia,a=m.anims[0];this.claudia=this.add.sprite(bl+970,490,m.pages[0],a.frames[0]).setOrigin(.5,.95).setScale(.27).setTint(0xffb4d7).play(a.name);
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);this.claudiaCage=cage;}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
-  this.game.inp.clear();preloadClips(stageLines(this.stageNo));setVoicePolicy(narrationYields);playTrack(`stage${this.stageNo}`);
+  this.game.inp.clear();preloadClips(stageLines(this.stageNo));playTrack(`stage${this.stageNo}`);
   this.offDadBless=installDadGestureBless(globalThis);
-  this.events.once('shutdown',()=>{this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
-  this.syncViews();this.handleEvents();this.hud.update(this.world);
+  this.offRotate=bindRotatePause(this);
+  this.events.once('shutdown',()=>{this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
+  this.syncViews();presentStage(this);this.hud.update(this.world);
  }
  setBloom(on){this.bloomEnabled=!!on;}
  setBackdropLit(on){this.backdropLit=on!==false;}
@@ -75,7 +78,7 @@ export class GameScene extends Phaser.Scene {
   if(!(this.recoil>0))return;
   const view=this.views.get(this.world.bob);if(!view)return;
   view.x=this.world.bob.x-(this.recoilDir||1)*this.recoil*0.55;view.sync();
-  this.recoil=Math.max(0,this.recoil-90*dt);
+  this.recoil=stepRecoil(this.recoil,dt);
  }
  stepDust(dt){
   const b=this.world.bob;if(!b||!this.fx)return;
@@ -139,7 +142,7 @@ export class GameScene extends Phaser.Scene {
    if(!e.boss&&e.hp<e.maxHp){g.fillStyle(0x201b30);g.fillRect(e.x-30,e.y-215,60,5);g.fillStyle(0xb7dce7);g.fillRect(e.x-30,e.y-215,60*e.hp/e.maxHp,5);}
   }
   for(const p of w.projectiles){g.fillStyle(0x491b7d);g.fillEllipse(p.x,p.y,48,19);g.fillStyle(0xba77ed);g.fillEllipse(p.x-5*p.dir,p.y-4,26,6);g.fillStyle(0x9bcc63);g.fillTriangle(p.x+22*p.dir,p.y,p.x+32*p.dir,p.y-9,p.x+33*p.dir,p.y+4);}
-  for(const p of w.hostile){g.lineStyle(4,p.kind==='snowball'?0xdaefff:0xffdf89);g.strokeEllipse(p.x,p.y-65,28,32);}
+  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else{g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-65,28,32);}}
   for(const p of w.pickups){g.fillStyle(0xfff1bb);g.fillRoundedRect(p.x-12,p.y-38,24,32,5);g.fillStyle(0xcc8fde);g.fillRect(p.x-9,p.y-30,18,13);g.fillStyle(0x7bd6c7);g.fillRect(p.x-10,p.y-43,20,6);}
   for(const p of this.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);}
   this.particles=this.particles.filter(p=>p.life>0);
@@ -169,7 +172,7 @@ export class GameScene extends Phaser.Scene {
  }
  handleEvents(){for(const {type,data}of this.world.events.splice(0)){
   if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else{say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
-  if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=12;this.recoilDir=data.dir||1;}}
+  if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
   if(type==='shield')sfx.clang();
@@ -186,8 +189,8 @@ export class GameScene extends Phaser.Scene {
  }}
  update(time,delta){
   this.game.beat?.();
-  if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;syncRotatePause(this);inp.update(dt);
-  if(inp.take('pause')||inp.take('start'))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
+  if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;inp.update(dt);
+  if(gameplayWantsPause(inp))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
   this.accumulator+=dt;
   while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}

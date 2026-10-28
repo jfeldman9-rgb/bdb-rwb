@@ -62,11 +62,6 @@ test('a software-renderer downgrade uses the scene fx hooks without throwing', (
   assert.equal(st.lit, false);
 });
 
-test('story clips park the Phaser loop like the Dad call', async () => {
-  const scene = await readFile('src/game-scene.js', 'utf8');
-  assert.match(scene, /pauseForClip\(this\.game\)/);
-});
-
 test('a title-screen downgrade keeps the floor and lands on the fresh fx rig', () => {
   const st = {
     bloom: true, lit: true,

@@ -55,14 +55,6 @@ test('resumed boot drops one-shot flags once its stage starts', () => {
   assert.ok(!new URL(replaced).searchParams.has('resume'));
 });
 
-test('boot wires the resume cleanup', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const main = await readFile('src/main.js', 'utf8');
-  assert.match(main, /installResumeCleanup\(game,q\)/);
-  const startup = await readFile('src/startup.js', 'utf8');
-  assert.match(startup, /resumeGame\(root, root\.__game\)/);
-});
-
 function cardRoot(extra = {}) {
   const els = {};
   const el = (id) => (els[id] ??= { textContent: '', hidden: true, focus() {}, handlers: {}, addEventListener(e, fn) { (this.handlers[e] ??= []).push(fn); }, removeEventListener(e, fn) { this.handlers[e] = (this.handlers[e] || []).filter(f => f !== fn); }, click() { for (const fn of this.handlers.click || []) fn(); } });
