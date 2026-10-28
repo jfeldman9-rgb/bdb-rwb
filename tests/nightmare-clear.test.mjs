@@ -121,6 +121,40 @@ test('nightmare bot clears stage 2 and stage 3 zone 5 without a third ranged bod
   }
 });
 
+test('a Wingman keeps damage already dealt when Bob dies', () => {
+  const w = new Campaign({ stage: 3, difficulty: 'nightmare' });
+  w.startBoss(2);
+  const wing = w.enemies.find(e => e.type === 'wingman');
+  wing.hp = 40;
+  w.bob.hp = 1;
+  w.hurtBob(true);
+  for (let i = 0; i < 120 && w.stats.deaths === 0; i++) w.update(1 / 60, {});
+  const again = w.enemies.find(e => e.type === 'wingman' && e.alive);
+  assert.equal(w.stats.deaths, 1);
+  assert.equal(w.wingmen.phase, 2);
+  assert.equal(again.hp, 40);
+});
+
+function clearStage(stage, capSec = 600) {
+  const w = new Campaign({ stage, difficulty: 'nightmare' });
+  const bot = new Bot();
+  const cap = 60 * capSec;
+  for (let steps = 0; steps < cap && !w.stats.stages.includes(stage); steps++) {
+    w.update(1 / 60, bot.update(1 / 60, w));
+    for (const e of w.events) if (e.type === 'dad_callin') w.finishDadCallin();
+    for (const shot of w.projectiles) assert.equal(shot.vy, 0);
+    w.events = [];
+  }
+  return { cleared: w.stats.stages.includes(stage), seconds: w.elapsed, deaths: w.stats.deaths, zone: w.zoneIndex, boss: w.bossActive };
+}
+
+test('nightmare bot clears a full stage 2 and stage 3, Choirmaster and Wingmen included', () => {
+  for (const stage of [2, 3]) {
+    const result = clearStage(stage);
+    assert.equal(result.cleared, true, `stage ${stage} not clear in ${result.seconds.toFixed(1)}s (${result.deaths} deaths, zone ${result.zone}, boss ${result.boss})`);
+  }
+});
+
 test('mercy before Dad arrives drops a shake trio instead of a charge', () => {
   const w = new Campaign({ stage: 1, difficulty: 'nightmare' });
   assert.equal(w.dadCall.unlocked, false);

@@ -126,9 +126,21 @@ export class Campaign {
     const z=this.def.boss; this.bossActive=true; this.locked=true; this.pending=[];
     this.camMax=Math.max(this.camMax||0,z.l);
     const bossHp=this.checkpoint.zone===this.bossZone?this.checkpoint.bossHp:undefined;
-    this.checkpoint={zone:this.bossZone,x:z.l+200,phase,bossHp}; this.bob.x=Math.max(this.bob.x,z.l+120);
+    // Wingmen used to respawn at full HP, so a death undid the whole phase and Nightmare never finished.
+    const wingHp=this.checkpoint.zone===this.bossZone?this.checkpoint.wingHp:undefined;
+    this.checkpoint={zone:this.bossZone,x:z.l+200,phase,bossHp,wingHp}; this.bob.x=Math.max(this.bob.x,z.l+120);
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,boss:z,snap:lockSnaps(this.camX,z)});
-    if (z.type==='wingman') { this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase); }
+    if (z.type==='wingman') {
+      this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase);
+      if (Array.isArray(wingHp)) {
+        const bosses=this.enemies.filter(e=>e.type==='wingman');
+        bosses.forEach((e,i)=>{
+          if (wingHp[i]==null) return;
+          const floor=phase>=3?1:0;
+          e.hp=Math.max(floor,Math.min(e.maxHp,wingHp[i]));
+        });
+      }
+    }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; boss.hp=Math.min(bossPhaseHp(boss.maxHp,phase),bossHp??Infinity); this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
     const rescue = this.stageNo === 3 && !this.rescuePreBossPlayed;
@@ -224,6 +236,10 @@ export class Campaign {
   /** Lose a life, keep progress: zones resume at the wave reached; a mini-boss keeps the damage dealt. */
   respawn() {
     this.stats.deaths++;
+    if (this.wingmen) {
+      const wings=this.enemies.filter(e=>e.type==='wingman');
+      if (wings.length) this.checkpoint.wingHp=wings.map(e=>e.alive?e.hp:0);
+    }
     const boss=this.bossActive&&!this.wingmen&&this.enemies.find(e=>e.boss&&e.alive);
     if(boss)this.checkpoint.bossHp=boss.hp;
     const cp={...this.checkpoint};
