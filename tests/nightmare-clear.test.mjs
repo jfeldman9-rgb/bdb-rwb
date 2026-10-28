@@ -120,3 +120,15 @@ test('nightmare bot clears stage 2 and stage 3 zone 5 without a third ranged bod
     assert.ok(result.zoneIndex > 4, `stage ${stage} zone 5 not clear in ${result.seconds}s (${result.deaths} deaths)`);
   }
 });
+
+test('mercy before Dad arrives drops a shake trio instead of a charge', () => {
+  const w = new Campaign({ stage: 1, difficulty: 'nightmare' });
+  assert.equal(w.dadCall.unlocked, false);
+  w.zoneIndex = 1;
+  w.checkpoint = { zone: 1, x: 1130, phase: 1 };
+  for (let i = 0; i < ZONE_MERCY_DEATHS; i++) die(w);
+  assert.equal(w.zoneDeaths[1], 3);
+  assert.equal(w.dadCall.charges, 0, 'no charge before Dad arrives');
+  assert.equal(w.pickups.length, 3, 'shake trio instead');
+  assert.match(w.message, /CATCH YOUR BREATH/);
+});
