@@ -11,7 +11,7 @@ Deviations and later work:
 - Bob walk is six original frames, as Jason specified. The `_v1` originals were used instead of the interpolated root frames. No frames were invented for Bob.
 - Upgrade shop and its fields/UI are omitted. Old fields are discarded by save normalization.
 - Flat lighting ships by default; normal maps and bloom are not needed.
-- Dad uses the in-engine two-swat actor; Dad video variants and new voice recordings remain deferred.
+- Dad uses the in-engine one-swat actor. The packed atlas is a single swat, and v1 does not add a second. Dad video variants and new voice recordings remain deferred.
 - Chapter cards substitute for new chapter-entry, kidnap and boss-intro videos. Packet opening/victory clips work now.
 - Pure combat models are separated from the Phaser Fighter presentation so the campaign tests exercise actual gameplay. Shared character textures stay resident; obsolete stage-specific pages are released.
 - The compact campaign has not been tuned to the plan's 5–8 human minutes per chapter. Human pacing, audio/art polish and final casting need the subsequent content/review pass.
