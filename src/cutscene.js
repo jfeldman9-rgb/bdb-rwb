@@ -8,11 +8,11 @@ import { isMuted, onMuteChange } from './audio.js';
 
 export const CLIP_BASE = 'assets/cutscenes/';
 export const INTRO_V2 = Object.freeze({
-  // Flag default OFF until Jason OKs intro_v2. Enable with ?intro=v2.
+  // Legacy alternate intro. Enable with ?intro=v2. Default opening is intro_v3.
   enabled(q) { return q?.get?.('intro') === 'v2'; },
 });
 export const STAGE_CLIPS = Object.freeze({
-  intro: ['opening'],
+  intro: ['intro_v3'],
   intro_v2: ['intro_v2'],
   kidnap: ['kidnap_1', 'kidnap_2'],
   rescue_pre_boss: ['rescue_1'],

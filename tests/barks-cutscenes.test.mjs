@@ -10,15 +10,16 @@ test('STAGE_CLIPS maps kidnap/rescue/victory and intro_v2 stays behind flag', ()
   assert.deepEqual(STAGE_CLIPS.kidnap, ['kidnap_1', 'kidnap_2']);
   assert.deepEqual(STAGE_CLIPS.rescue_pre_boss, ['rescue_1']);
   assert.deepEqual(STAGE_CLIPS.victory, ['rescue_2']);
+  assert.deepEqual(STAGE_CLIPS.intro, ['intro_v3']);
   assert.equal(INTRO_V2.enabled(new URLSearchParams('')), false);
   assert.equal(INTRO_V2.enabled(new URLSearchParams('intro=v2')), true);
 });
 
 test('cutscene mp4s and dad placeholder exist on disk', async () => {
-  for (const id of ['kidnap_1', 'kidnap_2', 'rescue_1', 'rescue_2', 'intro_v2']) {
+  for (const id of ['kidnap_1', 'kidnap_2', 'rescue_1', 'rescue_2', 'intro_v2', 'intro_v3']) {
     await access(`assets/cutscenes/${id}.mp4`);
   }
-  await access('assets/cutscenes/dad/D1.mp4');
+  for (const id of ['D1', 'D2', 'D3']) await access(`assets/cutscenes/dad/${id}.mp4`);
 });
 
 test('bark cooldowns gate Where/Cory/Yetti lines', () => {
@@ -50,5 +51,5 @@ test('dad call bag rotates without immediate repeat when pool>1', () => {
   const bag = createDadBag({ getItem: () => null, setItem() {} }, () => 0.9, ['D1', 'D2', 'D3']);
   const a = bag.next(), b = bag.next();
   assert.notEqual(a, b);
-  assert.ok(DAD_CLIPS.includes('D1'));
+  assert.deepEqual([...DAD_CLIPS], ['D1', 'D2', 'D3']);
 });

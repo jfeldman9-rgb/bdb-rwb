@@ -4,7 +4,7 @@ import { CutscenePlayer, cutscenesEnabled } from './cutscene.js';
 import { q } from './config.js';
 
 export const DAD_CLIP_BASE = 'assets/cutscenes/dad/';
-export const DAD_CLIPS = Object.freeze(['D1']); // grow as /workspace/bdb-art/cutscenes/dad-callin/*.mp4 land
+export const DAD_CLIPS = Object.freeze(['D1', 'D2', 'D3']);
 export const BAG_KEY = 'bdb-dad-call-bag';
 const START = 1500, STALL = 1500, MAX = 11000, GUARD = 900;
 
