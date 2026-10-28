@@ -26,15 +26,15 @@ test('wingman halo volley uses the walk lanes, skipping the safe one',()=>{
 test('HUD draws one HP bar per Wingman and drops the street label',async()=>{
  const{bossBars}=await import('../src/hud.js');
  const pair={enemies:[{type:'wingman',boss:true,alive:true,hp:100,maxHp:200,role:1},{type:'wingman',boss:true,alive:true,hp:50,maxHp:200,role:2}]};
- assert.deepEqual(bossBars(pair),[{label:'W1',ratio:.5},{label:'W2',ratio:.25}]);
+ assert.deepEqual(bossBars(pair),[{label:'W1',ratio:.5,ticks:false},{label:'W2',ratio:.25,ticks:false}]);
  const downed={enemies:[{type:'wingman',boss:true,alive:true,hp:40,maxHp:200,role:1},{type:'wingman',boss:true,alive:false,hp:0,maxHp:200,role:2}]};
- assert.deepEqual(bossBars(downed),[{label:'W1',ratio:.2},{label:'W2',ratio:0}]);
+ assert.deepEqual(bossBars(downed),[{label:'W1',ratio:.2,ticks:false},{label:'W2',ratio:0,ticks:false}]);
  const laid=bossBarLayout(bossBars(pair));
  assert.equal(laid[0].color,0xd0beff);assert.equal(laid[1].color,0xffb1d6);
  assert.ok(laid[0].x+laid[0].w<=laid[1].x,'the two bars do not overlap');
  assert.ok(laid.every(b=>b.y+b.h<106),'bars stay above the boss name');
  const solo={enemies:[{type:'interventionist',boss:true,alive:true,hp:600,maxHp:1200}]};
- assert.deepEqual(bossBars(solo),[{label:'BOSS',ratio:.5}]);
+ assert.deepEqual(bossBars(solo),[{label:'BOSS',ratio:.5,ticks:true}]);
  assert.deepEqual(bossBars({enemies:[]}),[]);
  const fills=[];const rects=[];const texts=[];
  const node={setText(){return node;},setOrigin(){return node;},setAlign(){return node;},setWordWrapWidth(){return node;},setColor(){return node;},setScrollFactor(){return node;},setDepth(){return node;},setVisible(){return node;},setDisplaySize(){return node;},setTint(){return node;},setTileScale(){return node;},setAlpha(){return node;}};
@@ -49,6 +49,13 @@ test('HUD draws one HP bar per Wingman and drops the street label',async()=>{
  const ticks=rects.filter(r=>r[2]===2&&r[3]===13);
  assert.ok(ticks.some(r=>r[0]===390+500*BOSS_GATES[1]),'66% phase gate');
  assert.ok(ticks.some(r=>r[0]===390+500*BOSS_GATES[2]),'33% phase gate');
+ rects.length=0;
+ const phase1={...hudState,stageNo:3,def:{zones:[],boss:{name:'Wingman'}},wingmen:{phase:1},enemies:[{type:'wingman',boss:true,alive:true,hp:200,maxHp:360,role:1}]};
+ hud.update(phase1);
+ assert.equal(rects.filter(r=>r[2]===2&&r[3]===13).length,0,'phase 1 wingman bar has no gate ticks');
+ rects.length=0;
+ hud.update({...phase1,wingmen:{phase:3},enemies:pair.enemies});
+ assert.equal(rects.filter(r=>r[2]===2&&r[3]===13).length,0,'W1/W2 bars have no gate ticks');
  const reused=hud._bars;
  hud.update(hudState);
  assert.equal(hud._bars,reused,'boss bars reuse one array');

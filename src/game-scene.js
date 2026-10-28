@@ -1,7 +1,7 @@
 import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
 import { Fighter } from './fighter.js';
-import { TYPES, laneOf, laneY, LANE_H, choirAura, choirMultiplier } from './yettis.js';
+import { TYPES, laneOf, laneY, LANE_H, choirAura } from './yettis.js';
 import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
@@ -23,6 +23,12 @@ import { RECOIL_KICK, stepRecoil, hostileShape, killImpact } from './shot-feel.j
 export function trackForStageStart(stageNo, events) {
   if (events?.some(e => e.type === 'cutscene')) return null;
   return `stage${stageNo}`;
+}
+
+/** Boss stinger. The same drained batch may open rescue_pre_boss, which ducks music immediately. */
+export function bossTrackForBatch(stageNo, events) {
+  if (events?.some(e => e.type === 'cutscene')) return null;
+  return `boss${stageNo}`;
 }
 
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
@@ -62,6 +68,12 @@ export class GameScene extends Phaser.Scene {
   this.load.once('loaderror',loadError);this.load.once('complete',()=>this.load.off('loaderror',loadError));
  }
  create(){
+  if(globalThis.__bdbStartup?.failed)return;
+  this.assemble();
+  // Preload can sit here for seconds on a slow phone. The freeze guard waits until the stage is actually running.
+  this.started=true;
+ }
+ assemble(){
   this.game.campaign=this.world;this.metas=makeCharAnims(this,STAGE_CHARS[this.stageNo]);
   this.backdrop=buildBackdrop(this,this.world.def);
   if(!this.textures.exists('shadow')){const g=this.make.graphics({x:0,y:0},false);g.fillStyle(0x03050c,.5);g.fillEllipse(32,32,63,60);g.generateTexture('shadow',64,64);g.destroy();}
@@ -78,8 +90,6 @@ export class GameScene extends Phaser.Scene {
   this.offRotate=bindRotatePause(this);
   this.events.once('shutdown',()=>{this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();presentStage(this);this.hud.update(this.world);
-  // Preload can sit here for seconds on a slow phone. The freeze guard waits until the stage is actually running.
-  this.started=true;
  }
  setBloom(on){this.bloomEnabled=!!on;}
  setBackdropLit(on){this.backdropLit=on!==false;}
@@ -143,12 +153,14 @@ export class GameScene extends Phaser.Scene {
   if(paddle){const d=w.dad,swing=d.state==='swat'?Math.sin(d.age*12)*65:0,x=d.x+135+swing,y=d.y-230;g.lineStyle(12,0xd5bc82);g.lineBetween(d.x+45,d.y-100,x,y);g.lineStyle(6,0xffe3a5);g.strokeRoundedRect(x-44,y-70,88,90,12);for(let i=-25;i<=25;i+=12){g.lineStyle(1,0xffe3a5);g.lineBetween(x+i,y-64,x+i,y+14);}this.dadLabel.setPosition(x-22,y-42);}
   for(const e of w.enemies){if(!e.alive)continue;
    const aura=choirAura(e);
+   const spin=w.elapsed||0;
    if(aura){
-    const spin=w.elapsed||0;g.lineStyle(2,0xffd56a,.45+.2*Math.sin(spin*2));
+    g.lineStyle(2,0xffd56a,.45+.2*Math.sin(spin*2));
     const steps=24;
     for(let i=0;i<steps;i+=2){g.beginPath();g.arc(e.x,e.y,aura.r,(i/steps)*Math.PI*2,((i+1)/steps)*Math.PI*2,false);g.strokePath();}
     for(let n=0;n<aura.notes;n++){const ang=spin*1.4+n*2.0943951023931953,nx=e.x+Math.cos(ang)*72,ny=e.y-168+Math.sin(ang)*16;g.fillStyle(0xfff1a8,.9);g.fillEllipse(nx,ny,8,6);g.fillRect(nx+4,ny-14,2,14);}
-   }else if(choirMultiplier(e,w.enemies)>1){g.lineStyle(3,0xffd56a,.35+.35*Math.sin((w.elapsed||0)*6));g.strokeEllipse(e.x,e.y-90,78,160);}
+   }
+   if(e.choirBuff>1){g.lineStyle(3,0xffd56a,.35+.35*Math.sin(spin*6));g.strokeEllipse(e.x,e.y-90,78,160);}
    if(e.type==='hover'){g.lineStyle(3,0x9de1ff,.9);g.strokeEllipse(e.x,e.y,90,20);}
    if(e.shield){const sx=e.x+e.facing*48,sy=e.y-82;g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(sx,sy,34,110);const chips=e.shieldHits||0;if(chips>=1){g.lineStyle(2,0x6a4a12,.95);g.lineBetween(sx-10,sy-28,sx+8,sy+6);}if(chips>=2){g.lineBetween(sx+12,sy-22,sx-6,sy+18);}}
    if(e.state==='telegraph'){
@@ -169,13 +181,17 @@ export class GameScene extends Phaser.Scene {
  playHeld(ids){(ids||[]).forEach((id,i)=>{say(id,(who,line)=>this.hud?.say(who,line),true,false,i?{wait:2.5*i}:null);if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);});}
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
-  this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
+  // Play first so a superseded clip can still read the lines it was holding.
+  // A clip that finishes inside play() must not re-arm that hold and swallow the next line.
   // The story player owns pauseForClip, so destroy() can resume the loop it paused.
+  let finished=false;
   this.game.story.play(key,()=>{
-   this.holdingVoice=false;this.setPauseReason('cutscene',false);const held=this.voiceHold||[];this.voiceHold=[];
+   finished=true;this.holdingVoice=false;this.setPauseReason('cutscene',false);const held=this.voiceHold||[];this.voiceHold=[];
    if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
    done?.(held);
   });
+  if(finished)return;
+  this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
  }
  freeClaudia(){this.claudiaCage?.destroy();this.claudiaCage=null;this.claudia?.play('claudia_freed');}
  presentVictory(){
@@ -187,13 +203,19 @@ export class GameScene extends Phaser.Scene {
    if(panel)panel.hidden=false;document.body.classList.remove('playing');
   });
  }
- handleEvents(){for(const {type,data}of this.world.events.splice(0)){
+ handleEvents(){
+  const ev=this.world.events, batch=this._evBatch||(this._evBatch=[]);
+  batch.length=0;
+  for(let i=0;i<ev.length;i++)batch.push(ev[i]);
+  ev.length=0;
+  const bossTrack=bossTrackForBatch(this.stageNo,batch);
+  for(const {type,data}of batch){
   if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else{say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
   if(type==='shield')sfx.clang(data?.chips||1);
-  if(type==='boss')playTrack(`boss${this.stageNo}`);if(type==='clear')sfx.levelClear();
+  if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear')sfx.levelClear();
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
   if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}
@@ -213,7 +235,9 @@ export class GameScene extends Phaser.Scene {
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
   this.handleEvents();
   this.syncViews(dt);this.fx?.update(dt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(dt);this.stepDust(dt);}if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);
-  perf.tick(performance.now(),{active:!w.paused&&!w.victory,inFight:w.locked&&!w.papiTime&&!w.dad,context:{stage:this.stageNo,mode:w.bossActive?'boss':'stage'}});
+  const perfCtx=this._perfCtx||(this._perfCtx={stage:0,mode:''});
+  perfCtx.stage=this.stageNo;perfCtx.mode=w.bossActive?'boss':'stage';
+  perf.tick(performance.now(),{active:!w.paused&&!w.victory,inFight:w.locked&&!w.papiTime&&!w.dad,context:perfCtx});
   this.game.governor?.();
   if(w.victory&&!this.finished)this.presentVictory();
  }

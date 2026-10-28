@@ -81,27 +81,34 @@ const ROAR = 1.1;
 export const POISE = Object.freeze({ light: .45, heavy: .9 });
 const HEAVY = ['guard', 'charger', 'lecturer'];
 export function choirMultiplier(e, enemies) {
-  return enemies.some(a => a !== e && a.alive && ['choir','choirmaster'].includes(a.type) && Math.hypot(a.x-e.x,a.y-e.y) <= 300) ? 1.28 : 1;
+  for (let i = 0; i < enemies.length; i++) {
+    const a = enemies[i];
+    if (a === e || !a.alive) continue;
+    if (a.type !== 'choir' && a.type !== 'choirmaster') continue;
+    if (Math.hypot(a.x - e.x, a.y - e.y) <= 300) return 1.28;
+  }
+  return 1;
 }
 /** Dashed ring and note marks for a living choir. Radius matches the buff. The multiplier stays 1.28. */
+const CHOIR_AURA = Object.freeze({ r: 300, notes: 3 });
 export function choirAura(e) {
   if (!e?.alive || (e.type !== 'choir' && e.type !== 'choirmaster')) return null;
-  return { r: 300, notes: 3 };
+  return CHOIR_AURA;
 }
 /** Same-lane minions closer than this overlap into one sprite. Bosses stay put. */
 export const SEPARATE_GAP = 46;
 const SEPARATE_PUSH = 8;
 const separateScratch = [];
 /** Push same-lane non-bosses apart. actorId order keeps the step deterministic. At most 8px per body per pair. */
-export function separateEnemies(enemies, bounds) {
+export function separateEnemies(enemies) {
   separateScratch.length = 0;
   for (let i = 0; i < enemies.length; i++) {
     const e = enemies[i];
-    if (e?.alive && !e.boss) separateScratch.push(e);
+    if (!e?.alive || e.boss) continue;
+    if (e.state === 'hold' || e.state === 'telegraph') continue;
+    separateScratch.push(e);
   }
   separateScratch.sort((a, b) => (a.id | 0) - (b.id | 0));
-  const lo = bounds ? bounds.l + 55 : -Infinity;
-  const hi = bounds ? bounds.r - 55 : Infinity;
   for (let i = 0; i < separateScratch.length; i++) {
     for (let j = i + 1; j < separateScratch.length; j++) {
       const a = separateScratch[i], b = separateScratch[j];
@@ -111,8 +118,8 @@ export function separateEnemies(enemies, bounds) {
       if (dist >= SEPARATE_GAP) continue;
       const push = Math.min(SEPARATE_PUSH, (SEPARATE_GAP - dist) / 2);
       const sign = dx > 0 || (dx === 0 && (a.id | 0) <= (b.id | 0)) ? 1 : -1;
-      a.x = clamp(a.x - sign * push, lo, hi);
-      b.x = clamp(b.x + sign * push, lo, hi);
+      a.x -= sign * push;
+      b.x += sign * push;
     }
   }
 }
@@ -151,8 +158,9 @@ export class Yetti {
   }
   breakShield() { if (!this.shield) return false; this.shield = false; this.shieldHits = 0; this.state = 'hurt'; this.stun = .5; return true; }
   update(dt, world) {
-    if (!this.alive) return;
+    if (!this.alive) { this.choirBuff = 1; return; }
     const b = world.bob, pace = world.difficulty.pace, buff = choirMultiplier(this, world.enemies);
+    this.choirBuff = buff;
     this.clock += dt; this.cooldown -= dt * buff; this.poise -= dt;
     if (this.type === 'hover') this.z = 65 + Math.sin(this.clock * 3) * 10;
     if (this.stun > 0) { this.stun -= dt; if (this.stun <= 0) this.state = 'approach'; return; }

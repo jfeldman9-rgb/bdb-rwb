@@ -7,7 +7,7 @@ export function stepRecoil(recoil, dt) {
 /** Bob's killing eggplant emits hit and then ko. Splat the hit once. Ko splats only for Papi and Dad. */
 export function killImpact(type, data) {
   if (type === 'hit') return { heavy: data?.kind === 'heavy' || data?.kind === 'finisher', splat: true, kick: true };
-  if (type === 'ko' && data?.source && data.source !== 'bob') return { heavy: true, splat: true, kick: false };
+  if (type === 'ko' && data?.source !== 'bob') return { heavy: true, splat: true, kick: false };
   return null;
 }
 /** Snowball stays an ice ellipse. Halo is a ring. Shockwave is a flat bar. */

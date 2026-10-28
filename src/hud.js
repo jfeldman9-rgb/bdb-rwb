@@ -17,6 +17,7 @@ export function bossBars(w, out = []){
       const slot = out[i++];
       slot.label = e.role === 2 ? 'W2' : 'W1';
       slot.ratio = e.alive ? e.hp / e.maxHp : 0;
+      slot.ticks = false;
     }
     return out;
   }
@@ -27,6 +28,7 @@ export function bossBars(w, out = []){
   out.length = 1;
   out[0].label = 'BOSS';
   out[0].ratio = hp / max;
+  out[0].ticks = !w.wingmen;
   return out;
 }
 /** Side by side, above the boss name at y=106. W1/W2 match the wingman tints. */
@@ -37,7 +39,7 @@ export function bossBarLayout(bars, out = []){
   if (bars.length > 1) {
     for (let i = 0; i < bars.length; i++) {
       const b = bars[i], slot = out[i];
-      slot.label = b.label; slot.ratio = b.ratio;
+      slot.label = b.label; slot.ratio = b.ratio; slot.ticks = !!b.ticks;
       slot.x = i ? 650 : 390; slot.y = 79; slot.w = 240; slot.h = 13;
       slot.color = b.label === 'W2' ? 0xffb1d6 : 0xd0beff;
     }
@@ -45,7 +47,7 @@ export function bossBarLayout(bars, out = []){
   }
   if (bars.length) {
     const b = bars[0], slot = out[0];
-    slot.label = b.label; slot.ratio = b.ratio;
+    slot.label = b.label; slot.ratio = b.ratio; slot.ticks = !!b.ticks;
     slot.x = 390; slot.y = 79; slot.w = 500; slot.h = 13; slot.color = 0xd6a2ff;
   }
   return out;
@@ -55,10 +57,19 @@ export function stagePrompt(w){
   if(w.bob.state==='grabbed')return `MASH ANY BUTTON  ${Math.min(6,Math.floor(w.bob.grabMash))}/6`;
   if(w.wingmen?.ready)return 'PRESS PAPI TO FINISH THE RESCUE';
   if(w.stageNo===1&&w.locked){
-    const foes=w.enemies.filter(e=>e.alive);
-    if(foes.some(e=>e.shield))return 'DASH THROUGH THE GOLD SHIELD';
-    if(foes.some(e=>e.type==='charger'&&(e.state==='telegraph'||e.state==='rush')))return 'JUMP THE RUSH!';
-    if(foes.length>1&&foes.some(e=>e.type==='choir'))return 'DROP THE CHOIR FIRST';
+    let n=0, shield=false, rush=false, choir=false;
+    const foes=w.enemies;
+    for(let i=0;i<foes.length;i++){
+      const e=foes[i];
+      if(!e.alive)continue;
+      n++;
+      if(e.shield)shield=true;
+      if(e.type==='charger'&&(e.state==='telegraph'||e.state==='rush'))rush=true;
+      if(e.type==='choir')choir=true;
+    }
+    if(shield)return 'DASH THROUGH THE GOLD SHIELD';
+    if(rush)return 'JUMP THE RUSH!';
+    if(n>1&&choir)return 'DROP THE CHOIR FIRST';
   }
   return !w.locked?'KEEP GOING  →':'';
 }
@@ -89,9 +100,11 @@ export class HUD {
   for(const b of bars){
     g.fillStyle(0x372947);g.fillRoundedRect(b.x,b.y,b.w,b.h,5);
     if(b.ratio>0){g.fillStyle(b.color);g.fillRoundedRect(b.x,b.y,Math.max(3,b.w*b.ratio),b.h,5);}
-    g.fillStyle(0xfff6d0,.9);
-    g.fillRect(b.x+b.w*BOSS_GATES[1],b.y,2,b.h);
-    g.fillRect(b.x+b.w*BOSS_GATES[2],b.y,2,b.h);
+    if(b.ticks){
+      g.fillStyle(0xfff6d0,.9);
+      g.fillRect(b.x+b.w*BOSS_GATES[1],b.y,2,b.h);
+      g.fillRect(b.x+b.w*BOSS_GATES[2],b.y,2,b.h);
+    }
   }
   if(w.bob.state==='grabbed'){g.lineStyle(8,0xffdc8c);g.beginPath();g.arc(640,620,32,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,w.bob.grabMash/6));g.strokePath();}
   this.paintTouch(w);

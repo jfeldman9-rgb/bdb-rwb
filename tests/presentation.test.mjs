@@ -15,6 +15,8 @@ test('recoil is a kick that is gone before the next shot', () => {
 
 test('a killing eggplant splats once; Papi and Dad still splat on the ko', () => {
   assert.equal(killImpact('ko', { source: 'bob' }), null);
+  assert.equal(killImpact('ko', {}).splat, true);
+  assert.equal(killImpact('ko').splat, true);
   assert.equal(killImpact('hit', { kind: 'heavy' }).splat, true);
   assert.equal(killImpact('hit', { kind: 'heavy' }).heavy, true);
   assert.equal(killImpact('hit', { kind: 'light' }).heavy, false);

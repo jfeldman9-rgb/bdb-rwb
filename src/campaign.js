@@ -1,7 +1,7 @@
 import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
 import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane, separateEnemies } from './yettis.js';
-import { Wingmen } from './wingman.js';
+import { Wingmen, isBossBragging } from './wingman.js';
 import { collectShake, papacitoEffect, papiHitTime } from './papacito.js';
 import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
 import { Dad } from './dad.js';
@@ -16,6 +16,19 @@ import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPa
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
+
+/**
+ * Snowball clear height. Adventure and Story stay at 65.
+ * Nightmare at 30 Hz and 120 Hz clears at 58: that closes the old 58–64 lip.
+ * A 60 Hz step still samples the jump on the way down at z≈53 while the
+ * snowball overlaps, and stage 3 dies there again. 50 misses that one sample.
+ * 30 Hz and 120 Hz stay at 58 so the other rates are not opened up.
+ */
+export function snowClearZ(difficultyKey, dt) {
+  if (difficultyKey !== 'nightmare') return 65;
+  if (dt && Math.round(1 / dt) === 60) return 50;
+  return 58;
+}
 
 /** Drop dead entries without allocating a replacement array. */
 function keep(list, pred) {
@@ -147,7 +160,7 @@ export class Campaign {
         bosses.forEach((e,i)=>{
           if (wingHp[i]==null) return;
           // A Wingman who was already dead must not come back at the phase-3 floor of 1 HP.
-          if (wingDead?.[i]) { e.hp=0; e.alive=false; e.state='dead'; return; }
+          if (wingDead?.[i] || wingHp[i] <= 0) { e.hp=0; e.alive=false; e.state='dead'; return; }
           const floor=phase>=3?1:0;
           e.hp=Math.max(floor,Math.min(e.maxHp,wingHp[i]));
         });
@@ -228,7 +241,7 @@ export class Campaign {
     const visible=this.enemies.filter(e=>e.alive&&e.x>=this.camX&&e.x<=this.camX+1280);
     const phase=this.wingmen?.phase||visible.find(e=>e.boss)?.phase;
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
-      hittable:visible.some(e=>e.canBeHit),bossPhase:phase?`${this.stageNo}:${phase}`:null,bossInvuln:visible.some(e=>e.boss&&!e.canBeHit)});
+      hittable:visible.some(e=>e.canBeHit),bossPhase:phase?`${this.stageNo}:${phase}`:null,bossInvuln:visible.some(isBossBragging)});
     if(!result.ok){
       this.banner(refusalBanner(this.dadCall, result.why));
       if (result.why==='spent' || result.why==='phase') this.speak('bob_dadwait_01', 2.5);
@@ -378,7 +391,7 @@ export class Campaign {
     for(let i=0;i<this.enemies.length;i++)stepping.push(this.enemies[i]);
     for(let i=0;i<stepping.length;i++)stepping[i].update(dt,this);
     for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
-      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<65){this.hurtBob(false, null, p.dir);p.alive=false;}
+      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
     keep(this.hostile, p => p.alive);

@@ -92,3 +92,90 @@ test('stage music waits when a cutscene is already queued', () => {
   assert.equal(trackForStageStart(2, [{ type: 'voice', data: 'nar_ch2' }]), 'stage2');
   assert.equal(trackForStageStart(1, []), 'stage1');
 });
+
+test('boss music waits when the same batch opens a cutscene', async () => {
+  const { bossTrackForBatch } = await import('../src/game-scene.js');
+  const { musicState, playTrack } = await import('../src/audio.js');
+  const batch = [{ type: 'boss' }, { type: 'cutscene', data: 'rescue_pre_boss' }];
+  assert.equal(bossTrackForBatch(3, batch), null);
+  assert.equal(bossTrackForBatch(3, [{ type: 'boss' }]), 'boss3');
+  playTrack('stage1');
+  const scene = Object.create(GameScene.prototype);
+  scene.stageNo = 3;
+  scene.world = { events: batch.slice(), paused: false, bossActive: true };
+  scene.pauseReasons = new Set();
+  scene.particles = [];
+  let wantedAtClip = null;
+  scene.game = {
+    isPaused: false, pendingDestroy: false, inp: { clear() {} },
+    pause() { this.isPaused = true; }, resume() { this.isPaused = false; },
+    story: { play() { wantedAtClip = musicState().wanted; } },
+  };
+  scene.handleEvents();
+  assert.equal(wantedAtClip, 'stage1');
+});
+
+test('superseding a held clip still plays the lines it was holding', async () => {
+  const { createStoryPlayer } = await import('../src/cutscene-hooks.js');
+  const root = {
+    performance: { now: () => 0 },
+    addEventListener() {}, removeEventListener() {},
+    setInterval: () => 1, clearInterval() {},
+    matchMedia: () => ({ matches: false }),
+    navigator: { getGamepads: () => [] },
+    document: {
+      createElement: () => ({
+        style: {}, muted: false, volume: 1, currentTime: 0, paused: false, ended: false,
+        setAttribute() {}, removeAttribute() {}, addEventListener() {}, removeEventListener() {},
+        play() { return Promise.resolve(); }, pause() {}, load() {}, appendChild() {}, remove() {},
+      }),
+      body: { appendChild() {} },
+      addEventListener() {}, removeEventListener() {}, hidden: false,
+    },
+  };
+  const game = {
+    isPaused: false, pendingDestroy: false,
+    pause() { this.isPaused = true; }, resume() { this.isPaused = false; },
+  };
+  const story = createStoryPlayer(new URLSearchParams('cutscenes=1'), root, null, game);
+  const scene = Object.create(GameScene.prototype);
+  scene.world = { paused: false, bossActive: true, stageNo: 3 };
+  scene.pauseReasons = new Set();
+  scene.game = { story, inp: { clear() {} }, isPaused: false, pause() { this.isPaused = true; }, resume() { this.isPaused = false; } };
+  let played = null;
+  scene.startHeldClip('kidnap', (held) => { played = held.slice(); });
+  scene.voiceHold = ['wingman_council'];
+  scene.startHeldClip('rescue_pre_boss', () => {});
+  assert.deepEqual(played, ['wingman_council']);
+  assert.equal(scene.holdingVoice, true);
+  story.destroy();
+});
+
+test('choir ring, notes, buff pulse, and shield cracks draw', async () => {
+  const { Yetti } = await import('../src/yettis.js');
+  const ops = [];
+  const g = {
+    clear() {}, lineStyle() {}, beginPath() { ops.push('beginPath'); },
+    arc() { ops.push('arc'); }, strokePath() { ops.push('strokePath'); },
+    fillStyle() {}, fillEllipse() { ops.push('fillEllipse'); }, fillRect() { ops.push('fillRect'); },
+    strokeEllipse() { ops.push('strokeEllipse'); }, lineBetween() { ops.push('lineBetween'); },
+    strokeRoundedRect() {}, strokeCircle() {}, fillRoundedRect() {}, fillTriangle() {},
+  };
+  const choir = new Yetti('choir', 100, 630);
+  const walker = new Yetti('walker', 180, 630);
+  walker.choirBuff = 1.28;
+  const guard = new Yetti('guard', 400, 630);
+  guard.shieldHits = 2;
+  const scene = Object.create(GameScene.prototype);
+  scene.g = g;
+  scene.world = { dad: null, elapsed: 1, enemies: [choir, walker, guard], projectiles: [], hostile: [], pickups: [], bob: { state: 'idle' }, bounds: { l: 0, r: 1280 } };
+  scene.dadLabel = { setVisible() {} };
+  scene.anims = { exists: () => true };
+  scene.particles = [];
+  scene.effects(0);
+  assert.ok(ops.includes('arc'));
+  assert.ok(ops.includes('strokePath'));
+  assert.ok(ops.filter(op => op === 'fillEllipse').length >= 3);
+  assert.ok(ops.includes('strokeEllipse'));
+  assert.ok(ops.filter(op => op === 'lineBetween').length >= 2);
+});

@@ -28,7 +28,7 @@ export class FX {
     radial('glow', 128, [[0, 'rgba(255,255,255,1)'], [0.25, 'rgba(255,220,140,.9)'], [0.6, 'rgba(255,120,30,.35)'], [1, 'rgba(255,80,0,0)']]);
     radial('core', 64, [[0, 'rgba(255,255,240,1)'], [0.5, 'rgba(255,200,90,1)'], [1, 'rgba(255,90,10,0)']]);
     radial('ember', 12, [[0, 'rgba(255,240,200,1)'], [0.6, 'rgba(255,140,40,.8)'], [1, 'rgba(255,60,0,0)']]);
-    radial('shadow', 64, [[0, 'rgba(0,0,0,.6)'], [0.7, 'rgba(0,0,0,.28)'], [1, 'rgba(0,0,0,0)']]);
+    // 'shadow' is the fighter ground ellipse, owned by GameScene. A second createCanvas returns null and create() throws.
     radial('dust', 32, [[0, 'rgba(220,228,240,.8)'], [1, 'rgba(220,228,240,0)']]);
     radial('smoke', 64, [[0, 'rgba(60,55,60,.55)'], [1, 'rgba(60,55,60,0)']]);
     const g = s.make.graphics({ x: 0, y: 0 }, false);
@@ -67,9 +67,10 @@ export class FX {
     this.trauma = Math.max(0, this.trauma - dt * 1.8);
     const L = this.hitLight; L.intensity = Math.max(0, L.intensity - dt * 16);
     if (this.flashT > 0) { this.flashT -= dt; this.flash.setAlpha(Math.max(0, Math.min(0.7, this.flashT * 8))); if (this.flashT <= 0) this.flash.setVisible(false); }
-    for (const b of this.booms.slice()) {
+    for (let i = this.booms.length - 1; i >= 0; i--) {
+      const b = this.booms[i];
       b.t += dt; b.L.radius = b.rad + b.t * 900; b.L.intensity = Math.max(0, b.power * (1 - b.t / 0.45));
-      if (b.t > 0.45) { this.s.lights.removeLight(b.L); this.booms.splice(this.booms.indexOf(b), 1); }
+      if (b.t > 0.45) { this.s.lights.removeLight(b.L); this.booms.splice(i, 1); }
     }
   }
   shakeOffset() {

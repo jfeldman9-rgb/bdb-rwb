@@ -29,10 +29,14 @@ export function showStuck(root, error, game) {
   set('startup-description', 'This stage stopped running. Reload game picks up at the start of this stage.');
   set('startup-code', `Code: FRAME_ERROR ${error?.name || ''}`);
   const retry = by('startup-retry');
-  // startup.js already resumes from this button. A second listener fires reload twice.
-  if (retry && !retry.__bdbResume && !retry.__bdbStuck) {
-    retry.__bdbStuck = true;
-    retry.addEventListener?.('click', () => resumeGame(root, game), { once: true });
+  // startup.js already resumes from this button. One persistent listener, not {once:true},
+  // so a later stuck card still reloads. The game handle is refreshed every time.
+  if (retry && !retry.__bdbResume) {
+    retry.__bdbStuckGame = game;
+    if (!retry.__bdbStuck) {
+      retry.__bdbStuck = true;
+      retry.addEventListener?.('click', () => resumeGame(root, retry.__bdbStuckGame));
+    }
   }
   card.hidden = false;
   return true;
@@ -73,9 +77,18 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
   let shown = false;
   let strikes = 0;
   let pendingError = null;
+  let stageSeen = null;
   const scene = () => game?.scene?.getScene?.('gameplay');
   const loading = (s) => typeof s?.load?.isLoading === 'function' && s.load.isLoading();
-  const note = () => { last = clock(); };
+  const stamp = () => { last = clock(); };
+  const clearStrikes = () => { strikes = 0; pendingError = null; };
+  const rememberStage = (s) => {
+    const stage = s?.stageNo;
+    if (stage == null) return;
+    if (stageSeen != null && stage !== stageSeen) clearStrikes();
+    stageSeen = stage;
+  };
+  const note = () => { stamp(); clearStrikes(); rememberStage(scene()); };
   const trip = (error) => {
     if (shown) return;
     if (!scene()?.started) return;
@@ -86,12 +99,15 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
   const timer = root.setInterval?.(() => {
     const s = scene();
     // A chapter download is not a stall. started stays false until create, and a loader still in flight is ignored.
-    if (!s?.started || loading(s) || s.world?.paused || game?.isPaused) { note(); return; }
+    if (!s?.started || loading(s) || s.world?.paused || game?.isPaused) { stamp(); return; }
+    rememberStage(s);
     if (strikes >= 2) { trip(pendingError || new Error('error')); return; }
     if (clock() - last > limit) trip(new Error('freeze'));
   }, opts.interval ?? 1000);
   const onError = (event) => {
-    if (!scene()?.started) return;
+    const s = scene();
+    if (!s?.started) return;
+    rememberStage(s);
     const origin = root.location?.origin;
     const file = event?.filename || '';
     // Empty filename is the cross-origin "Script error." A one-off throw while the loop still beats is not a stall.
