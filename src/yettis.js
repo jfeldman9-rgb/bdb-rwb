@@ -3,10 +3,10 @@ import { LANE_TOP, LANE_BOT, clamp } from './config.js';
 export const TYPES = Object.freeze({
   walker: { hp: 24, speed: 100, art: 'yetti_walker', tint: 0xffffff },
   guard: { hp: 48, speed: 65, art: 'yetti_guard', tint: 0xffe1a0 },
-  hover: { hp: 36, speed: 115, art: 'yetti_hover', tint: 0xc3dbff },
-  charger: { hp: 48, speed: 100, art: 'yetti_charger', tint: 0xffa6aa },
-  choir: { hp: 36, speed: 0, art: 'yetti_choir', tint: 0xd6b0ff },
-  lecturer: { hp: 48, speed: 95, art: 'yetti_lecturer', tint: 0x9bedd9 },
+  hover: { hp: 36, speed: 115, art: 'yetti_hover', tint: 0xffffff },
+  charger: { hp: 48, speed: 100, art: 'yetti_charger', tint: 0xffffff },
+  choir: { hp: 36, speed: 0, art: 'yetti_choir', tint: 0xffffff },
+  lecturer: { hp: 48, speed: 95, art: 'yetti_lecturer', tint: 0xffffff },
   interventionist: { hp: 1200, speed: 95, art: 'interventionist', tint: 0xffffff, boss: true },
   choirmaster: { hp: 1140, speed: 0, art: 'choirmaster', tint: 0xffffff, boss: true },
 });

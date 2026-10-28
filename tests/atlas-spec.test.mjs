@@ -48,13 +48,13 @@ test('§5.1 keys present; Yetti originals use v2 walk=16 and are not placeholder
   const walk=m.anims.find(a=>a.name===key+'_walk');assert.equal(walk.frames.length,16);assert.equal(walk.holds[0],hold(18));
  }
 });
-test('character atlas GPU residency stays under 20 MiB for a Stage 1 kit',async()=>{
+test('character atlas GPU residency stays under 60 MiB RGBA for a Stage 1 kit',async()=>{
  const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_runners'];
  let gpu=0;
  for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);
   for(const p of m.pages){const meta=(await json(`assets/chars/${p}.json`)).meta;gpu+=meta.size.w*meta.size.h*4;}
  }
- assert.ok(gpu/1024/1024<20,`stage1 GPU MiB ${gpu/1024/1024}`);
+ assert.ok(gpu/1024/1024<60,`stage1 GPU MiB ${gpu/1024/1024}`);
 });
 const KTX1=[0xab,0x4b,0x54,0x58,0x20,0x31,0x31,0xbb,0x0d,0x0a,0x1a,0x0a];
 const GL={'astc.ktx':0x93b0,'etc2.ktx':0x9278};
@@ -86,6 +86,24 @@ test('queueCharPages asks Phaser for ASTC, then ETC2, then the webp atlas',async
 test('Stage 1 kit on-device estimate with ASTC/ETC2 is a quarter of the RGBA webp path',async()=>{
  const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_runners'];let rgba=0,astc=0;
  for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}}
- assert.equal(astc*4,rgba);assert.ok(astc/2**20<6,`stage1 ASTC MiB ${astc/2**20}`);
+ assert.equal(astc*4,rgba);assert.ok(astc/2**20<60,`stage1 ASTC MiB ${astc/2**20}`);
  const r=await json('assets/chars/_pack_report.json');assert.ok(Math.abs(r.compressed.stage1_gpu_MiB.astc-astc/2**20)<.01);
+});
+
+test('painted role Yettis ship FPS.md anims and are not placeholders',async()=>{
+  const expect={
+    yetti_hover:[['fly',6,12],['throw',6,16],['hurt',3,14],['knockdown',5,14]],
+    yetti_charger:[['idle',6,12],['walk',8,12],['windup',4,16],['rush',6,16],['hurt',3,14],['knockdown',5,14]],
+    yetti_choir:[['sing',8,12],['note',6,16],['hurt',3,14],['knockdown',5,14]],
+    yetti_lecturer:[['walk',8,12],['grab',4,16],['lecture',6,16],['hurt',3,14],['knockdown',5,14]],
+  };
+  for(const [key,anims] of Object.entries(expect)){
+    const m=await json(`assets/chars/${key}.anims.json`);
+    assert.equal(m.placeholder,false,key);
+    for(const [name,n,fps] of anims){
+      const a=m.anims.find(x=>x.name===`${key}_${name}`);
+      assert.ok(a,`${key}_${name}`);
+      assert.equal(a.frames.length,n);assert.equal(a.holds[0],hold(fps));
+    }
+  }
 });

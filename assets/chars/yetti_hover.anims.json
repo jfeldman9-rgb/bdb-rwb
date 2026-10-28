@@ -12,12 +12,12 @@
     {
       "name": "yetti_hover_fly",
       "frames": [
+        "yetti_hover_fly_00",
         "yetti_hover_fly_01",
         "yetti_hover_fly_02",
         "yetti_hover_fly_03",
         "yetti_hover_fly_04",
-        "yetti_hover_fly_05",
-        "yetti_hover_fly_06"
+        "yetti_hover_fly_05"
       ],
       "pages": [
         0,
@@ -39,36 +39,48 @@
       "fps": 12
     },
     {
-      "name": "yetti_hover_shoot",
+      "name": "yetti_hover_throw",
       "frames": [
-        "yetti_hover_fly_01",
-        "yetti_hover_fly_02",
-        "yetti_hover_fly_03"
+        "yetti_hover_throw_00",
+        "yetti_hover_throw_01",
+        "yetti_hover_throw_02",
+        "yetti_hover_throw_03",
+        "yetti_hover_throw_04",
+        "yetti_hover_throw_05"
       ],
       "pages": [
+        0,
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        71,
-        71,
-        71
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
       ],
       "loop": false,
-      "fps": 14
+      "fps": 16
     },
     {
       "name": "yetti_hover_hurt",
       "frames": [
-        "yetti_hover_fly_01",
-        "yetti_hover_fly_02"
+        "yetti_hover_hurt_00",
+        "yetti_hover_hurt_01",
+        "yetti_hover_hurt_02"
       ],
       "pages": [
+        0,
         0,
         0
       ],
       "holds": [
+        71,
         71,
         71
       ],
@@ -76,32 +88,38 @@
       "fps": 14
     },
     {
-      "name": "yetti_hover_down",
+      "name": "yetti_hover_knockdown",
       "frames": [
-        "yetti_hover_fly_01",
-        "yetti_hover_fly_02",
-        "yetti_hover_fly_03"
+        "yetti_hover_knockdown_00",
+        "yetti_hover_knockdown_01",
+        "yetti_hover_knockdown_02",
+        "yetti_hover_knockdown_03",
+        "yetti_hover_knockdown_04"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        83,
-        83,
-        83
+        71,
+        71,
+        71,
+        71,
+        71
       ],
       "loop": false,
-      "fps": 12
+      "fps": 14
     }
   ],
-  "placeholder": true,
-  "source": "local coloured silhouettes",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 14,
-    "unique": 6,
-    "reused": 8
+    "logical": 20,
+    "unique": 20,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

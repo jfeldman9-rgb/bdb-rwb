@@ -12,14 +12,18 @@
     {
       "name": "yetti_lecturer_walk",
       "frames": [
+        "yetti_lecturer_walk_00",
         "yetti_lecturer_walk_01",
         "yetti_lecturer_walk_02",
         "yetti_lecturer_walk_03",
         "yetti_lecturer_walk_04",
         "yetti_lecturer_walk_05",
-        "yetti_lecturer_walk_06"
+        "yetti_lecturer_walk_06",
+        "yetti_lecturer_walk_07"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0,
@@ -28,6 +32,8 @@
         0
       ],
       "holds": [
+        83,
+        83,
         83,
         83,
         83,
@@ -41,51 +47,69 @@
     {
       "name": "yetti_lecturer_grab",
       "frames": [
-        "yetti_lecturer_walk_01",
-        "yetti_lecturer_walk_02",
-        "yetti_lecturer_walk_03"
+        "yetti_lecturer_grab_00",
+        "yetti_lecturer_grab_01",
+        "yetti_lecturer_grab_02",
+        "yetti_lecturer_grab_03"
       ],
       "pages": [
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        83,
-        83,
-        83
+        63,
+        63,
+        63,
+        63
       ],
       "loop": false,
-      "fps": 12
+      "fps": 16
     },
     {
-      "name": "yetti_lecturer_hold",
+      "name": "yetti_lecturer_lecture",
       "frames": [
-        "yetti_lecturer_walk_01",
-        "yetti_lecturer_walk_02"
+        "yetti_lecturer_lecture_00",
+        "yetti_lecturer_lecture_01",
+        "yetti_lecturer_lecture_02",
+        "yetti_lecturer_lecture_03",
+        "yetti_lecturer_lecture_04",
+        "yetti_lecturer_lecture_05"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
         0,
         0
       ],
       "holds": [
-        125,
-        125
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
       ],
-      "loop": false,
-      "fps": 8
+      "loop": true,
+      "fps": 16
     },
     {
       "name": "yetti_lecturer_hurt",
       "frames": [
-        "yetti_lecturer_walk_01",
-        "yetti_lecturer_walk_02"
+        "yetti_lecturer_hurt_00",
+        "yetti_lecturer_hurt_01",
+        "yetti_lecturer_hurt_02"
       ],
       "pages": [
+        0,
         0,
         0
       ],
       "holds": [
+        71,
         71,
         71
       ],
@@ -93,32 +117,38 @@
       "fps": 14
     },
     {
-      "name": "yetti_lecturer_down",
+      "name": "yetti_lecturer_knockdown",
       "frames": [
-        "yetti_lecturer_walk_01",
-        "yetti_lecturer_walk_02",
-        "yetti_lecturer_walk_03"
+        "yetti_lecturer_knockdown_00",
+        "yetti_lecturer_knockdown_01",
+        "yetti_lecturer_knockdown_02",
+        "yetti_lecturer_knockdown_03",
+        "yetti_lecturer_knockdown_04"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        83,
-        83,
-        83
+        71,
+        71,
+        71,
+        71,
+        71
       ],
       "loop": false,
-      "fps": 12
+      "fps": 14
     }
   ],
-  "placeholder": true,
-  "source": "local coloured silhouettes",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 16,
-    "unique": 6,
-    "reused": 10
+    "logical": 26,
+    "unique": 26,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

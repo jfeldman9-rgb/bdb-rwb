@@ -5,7 +5,8 @@
 - Spec: FPS.md — bob idle12@12 walk12@18 shoot8@16 hurt5@14 knockdown7@14 getup7@14;
   yetti1/2 idle12@12 walk16@18 attack 8@16 (yetti1, hand-drawn v3) / 7@16 (yetti2) hurt5@14 knockdown7@14.
   dad enter6@12 swat8@16 exit6@12 (dad_callin.png slice).
-  Hand-drawn v3 sheets and dad are numbered 00..; everything else starts at 01 (third spec field).
+  role Yettis: hover fly/throw/hurt/kd; charger idle/walk/windup/rush/hurt/kd; choir sing/note/hurt/kd; lecturer walk/grab/lecture/hurt/kd.
+  Hand-drawn v3, dad, and role sheets are numbered 00..; everything else starts at 01 (third spec field).
 - Dedupes identical pixel frames in the atlas; anim defs re-reference shared frames.
 - Trims alpha, packs webp, downscales by DRAW_SCALE (~0.58) for iPhone GPU.
 - canvas/baseline stay logical 720×600 / 570; anims.scale = DRAW_SCALE so
@@ -52,20 +53,30 @@ REAL = {
   }),
   # Dad call-in (dad_callin.png slice, Oct 28): jog in, overhead BDB swat (impact on swat_06), jog out.
   'dad': ('dad', {'enter': (6, 12, 0), 'swat': (8, 16, 0), 'exit': (6, 12, 0)}),
+  # Painted role Yettis (Oct 28 Game Art): yetti_<role>_<anim>_NN.png, feet y=560 (hover fly/throw y=495).
+  'yetti_hover': ('yetti_hover', {
+    'fly': (6, 12, 0), 'throw': (6, 16, 0), 'hurt': (3, 14, 0), 'knockdown': (5, 14, 0),
+  }),
+  'yetti_charger': ('yetti_charger', {
+    'idle': (6, 12, 0), 'walk': (8, 12, 0), 'windup': (4, 16, 0), 'rush': (6, 16, 0),
+    'hurt': (3, 14, 0), 'knockdown': (5, 14, 0),
+  }),
+  'yetti_choir': ('yetti_choir', {
+    'sing': (8, 12, 0), 'note': (6, 16, 0), 'hurt': (3, 14, 0), 'knockdown': (5, 14, 0),
+  }),
+  'yetti_lecturer': ('yetti_lecturer', {
+    'walk': (8, 12, 0), 'grab': (4, 16, 0), 'lecture': (6, 16, 0), 'hurt': (3, 14, 0), 'knockdown': (5, 14, 0),
+  }),
 }
 STANDINS = {
   'claudia': {'idle-caged': (4, 10), 'freed': (4, 12), 'portrait': (1, 1)},
-  'yetti_hover': {'fly': (6, 12), 'shoot': (3, 14), 'hurt': (2, 14), 'down': (3, 12)},
-  'yetti_charger': {'walk': (6, 14), 'telegraph': (2, 10), 'rush': (4, 16), 'hurt': (2, 14), 'down': (3, 12)},
-  'yetti_choir': {'sing': (6, 10), 'hurt': (2, 14), 'down': (3, 12)},
-  'yetti_lecturer': {'walk': (6, 12), 'grab': (3, 12), 'hold': (2, 8), 'hurt': (2, 14), 'down': (3, 12)},
   'wingman': {'hover': (6, 12), 'ring': (4, 14), 'telegraph': (2, 10), 'dive': (3, 14), 'land': (3, 12), 'hurt': (2, 14), 'split': (4, 12)},
   'papi_runners': {f'run{i}': (8, 16) for i in range(1, 5)},
   'interventionist': {'walk': (6, 12), 'grab': (3, 12), 'hold': (2, 8), 'hurt': (2, 14), 'down': (3, 12), 'slam': (4, 14)},
   'choirmaster': {'sing': (6, 10), 'hurt': (2, 14), 'down': (3, 12), 'ring': (4, 14)},
 }
 
-LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged'} | {f'run{i}' for i in range(1, 5)}
+LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture'} | {f'run{i}' for i in range(1, 5)}
 
 
 def silhouette(key, anim, i):

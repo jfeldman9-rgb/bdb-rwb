@@ -14,6 +14,29 @@ import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall } from './dad-call-cutscene.js';
 
+/** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
+function roleAnim(m) {
+  const t = m.type, s = m.state;
+  if (s === 'hurt') return 'hurt';
+  if (s === 'down' || s === 'dead') return 'knockdown';
+  if (t === 'hover') return s === 'telegraph' ? 'throw' : 'fly';
+  if (t === 'charger') {
+    if (s === 'telegraph') return 'windup';
+    if (s === 'rush') return 'rush';
+    return s === 'approach' ? 'walk' : 'idle';
+  }
+  if (t === 'choir') return s === 'telegraph' ? 'note' : 'sing';
+  if (t === 'lecturer') {
+    if (s === 'telegraph') return 'grab';
+    if (s === 'hold') return 'lecture';
+    return 'walk';
+  }
+  if (s === 'telegraph' || s === 'rush') return 'attack';
+  if (s === 'approach') return 'walk';
+  return 'idle';
+}
+
+
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
  init(data){this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=true;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.particles=[];this.dadView=null;this.switching=false;this.finished=false;}
@@ -50,8 +73,8 @@ export class GameScene extends Phaser.Scene {
    if(!view){view=this.makeView(model,key,isBob ? .46 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
    Object.assign(view,{x:model.x,y:model.y,z:model.z||0,state:model.state});view.face(model.facing);
    let anim=isBob?(model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle'):
-    model.state==='hurt'?'hurt':model.state==='down'?'knockdown':model.state==='telegraph'||model.state==='rush'?'attack':model.state==='approach'?'walk':'idle';
-   if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':['roar','slam'].includes(model.state)?'slam':'walk'):model.state==='roar'?'ring':'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
+    roleAnim(model);
+   if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':model.state==='hold'?'hold':['roar','slam'].includes(model.state)?'slam':'walk'):model.state==='roar'?'ring':'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
    view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
   }
   for(const [m,v]of this.views)if(!live.has(m)){v.destroy();this.views.delete(m);}
