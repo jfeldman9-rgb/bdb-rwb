@@ -7,14 +7,31 @@ export function fireGun(gun, dt, held, bob, enemies, multiplier = 1) {
   gun.cooldown = Math.max(0, (gun.cooldown || 0) - dt);
   if (!held || bob.busy || !bob.alive || gun.cooldown > 1e-8) return null;
   gun.cooldown = GUN.interval; bob.shootTime = .22;
-  const target = enemies.filter(e => e.alive && e.canBeHit !== false && Math.abs(e.y - bob.y) < GUN.band && (e.x - bob.x) * bob.facing >= 0 && Math.abs(e.x - bob.x) < GUN.bonkRange)
-    .sort((a,b) => Math.abs(a.x-bob.x) - Math.abs(b.x-bob.x))[0];
+  let target = null, best = Infinity;
+  const facing = bob.facing;
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    if (!e.alive || e.canBeHit === false) continue;
+    if (Math.abs(e.y - bob.y) >= GUN.band) continue;
+    const dx = (e.x - bob.x) * facing;
+    if (dx < 0 || dx >= GUN.bonkRange) continue;
+    const dist = Math.abs(e.x - bob.x);
+    if (dist < best) { best = dist; target = e; }
+  }
   return { shot: target ? null : createShot(bob, multiplier), bonk: target || null, damage: GUN.damage * multiplier };
 }
 export function stepShot(shot, dt, enemies, hit, camX = 0, width = 1280) {
   const oldX = shot.x; shot.x += shot.vx * dt; shot.vy = 0; shot.age += dt;
-  const targets = enemies.filter(e => e.alive && e.canBeHit !== false && Math.abs(e.y - shot.gy) < GUN.band &&
-    e.x >= Math.min(oldX, shot.x) - 30 && e.x <= Math.max(oldX, shot.x) + 30).sort((a,b) => (a.x - b.x) * shot.dir);
-  if (targets.length) { hit(targets[0], shot.damage, shot.dir, false); shot.alive = false; }
+  let target = null;
+  const forward = shot.dir >= 0;
+  let best = forward ? Infinity : -Infinity;
+  const x0 = Math.min(oldX, shot.x) - 30, x1 = Math.max(oldX, shot.x) + 30;
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    if (!e.alive || e.canBeHit === false) continue;
+    if (Math.abs(e.y - shot.gy) >= GUN.band || e.x < x0 || e.x > x1) continue;
+    if (forward ? e.x < best : e.x > best) { best = e.x; target = e; }
+  }
+  if (target) { hit(target, shot.damage, shot.dir, false); shot.alive = false; }
   if (shot.x < camX - 200 || shot.x > camX + width + 200 || shot.age > 3) shot.alive = false;
 }

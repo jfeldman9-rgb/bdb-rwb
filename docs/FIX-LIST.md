@@ -1,3 +1,32 @@
+# BDB Fix List — Pass 5 (from Pass 4 reviews)
+
+**Date:** 2026-10-28
+**Head reviewed:** `cursor/bdb-pass4-cfe0` @ `3f76903` (draft PR #11).
+**Sources:** Kimi (`docs/REVIEW-KIMI-PASS4.md`, PR #12, branch `cursor/kimi-review-pass4-66bb`), Muse (`docs/REVIEW-MUSE-PASS4.md`, PR #13, branch `cursor/muse-pass4-review-8008`), Argon (`docs/REVIEW-ARGON-PASS4.md`, PR #14, branch `cursor/argon-review-pass4-6474`), Claude (`docs/REVIEW-CLAUDE-PASS4.md`, PR #15, branch `cursor/claude-review-pass4-ee07`).
+**Locked, not on this list:** eggplant fires straight (`vy=0`, no aiming); `CAM_LEAD` stays 0.28; no upgrade shop; quoted lines and Dad's catchphrase stay exact; Choirmaster numbers stay (hp 1140 and the rest); `intro_v3.mp4`; Adventure stays 140–240 s per stage. The eighteen Pass 4 items below are done. Do not reopen them.
+
+| ID | Fix | Found by | Notes |
+|---|---|---|---|
+| **P5-1** | Boot crash: `GameScene` owns the fighter `'shadow'` ellipse. FX no longer registers that key. A texture-exists guard alone is not the fix. | Muse P1; Claude B1 | `tools/browser-smoke.mjs` launches Chrome, clicks through to gameplay, and checks `started`, advancing frames, no error card, and stage 1. The intro assertion is `intro_v3.mp4`. |
+| **P5-2** | Phase-3 finisher is ready when every living Wingman is at 1 HP, including a sole survivor. A phase-3 floor is not "THE BOSS IS BRAGGING". `wingHp <= 0` stays dead when `wingDead` is omitted. | Claude B2; Argon 1; Kimi T1/T2 | Eggplants still pass through a floored Wingman. Both floored and alive still refuses with NO TARGETS IN SIGHT and does not spend a charge. |
+| **P5-3** | Freeze-guard strikes reset on a healthy `beat` and on a stage change. The stuck card's Reload listener is persistent, so a second card still reloads. | Claude B3/B4; Argon 3 | Two errors with no beat between them still trip. Startup's own Reload listener is left alone. |
+| **P5-4** | Gate ticks only on the continuous Interventionist/Choirmaster bar. Choir buff pulse draws even when the choir also has a ring. Render reads `choirBuff` cached on the sim step. `choirAura` is one frozen object. | Argon 2; Claude B5/B8; Kimi T5 | `choirMultiplier` stays 1.28. |
+| **P5-5** | `separateEnemies` skips hold and telegraph and does not clamp to the camera. Walkers still clamp to the world in `Yetti.update`. Push stays 8px per step. | Claude B7; Argon 4 | |
+| **P5-6** | Hot per-frame copies: perf metadata is cached until resize/quality/search/renderer changes; `tick` does not stringify every frame; gun, shot, wingman, prompt, boom, and event-batch scans reuse buffers. | Argon 5; Claude B8 | |
+| **P5-7** | Superseding a clip invokes the previous settle callback with `'abort'` before the new hold is cleared. `CutscenePlayer.abort` still does not call `done`, so `destroy()` does not fire victory. A clip that finishes inside `play()` does not re-arm the hold. | Claude B6 | |
+| **P5-8** | A chapter `loaderror` sets `__bdbStartup.failed`, and `create()` returns before audio, the sim, and `started`. | Argon 6 | |
+| **P5-9** | `killImpact('ko')` splats when `source` is missing. Explicit `'bob'` stays silent. `recordKo` still emits `source`. | Kimi T2 | |
+| **P5-10** | A `boss` event in the same drained batch as a cutscene does not start boss music. The clip end still brings it back. | Muse / Claude stage-3 blip | |
+| **P5-11** | Camera respawn, freeze-guard `started`, and press-ownership/governor checks are behavior tests. | Argon 7; Kimi T3 | |
+| **P5-12** | Deleted unreferenced `src/crate-texture.js`, `src/cutscene-scene.js`, `src/music.js`, and `src/perf-panel.js`. | Argon 6 | `src/page-base.js` stays. `bootstrap.js` reaches it through `debug-flag.js` (`installDirectoryBase`). |
+| **P5-13** | Nightmare snowballs clear at 58px. Adventure and Story stay at 65. This pulls Nightmare stage 3 at 60 Hz into line with 30/120 without retuning Choirmaster, pace, or Adventure. | Muse P1 pacing | Device loop is still 1/60. The 58px clear is only the nightmare projectile test. |
+
+### Deferred
+- Recharge-banner punctuation and other copy nits the four reviews mentioned outside this list.
+- Choirmaster fight numbers. Still waiting on Jason.
+
+---
+
 # BDB Fix List — Pass 4 (from Pass 3 reviews)
 
 **Date:** 2026-10-28  

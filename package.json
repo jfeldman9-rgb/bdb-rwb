@@ -1,1 +1,1 @@
-{"name":"legend-of-claudia-bdb","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs"},"engines":{"node":">=24"}}
+{"name":"legend-of-claudia-bdb","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","smoke":"node tools/browser-smoke.mjs"},"engines":{"node":">=24"}}

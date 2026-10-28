@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VW, WORLD_W, CAM_LEAD as CONFIG_LEAD } from '../src/config.js';
+import { VW, WORLD_W, clamp, CAM_LEAD as CONFIG_LEAD } from '../src/config.js';
 import {
   CAM_LEAD, cameraTarget, updateCamera, stepCamera, screenX, freeRoam,
   moveBounds, lockSnaps, BOB_MAX_SCREEN, BOB_INSET,
@@ -45,11 +45,13 @@ test('CAM_LEAD keeps Bob in the left third of the screen', () => {
   assert.ok(sx >= VW * 0.15);
 });
 
-test('respawn uses CAM_LEAD instead of a copied 0.28', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const src = await readFile(new URL('../src/campaign.js', import.meta.url), 'utf8');
-  assert.match(src, /cp\.x-VW\*CAM_LEAD/);
-  assert.doesNotMatch(src, /VW\*0\.28/);
+test('respawn places the camera with CAM_LEAD', () => {
+  const w = new Campaign();
+  w.checkpoint.x = 1800;
+  w.respawn();
+  assert.equal(w.bob.x, 1800);
+  assert.equal(w.camX, clamp(cameraTarget(w.bob.x, w.bob.facing), 0, WORLD_W - VW));
+  assert.ok(Math.abs((w.bob.x - w.camX) - VW * CAM_LEAD) < 50);
 });
 
 test('updateCamera scrolls the world; Bob stays near left third when unlocked', () => {

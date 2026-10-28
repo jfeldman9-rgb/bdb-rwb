@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Campaign } from '../src/campaign.js';
+import { Campaign, snowClearZ } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
 import { Bob } from '../src/bob.js';
 import { createShot } from '../src/eggplant.js';
 import { ZONE_MERCY_DEATHS, refuseReason } from '../src/dad-call.js';
-import { laneOf, MAX_RANGED_PER_LANE, RANGED_TYPES } from '../src/yettis.js';
+import { laneOf, MAX_RANGED_PER_LANE, RANGED_TYPES, Yetti } from '../src/yettis.js';
+import { isBossFinisherReady } from '../src/wingman.js';
+import { killImpact } from '../src/shot-feel.js';
 
 function die(w) {
   const before = w.stats.deaths;
@@ -230,4 +232,58 @@ test('mercy before Dad arrives drops a shake trio instead of a charge', () => {
   assert.equal(w.dadCall.charges, 0, 'no charge before Dad arrives');
   assert.equal(w.pickups.length, 3, 'shake trio instead');
   assert.match(w.message, /CATCH YOUR BREATH/);
+});
+
+test('nightmare snowballs clear at 58; adventure and story stay at 65', () => {
+  assert.equal(snowClearZ('nightmare'), 58);
+  assert.equal(snowClearZ('adventure'), 65);
+  assert.equal(snowClearZ('story'), 65);
+});
+
+test('wingHp of 0 stays dead when wingDead is omitted, and one floored survivor can be finished', () => {
+  const w = new Campaign({ stage: 3, difficulty: 'nightmare' });
+  w.checkpoint = { zone: w.bossZone, x: w.def.boss.l + 200, phase: 3, wingHp: [40, 0] };
+  w.startBoss(3);
+  const wings = w.enemies.filter(e => e.type === 'wingman');
+  assert.equal(wings[0].alive, true);
+  assert.equal(wings[0].hp, 40);
+  assert.equal(wings[1].alive, false);
+  assert.equal(wings[1].hp, 0);
+  wings[0].hp = 1;
+  wings[0].state = 'hover';
+  assert.equal(isBossFinisherReady(3, w.enemies.filter(e => e.boss)), true);
+  w.papi.charges = 1;
+  assert.equal(w.usePapi(), true);
+});
+
+test('Dad swats a phase-3 pair when one Wingman is floored and the other can be hit', () => {
+  const w = new Campaign({ stage: 3 });
+  w.startBoss(3);
+  const pair = w.enemies.filter(e => e.type === 'wingman');
+  pair[0].hp = 1;
+  pair[0].state = 'hover';
+  pair[1].hp = 200;
+  pair[1].state = 'hover';
+  assert.equal(w.useDad(), true);
+  assert.notEqual(w.message, 'THE BOSS IS BRAGGING — WAIT FOR AN OPENING.');
+  const both = new Campaign({ stage: 3 });
+  both.startBoss(3);
+  for (const e of both.enemies) if (e.type === 'wingman') { e.hp = 1; e.state = 'hover'; }
+  const charges = both.dadCall.charges;
+  assert.equal(both.useDad(), false);
+  assert.equal(both.message, 'NO TARGETS IN SIGHT.');
+  assert.equal(both.dadCall.charges, charges);
+});
+
+test('recordKo carries a source, and a ko with no source still splats', () => {
+  const w = new Campaign();
+  const e = new Yetti('walker', 400, 630);
+  e.hp = 1;
+  w.enemies = [e];
+  w.hit(e, 50, 1, false);
+  const ko = w.events.find(ev => ev.type === 'ko');
+  assert.equal(ko.data.source, 'bob');
+  assert.equal(killImpact('ko', ko.data), null);
+  assert.equal(killImpact('ko', {}).splat, true);
+  assert.equal(killImpact('ko').splat, true);
 });
