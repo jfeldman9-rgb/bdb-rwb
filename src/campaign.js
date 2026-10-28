@@ -1,6 +1,6 @@
 import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
-import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane } from './yettis.js';
+import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane, separateEnemies } from './yettis.js';
 import { Wingmen } from './wingman.js';
 import { collectShake, papacitoEffect, papiHitTime } from './papacito.js';
 import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
@@ -390,6 +390,7 @@ export class Campaign {
     }
     keep(this.pickups, p => !p.gone);
     if(this.wingmen){const before=this.wingmen.phase;this.wingmen.update(dt,this);if(before!==this.wingmen.phase)this.stats.phases.push(`3:${this.wingmen.phase}`);}
+    separateEnemies(this.enemies, this.bounds);
     if(this.bossActive){
       if(this.wingmen?.complete || (!this.wingmen&&!this.enemies.some(e=>e.boss&&e.alive)))this.finishStage();
     } else if(this.locked&&!this.enemies.some(e=>e.alive)&&!this.pending.length){
