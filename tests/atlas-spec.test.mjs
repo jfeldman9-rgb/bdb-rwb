@@ -56,3 +56,36 @@ test('character atlas GPU residency stays under 20 MiB for a Stage 1 kit',async(
  }
  assert.ok(gpu/1024/1024<20,`stage1 GPU MiB ${gpu/1024/1024}`);
 });
+const KTX1=[0xab,0x4b,0x54,0x58,0x20,0x31,0x31,0xbb,0x0d,0x0a,0x1a,0x0a];
+const GL={'astc.ktx':0x93b0,'etc2.ktx':0x9278};
+test('every character page ships ASTC 4x4 + ETC2 KTX1 containers Phaser 4.2.1 can parse, plus the webp fallback',async()=>{
+ for(const file of (await readdir('assets/chars')).filter(f=>f.endsWith('.anims.json'))){
+  const m=await json(`assets/chars/${file}`);assert.ok(m.gpu,`${file} has no gpu formats`);assert.equal(m.gpu.premultiplied,true);
+  assert.deepEqual(Object.keys(m.gpu).filter(k=>k!=='premultiplied'),['ASTC','ETC']);
+  for(const p of m.pages){const size=(await json(`assets/chars/${p}.json`)).meta.size;await access(`assets/chars/${p}.webp`);
+   for(const suf of [m.gpu.ASTC,m.gpu.ETC]){const b=await readFile(`assets/chars/${p}.${suf}`),v=new DataView(b.buffer,b.byteOffset,b.byteLength),u=i=>v.getUint32(12+i*4,true);
+    assert.deepEqual([...b.subarray(0,12)],KTX1,`${p}.${suf} magic`);assert.equal(u(0),0x04030201);assert.equal(u(1),0,'glType 0 = compressed');
+    assert.equal(u(4),GL[suf]);assert.equal(u(6),size.w);assert.equal(u(7),size.h);assert.equal(u(11),1);
+    // Phaser flips V and cannot flip compressed uploads: pages are stored bottom-up and say so.
+    const kv=u(12);assert.equal(b.subarray(68,64+kv).toString('latin1').replace(/\0+$/,''),'KTXorientation\0S=r,T=u');
+    assert.equal(size.w%4,0);assert.equal(size.h%4,0);assert.equal(v.getUint32(64+kv,true),size.w*size.h,'8 bpp level 0');assert.equal(b.length,68+kv+size.w*size.h);}
+  }
+ }
+});
+test('queueCharPages asks Phaser for ASTC, then ETC2, then the webp atlas',async()=>{
+ const {queueCharPages,charPageSources}=await import('../src/assets.js');const m=await json('assets/chars/dad.anims.json'),calls=[];
+ const scene={cache:{json:{get:()=>m}},textures:{exists:()=>false},load:{texture:(k,s)=>calls.push(['texture',k,s]),atlas:(...a)=>calls.push(['atlas',...a])}};
+ queueCharPages(scene,['dad']);assert.equal(calls.length,1);const [kind,key,src]=calls[0];assert.equal(kind,'texture');assert.equal(key,'dad-0');
+ assert.deepEqual(Object.keys(src),['ASTC','ETC','IMG']);
+ assert.deepEqual(src.ASTC,{type:'KTX',textureURL:'assets/chars/dad-0.astc.ktx',atlasURL:'assets/chars/dad-0.json'});
+ assert.deepEqual(src.ETC,{type:'KTX',textureURL:'assets/chars/dad-0.etc2.ktx',atlasURL:'assets/chars/dad-0.json'});
+ assert.deepEqual(src.IMG,{textureURL:'assets/chars/dad-0.webp',atlasURL:'assets/chars/dad-0.json'});
+ const plain={...m};delete plain.gpu;assert.deepEqual(Object.keys(charPageSources(plain,'dad-0')),['IMG']);
+ calls.length=0;queueCharPages({...scene,cache:{json:{get:()=>plain}}},['dad']);assert.deepEqual(calls[0],['atlas','dad-0','assets/chars/dad-0.webp','assets/chars/dad-0.json']);
+});
+test('Stage 1 kit on-device estimate with ASTC/ETC2 is a quarter of the RGBA webp path',async()=>{
+ const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_runners'];let rgba=0,astc=0;
+ for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}}
+ assert.equal(astc*4,rgba);assert.ok(astc/2**20<6,`stage1 ASTC MiB ${astc/2**20}`);
+ const r=await json('assets/chars/_pack_report.json');assert.ok(Math.abs(r.compressed.stage1_gpu_MiB.astc-astc/2**20)<.01);
+});

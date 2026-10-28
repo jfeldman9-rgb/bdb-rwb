@@ -142,5 +142,10 @@
     "logical": 20,
     "unique": 6,
     "reused": 14
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
   }
 }

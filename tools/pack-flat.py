@@ -13,6 +13,7 @@
 
 Run from repo root: node tools/make-placeholders.mjs
 Repack only some atlases (no wipe, no media copy): python3 tools/pack-flat.py --only bob,yetti_walker
+Then tools/compress-ktx.py rebuilds the ASTC/ETC2 KTX pages for the repacked keys (run automatically below).
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
@@ -287,3 +288,9 @@ report = {
 }
 (out / '_pack_report.json').write_text(json.dumps(report, indent=2))
 print('PACK REPORT', json.dumps(report))
+
+# GPU-compressed pages (ASTC + ETC2). pack() wiped the old .ktx files and rewrote anims.json without
+# "gpu", so a failed/missing compressor leaves those keys on the webp path rather than stale KTX.
+packed = [k for k in list(REAL) + list(STANDINS) if not only or k in only]
+if subprocess.run([sys.executable, 'tools/compress-ktx.py', '--only', ','.join(packed)]).returncode:
+  print('WARNING: KTX compression skipped; these atlases load webp only:', ','.join(packed))
