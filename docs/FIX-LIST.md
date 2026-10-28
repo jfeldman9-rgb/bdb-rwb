@@ -17,9 +17,9 @@
 | **K1** | **Done.** A stage change does not drain events on the dying scene. `create` handles them after `syncViews`, so the kidnap clip pauses stage 2. `tests/stage-cutscene.test.mjs`. |
 | **P1-3** | **Done.** `narrationYields`: a line landing on narration waits 2.5s, anything else yields. Installed before `handleEvents`. Cory and Yetti taunts roll once a second. |
 | **P1-4** | Pending |
-| **P1-6** | Pending |
+| **P1-6** | **Done.** Story and victory clips duck music and hold later voice events until the clip's done callback. A synchronous skip releases the hold before the next event. |
 | **P1-7** | Pending |
-| **P1-14** | Pending |
+| **P1-14** | **Done.** Victory destroys the cage and plays `claudia_freed`. The retired produce line is gone from `#victory`. |
 | **P1-20** | **Done.** Private origin only. A token user and a missing `.git` suffix still count as `jfeldman9-rgb/bdb-rwb`. |
 | **K2** | Pending (press-ownership) |
 | Other P1/P2 | Deferred this pass unless noted above. |
