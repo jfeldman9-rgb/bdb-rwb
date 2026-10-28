@@ -15,6 +15,7 @@ export function createStoryPlayer(query, root=globalThis, input=null, game=null)
  const key=e=>{const action=KEYS[e.code];if(handle&&SKIP_ACTIONS.has(action)){if(input)consumePress(input,action);else e.preventDefault();handle.skip('key',action==='start'||action==='pause');}};
  root.addEventListener?.('keydown',key);
  return { player, bless:()=>player.bless(), play(clipKey,done){
+   if(handle?.active){const old=handle;handle=null;old.abort();resume();resume=()=>{};}
    if(!cutscenesEnabled(query,root.navigator)||!STAGE_CLIPS[clipKey]){done();return;}
    // Park the Phaser loop for the intro as well as the stage clips. A caller
    // that already paused (startHeldClip) keeps the resume; this one no-ops.

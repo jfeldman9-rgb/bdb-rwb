@@ -17,6 +17,7 @@ globalThis.addEventListener = noop;
 globalThis.removeEventListener = noop;
 
 const { GameScene } = await import('../src/game-scene.js');
+const { pauseForClip } = await import('../src/cutscene-hooks.js');
 
 test('a stage change leaves the kidnap cutscene for the new scene to pause', () => {
   const events = [{ type: 'cutscene', data: 'kidnap' }, { type: 'voice', data: 'nar_kidnap' }];
@@ -56,4 +57,32 @@ test('a stage change leaves the kidnap cutscene for the new scene to pause', () 
   assert.equal(scene.pauseReasons.has('cutscene'), true);
   assert.equal(world.paused, true);
   assert.equal(world.events.length, 0);
+});
+
+test('a held clip lets the story player own the Phaser pause', () => {
+  let pauses = 0;
+  const scene = Object.create(GameScene.prototype);
+  scene.world = { paused: false, bossActive: false, stageNo: 2 };
+  scene.pauseReasons = new Set();
+  scene.game = {
+    isPaused: false,
+    pendingDestroy: false,
+    inp: { clear() {} },
+    pause() { pauses++; this.isPaused = true; },
+    resume() { this.isPaused = false; },
+    story: {
+      play(key, done) {
+        const unpause = pauseForClip(scene.game);
+        scene.played = key;
+        scene.finish = () => { unpause(); done(); };
+      },
+    },
+  };
+  scene.startHeldClip('kidnap', () => { scene.released = true; });
+  assert.equal(pauses, 1, 'startHeldClip does not pause before the story player');
+  assert.equal(scene.game.isPaused, true);
+  scene.finish();
+  assert.equal(scene.released, true);
+  assert.equal(scene.game.isPaused, false, 'the story player resumes the pause it took');
+  assert.equal(scene.pauseReasons.has('cutscene'), false);
 });
