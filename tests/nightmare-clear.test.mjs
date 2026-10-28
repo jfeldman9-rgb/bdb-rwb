@@ -163,23 +163,26 @@ test('a Wingman keeps damage already dealt when Bob dies', () => {
   assert.equal(again.hp, 40);
 });
 
-function clearStage(stage, capSec = 600) {
+function clearStage(stage, hz = 60, capSec = 700) {
   const w = new Campaign({ stage, difficulty: 'nightmare' });
   const bot = new Bot();
-  const cap = 60 * capSec;
+  const dt = 1 / hz;
+  const cap = hz * capSec;
   for (let steps = 0; steps < cap && !w.stats.stages.includes(stage); steps++) {
-    w.update(1 / 60, bot.update(1 / 60, w));
+    w.update(dt, bot.update(dt, w));
     for (const e of w.events) if (e.type === 'dad_callin') w.finishDadCallin();
     for (const shot of w.projectiles) assert.equal(shot.vy, 0);
     w.events = [];
   }
-  return { cleared: w.stats.stages.includes(stage), seconds: w.elapsed, deaths: w.stats.deaths, zone: w.zoneIndex, boss: w.bossActive };
+  return { cleared: w.stats.stages.includes(stage), seconds: w.elapsed, deaths: w.stats.deaths, zone: w.zoneIndex, boss: w.bossActive, phase: w.wingmen?.phase };
 }
 
-test('nightmare bot clears a full stage 2 and stage 3, Choirmaster and Wingmen included', () => {
-  for (const stage of [2, 3]) {
-    const result = clearStage(stage);
-    assert.equal(result.cleared, true, `stage ${stage} not clear in ${result.seconds.toFixed(1)}s (${result.deaths} deaths, zone ${result.zone}, boss ${result.boss})`);
+test('nightmare bot clears every full stage at 60 Hz and at 30 Hz', () => {
+  for (const hz of [60, 30]) {
+    for (const stage of [1, 2, 3]) {
+      const result = clearStage(stage, hz);
+      assert.equal(result.cleared, true, `${hz} Hz stage ${stage} not clear in ${result.seconds.toFixed(1)}s (${result.deaths} deaths, zone ${result.zone}, boss ${result.boss}, phase ${result.phase})`);
+    }
   }
 });
 

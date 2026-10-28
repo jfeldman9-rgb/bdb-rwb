@@ -1,8 +1,20 @@
-import test from'node:test';import assert from'node:assert/strict';import{Campaign}from'../src/campaign.js';import{isBossFinisherReady,applyBossDamage}from'../src/wingman.js';import{callEffect}from'../src/dad-call.js';import{laneY}from'../src/yettis.js';import{bossBars,bossBarLayout}from'../src/hud.js';
+import test from'node:test';import assert from'node:assert/strict';import{Campaign}from'../src/campaign.js';import{Wingman,isBossFinisherReady,applyBossDamage}from'../src/wingman.js';import{callEffect}from'../src/dad-call.js';import{laneY}from'../src/yettis.js';import{stepShot}from'../src/eggplant.js';import{bossBars,bossBarLayout}from'../src/hud.js';
 test('phase 1→2→3 splits into two; shots and Dad cannot kill phase 3',()=>{const w=new Campaign({stage:3});w.startBoss();w.enemies[0].takeHit(999);w.wingmen.update(.01,w);assert.equal(w.wingmen.phase,2);assert.equal(w.checkpoint.phase,2);w.enemies[0].state='hover';w.enemies[0].takeHit(999);w.wingmen.update(.01,w);assert.equal(w.wingmen.phase,3);const pair=w.enemies.filter(e=>e.type==='wingman');assert.equal(pair.length,2);assert.ok(w.enemies.some(e=>!e.boss&&e.alive),'phase III calls in minions');for(const b of pair){b.state='hover';b.takeHit(999);assert.equal(b.hp,1);callEffect(b);assert.equal(b.hp,1);assert.equal(b.alive,true);}assert.ok(isBossFinisherReady(3,pair));w.papi.charges=1;assert.ok(w.usePapi());assert.ok(pair.every(e=>e.alive),'finisher waits for the runner front');for(let i=0;i<150;i++)w.update(1/60,{});assert.ok(pair.every(e=>!e.alive));});
 test('finisher softlock spawns a reachable shake trio every eight seconds',()=>{const w=new Campaign({stage:3});w.startBoss(3);for(const e of w.enemies)e.hp=1;w.pickups=[];for(let i=0;i<480;i++)w.wingmen.update(1/60,w);assert.equal(w.pickups.length,3);assert.ok(w.pickups.every(p=>p.x>w.bounds.l&&p.x<w.bounds.r));for(let i=0;i<480;i++)w.wingmen.update(1/60,w);assert.equal(w.pickups.length,6);w.papi.charges=1;for(let i=0;i<480;i++)w.wingmen.update(1/60,w);assert.equal(w.pickups.length,6);});
 test('boss death retry preserves the current phase checkpoint',()=>{const w=new Campaign({stage:3});w.startBoss(3);w.bob.hp=0;w.bob.alive=false;w.respawn();assert.equal(w.wingmen.phase,3);assert.equal(w.enemies.length,2);assert.equal(w.bob.hp,3);});
 test('boss damage sanitizes invalid values and never increases live HP above floor',()=>{assert.deepEqual(applyBossDamage(1,NaN,12),{hp:0,removed:0});assert.deepEqual(applyBossDamage(3,5,Infinity),{hp:5,removed:0});assert.deepEqual(applyBossDamage(3,5,-99),{hp:5,removed:0});});
+test('a phase-3 Wingman at 1 HP lets the shot through to the partner',()=>{
+  const front=new Wingman(500,600,3,1), back=new Wingman(760,600,3,2);
+  front.hp=1; back.hp=200;
+  assert.equal(front.canBeHit,false);
+  assert.equal(back.canBeHit,true);
+  const shot={x:460,y:450,gy:600,dir:1,vx:680,vy:0,damage:9.6,alive:true,age:0};
+  let hit=null;
+  for(let i=0;i<30&&shot.alive;i++) stepShot(shot,1/30,[front,back],(e,dmg)=>{hit=e;e.takeHit(dmg);},0);
+  assert.equal(hit,back,'the floored Wingman does not soak the eggplant');
+  assert.equal(front.hp,1);
+  assert.ok(back.hp<200);
+});
 test('wingman halo volley uses the walk lanes, skipping the safe one',()=>{
   const w=new Campaign({stage:3});w.startBoss(1);
   const wing=w.enemies[0];

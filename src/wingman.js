@@ -28,7 +28,12 @@ export class Wingman {
       hp: WINGMAN_HP[phase], maxHp: WINGMAN_HP[phase], alive: true,
       facing: -1, state: 'hover', timer: 1.5, attackX: x, attackY: y, volley: 0 });
   }
-  get canBeHit() { return this.alive && this.state !== 'split'; }
+  get canBeHit() {
+    // Phase III floors at 1 HP until Papacito. A floored Wingman that still
+    // soaks eggplants hides the partner, and at a 30 Hz step the bot never
+    // gets both of them to the finisher.
+    return this.alive && this.state !== 'split' && !(this.phase === 3 && this.hp <= 1);
+  }
   takeHit(amount) {
     if (!this.canBeHit) return { accepted: false };
     const result = applyBossDamage(this.phase, this.hp, amount); this.hp = result.hp;
