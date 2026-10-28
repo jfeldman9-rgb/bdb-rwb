@@ -13,6 +13,7 @@ import { stageLines } from './voice-lines.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall } from './dad-call-cutscene.js';
+import { beginCorpse, stepCorpse } from './corpses.js';
 
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
 function roleAnim(m) {
@@ -65,19 +66,29 @@ export class GameScene extends Phaser.Scene {
  }
  setPauseReason(reason,on){if(on)this.pauseReasons.add(reason);else this.pauseReasons.delete(reason);this.world.paused=this.pauseReasons.size>0;this.game.inp.clear();}
  makeView(model,key,scale,tint=0xffffff){const v=new Fighter(this,{key,prefix:key+'_',native:1,scale,anchorX:.5,hp:1,team:0,shadowW:135},model.x,model.y);v.sprite.setLighting(false).setTint(tint);return v;}
- syncViews(){
+ syncViews(dt=0){
   const w=this.world;this.bounds=w.bounds;this.cameras.main.setScroll(Math.round(w.camX),0);this.backdrop?.update(w.camX);
   const live=new Set();
   for(const model of [w.bob,...w.enemies.filter(e=>e.alive)]){
    live.add(model);let view=this.views.get(model);const isBob=model===w.bob,key=isBob?'bob':model.type==='wingman'?'wingman':TYPES[model.type].art;
    if(!view){view=this.makeView(model,key,isBob ? .46 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
+   view.corpse=null;view.corpsePlayed=false;
    Object.assign(view,{x:model.x,y:model.y,z:model.z||0,state:model.state});view.face(model.facing);
    let anim=isBob?(model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle'):
     roleAnim(model);
    if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':model.state==='hold'?'hold':['roar','slam'].includes(model.state)?'slam':'walk'):model.state==='roar'?'ring':'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
    view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
   }
-  for(const [m,v]of this.views)if(!live.has(m)){v.destroy();this.views.delete(m);}
+  for(const [m,v] of [...this.views]){
+   if(live.has(m))continue;
+   if(m===w.bob){v.destroy();this.views.delete(m);continue;}
+   if(!v.corpse)v.corpse=beginCorpse();
+   v.corpse=stepCorpse(v.corpse,dt);
+   v.state='dead';
+   if(!v.corpsePlayed){const key=v.def.key;v.play(this.anims.exists(key+'_knockdown')?'knockdown':'hurt',1,false);v.corpsePlayed=true;}
+   v.sprite.setAlpha(v.corpse.alpha);v.sync();
+   if(v.corpse.done){v.destroy();this.views.delete(m);}
+  }
   if(w.dad){if(!this.dadView)this.dadView=this.makeView(w.dad,'dad',.52);this.showDad(w.dad);}
   else if(this.dadView){this.dadView.destroy();this.dadView=null;}
  }
@@ -127,7 +138,7 @@ export class GameScene extends Phaser.Scene {
   while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.hitStop>0||w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
   this.handleEvents();
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
-  this.syncViews();if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);
+  this.syncViews(dt);if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);
   perf.tick(performance.now(),{active:!w.paused&&!w.victory,inFight:w.locked&&!w.papiTime&&!w.dad,context:{stage:this.stageNo,mode:w.bossActive?'boss':'stage'}});
   if(w.victory&&!this.finished){this.finished=true;playTrack(null,{fade:.5});stopSceneAudio();this.game.story.play('victory',()=>{document.getElementById('victory').hidden=false;document.getElementById('victory-score').textContent=`${Math.floor(w.score)} points · Nightmare unlocked`;document.body.classList.remove('playing');});}
  }
