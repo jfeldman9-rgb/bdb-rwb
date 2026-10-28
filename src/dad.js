@@ -1,6 +1,8 @@
 // In-engine call-in driven by the packed Dad atlas: jog in, one overhead BDB swat, jog out.
 // Combat freezes while he is on screen. Timing comes from FPS.md (enter 6@12, swat 8@16, exit 6@12);
 // the hit wipe resolves on the swat frame that shows the impact burst.
+// The atlas packs a single swat; the stand mark stays on screen so the swat reads near the right wall.
+import { VW } from './config.js';
 export const DAD_ANIMS = Object.freeze({
   enter: Object.freeze({ frames: 6, fps: 12 }),
   swat: Object.freeze({ frames: 8, fps: 16, impact: 6 }),
@@ -17,7 +19,7 @@ const EXIT_SPEED = 420;
 
 export class Dad {
   constructor(camX, y, standX = camX + 360) {
-    this.x = this.startX = camX - 100; this.standX = Math.max(standX, camX + 120); this.y = y;
+    this.x = this.startX = camX - 100; this.standX = Math.min(Math.max(standX, camX + 120), camX + VW - 200); this.y = y;
     this.age = 0; this.state = 'enter'; this.frame = 0; this.alpha = 1; this.resolved = false; this.gone = false;
   }
   update(dt, resolve) {

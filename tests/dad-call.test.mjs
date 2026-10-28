@@ -28,3 +28,8 @@ test('every refusal reason names its own banner; spent keeps charge numbers',()=
  const s=createDadCall();s.charges=0;s.calls=3;
  assert.match(refusalBanner(s,'spent'),/0\/1/);assert.match(refusalBanner(s,'spent'),/3\/3/);
 });
+test('Dad stand mark stays on screen near the right wall',()=>{
+ const near=new Dad(6480,630,7900);assert.ok(near.standX<=6480+1280-200,`stand ${near.standX}`);
+ const mid=new Dad(1000,630,1400);assert.equal(mid.standX,1400);
+ const close=new Dad(0,630,10);assert.equal(close.standX,120);
+});
