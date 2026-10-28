@@ -77,7 +77,12 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   assert.equal(s2.useDad(), true);
   assert.ok(voices(s2).includes('dad_call_01'));
   s2.finishDadCallin();
-  assert.ok(voices(s2).includes('dad_catchphrase'));
+  assert.equal(voices(s2).includes('dad_catchphrase'), false, 'the line waits for the swat');
+  for (let i = 0; i < Math.ceil(DAD_TIMING.impact * 60); i++) s2.update(1 / 60, {});
+  const phrase = s2.events.findIndex(e => e.type === 'voice' && e.data === 'dad_catchphrase');
+  const hit = s2.events.findIndex(e => e.type === 'dadhit');
+  assert.ok(phrase >= 0 && hit === phrase + 1, 'catchphrase lands on the impact');
+  s2.spawnYetti('walker', 500, 630);
   s2.dad = null;
   s2.dadCall.on = false;
   s2.dadCall.charges = 1;

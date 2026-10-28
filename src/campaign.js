@@ -235,7 +235,6 @@ export class Campaign {
   finishDadCallin() {
     if (this.dad) return;
     this.dad = new Dad(this.camX, this.bob.y, this.bob.x + 150);
-    this.emit('voice', 'dad_catchphrase');
     this.emit('dad');
   }
   /** Lose a life, keep progress: zones resume at the wave reached; a mini-boss keeps the damage dealt. */
@@ -326,7 +325,7 @@ export class Campaign {
       }
       return;
     }
-    if(this.dad){this.dad.update(dt,()=>{this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;this.speakRot('dad_done',['dad_done_01','dad_done_02'],0);}return;}
+    if(this.dad){this.dad.update(dt,()=>{this.emit('voice','dad_catchphrase');this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;this.speakRot('dad_done',['dad_done_01','dad_done_02'],0);}return;}
     if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);this.latchInput(input);return;}
     input=this.takeLatch(input);
     tickDadCall(this.dadCall,dt);
