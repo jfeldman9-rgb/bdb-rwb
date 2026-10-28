@@ -122,17 +122,49 @@ test('a stalled gameplay loop shows the stuck card; a pause does not', () => {
   guard.destroy();
 });
 
-test('a gameplay error shows the stuck card; a boot error and a foreign error do not', () => {
+test('a repeated gameplay error shows the stuck card; one error, a boot error, a foreign error, and an empty filename do not', () => {
   const { els, errors, gameplay, guard } = freezeRig();
   errors[0]({ error: new Error('boot'), filename: 'https://x.test/src/main.js' });
   assert.equal(els['startup-error'], undefined);
   gameplay.started = true;
   errors[0]({ error: new Error('boom'), filename: 'https://evil.test/x.js' });
-  assert.equal(els['startup-error'], undefined);
+  errors[0]({ error: new Error('script'), filename: '' });
+  errors[0]({ error: new Error('script') });
   errors[0]({ error: new Error('boom'), filename: 'https://x.test/src/campaign.js' });
+  assert.equal(els['startup-error'], undefined, 'one stray error while the loop can still run');
+  errors[0]({ error: new Error('boom again'), filename: 'https://x.test/src/campaign.js' });
   assert.equal(els['startup-error'].hidden, false);
   assert.match(els['startup-description'].textContent, /picks up at the start of this stage/);
   guard.destroy();
+});
+
+test('a preload longer than the freeze limit does not show the stuck card', () => {
+  const { els, now, timers, gameplay, game } = freezeRig();
+  gameplay.started = true;
+  gameplay.load = { isLoading: () => true };
+  game.beat();
+  now(20000);
+  timers[0]();
+  assert.equal(els['startup-error'], undefined, 'a slow chapter load is not a stall');
+  gameplay.started = false;
+  gameplay.load = { isLoading: () => false };
+  now(40000);
+  timers[0]();
+  assert.equal(els['startup-error'], undefined, 'init/preload has not started the stage');
+  gameplay.started = true;
+  now(40000 + 8001);
+  timers[0]();
+  assert.equal(els['startup-error'].hidden, false, 'a stall after the load still raises the card');
+});
+
+test('a stage is not marked started until create finishes', async () => {
+  globalThis.Phaser = globalThis.Phaser || { Scene: class {} };
+  const { GameScene } = await import('../src/game-scene.js');
+  const scene = Object.create(GameScene.prototype);
+  scene.game = { runSeq: 0 };
+  scene.init({ world: { stageNo: 2 } });
+  assert.equal(scene.started, false);
+  assert.match(String(GameScene.prototype.create), /this\.started=true/);
 });
 
 test('graphics retry reopens the running stage', () => {

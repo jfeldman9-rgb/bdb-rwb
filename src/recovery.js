@@ -66,7 +66,10 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
   const clock = () => root.performance?.now?.() ?? Date.now();
   let last = clock();
   let shown = false;
+  let strikes = 0;
+  let pendingError = null;
   const scene = () => game?.scene?.getScene?.('gameplay');
+  const loading = (s) => typeof s?.load?.isLoading === 'function' && s.load.isLoading();
   const note = () => { last = clock(); };
   const trip = (error) => {
     if (shown) return;
@@ -77,14 +80,20 @@ export function installFreezeGuard(game, root = globalThis, opts = {}) {
   if (game) game.beat = note;
   const timer = root.setInterval?.(() => {
     const s = scene();
-    if (!s?.started || s.world?.paused || game?.isPaused) { note(); return; }
+    // A chapter download is not a stall. started stays false until create, and a loader still in flight is ignored.
+    if (!s?.started || loading(s) || s.world?.paused || game?.isPaused) { note(); return; }
+    if (strikes >= 2) { trip(pendingError || new Error('error')); return; }
     if (clock() - last > limit) trip(new Error('freeze'));
   }, opts.interval ?? 1000);
   const onError = (event) => {
     if (!scene()?.started) return;
     const origin = root.location?.origin;
-    if (origin && event?.filename && !event.filename.startsWith(origin + '/')) return;
-    trip(event?.error || event?.message || 'error');
+    const file = event?.filename || '';
+    // Empty filename is the cross-origin "Script error." A one-off throw while the loop still beats is not a stall.
+    if (!file || (origin && !file.startsWith(origin + '/'))) return;
+    strikes++;
+    pendingError = event?.error || event?.message || 'error';
+    if (strikes >= 2) trip(pendingError);
   };
   root.addEventListener?.('error', onError);
   return {

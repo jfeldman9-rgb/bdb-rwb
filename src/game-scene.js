@@ -45,7 +45,7 @@ function roleAnim(m) {
 
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
- init(data){this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=true;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.particles=[];this.dadView=null;this.switching=false;this.finished=false;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;}
+ init(data){this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.particles=[];this.dadView=null;this.switching=false;this.finished=false;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;}
  preload(){
   const prev=this.game.residentChars||[],next=STAGE_CHARS[this.stageNo],delta=residencyDelta(prev,next);
   releaseChars(this,delta.release);queueCharPages(this,next);this.game.residentChars=next;
@@ -71,6 +71,8 @@ export class GameScene extends Phaser.Scene {
   this.offRotate=bindRotatePause(this);
   this.events.once('shutdown',()=>{this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();presentStage(this);this.hud.update(this.world);
+  // Preload can sit here for seconds on a slow phone. The freeze guard waits until the stage is actually running.
+  this.started=true;
  }
  setBloom(on){this.bloomEnabled=!!on;}
  setBackdropLit(on){this.backdropLit=on!==false;}
