@@ -25,6 +25,20 @@ export function refuseReason(st, c = {}) {
   return '';
 }
 export const canCall = (st, c) => refuseReason(st, c) === '';
+/** Player-facing banner for a refused call-in. The spent banner keeps the charge/call numbers. */
+export function refusalBanner(st, why) {
+  switch (why) {
+    case 'paused': return 'HOLD ON — FINISH THE CUTSCENE FIRST.';
+    case 'victory': return 'THE RESCUE IS OVER — DAD STANDS DOWN.';
+    case 'busy': return "DAD'S ALREADY MID-SWAT.";
+    case 'papi-active': return "PAPI'S ON STAGE — ONE CALL-IN AT A TIME.";
+    case 'empty': return 'NO TARGETS IN SIGHT.';
+    case 'boss-invulnerable': return 'THE BOSS IS BRAGGING — WAIT FOR AN OPENING.';
+    case 'spent': return `DAD'S OUT OF SWATS (${st?.charges | 0}/${DAD.maxCharges} · CALL ${Math.min(st?.calls | 0, DAD.maxCalls)}/${DAD.maxCalls}).`;
+    case 'phase': return 'DAD ALREADY SWATTED THIS PHASE.';
+    default: return "DAD'S ON HIS COFFEE BREAK.";
+  }
+}
 export function takeCall(st, c) {
   const why = refuseReason(st, c); if (why) return { ok: false, why };
   st.charges = 0; st.calls++; st.since = 0; st.kos = 0; st.on = true;

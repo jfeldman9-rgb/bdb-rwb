@@ -3,7 +3,7 @@ import { fireGun, stepShot, GUN } from './eggplant.js';
 import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane } from './yettis.js';
 import { Wingmen } from './wingman.js';
 import { collectShake, papacitoEffect } from './papacito.js';
-import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy } from './dad-call.js';
+import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
 import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
@@ -191,7 +191,7 @@ export class Campaign {
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
       hittable:visible.some(e=>e.canBeHit),bossPhase:phase?`${this.stageNo}:${phase}`:null,bossInvuln:visible.some(e=>e.boss&&!e.canBeHit)});
     if(!result.ok){
-      this.banner("DAD'S ON HIS COFFEE BREAK.");
+      this.banner(refusalBanner(this.dadCall, result.why));
       if (result.why==='spent' || result.why==='phase') this.speak('bob_dadwait_01', 2.5);
       return false;
     }

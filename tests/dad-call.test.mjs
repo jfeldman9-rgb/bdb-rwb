@@ -1,4 +1,4 @@
-import test from'node:test';import assert from'node:assert/strict';import{DAD,createDadCall,unlockDad,noteBobKo,tickDadCall,refuseReason,takeCall,callEffect,bossFloor}from'../src/dad-call.js';import{Dad,DAD_ANIMS,DAD_TIMING}from'../src/dad.js';
+import test from'node:test';import assert from'node:assert/strict';import{DAD,createDadCall,unlockDad,noteBobKo,tickDadCall,refuseReason,takeCall,callEffect,bossFloor,refusalBanner}from'../src/dad-call.js';import{Dad,DAD_ANIMS,DAD_TIMING}from'../src/dad.js';
 test('first charge is locked until explicitly granted',()=>{const s=createDadCall(false);for(let i=0;i<20;i++)noteBobKo(s);tickDadCall(s,60);assert.equal(s.charges,0);unlockDad(s);assert.equal(s.charges,1);assert.equal(DAD.maxCalls,3);});
 test('recharge requires both 10 Bob KOs and 45 seconds; max three calls',()=>{const s=createDadCall();for(let call=0;call<3;call++){assert.equal(takeCall(s,{hittable:true}).ok,true);s.on=false;for(let i=0;i<9;i++)noteBobKo(s);tickDadCall(s,45);assert.equal(s.charges,0);noteBobKo(s);tickDadCall(s,.01);assert.equal(s.charges,call<2?1:0);}assert.equal(s.calls,3);const t=createDadCall();takeCall(t,{hittable:true});t.on=false;for(let i=0;i<10;i++)noteBobKo(t);tickDadCall(t,44);assert.equal(t.charges,0);tickDadCall(t,1);assert.equal(t.charges,1);});
 test('all refusal reasons spend nothing',()=>{assert.equal(refuseReason(null),'nostate');for(const [why,c,mutate]of [
@@ -21,4 +21,10 @@ test('Dad jogs in to his stand mark, swats in place, then jogs out fading',()=>{
  const d=new Dad(1000,630,1400);assert.equal(d.x,900);d.update(DAD_TIMING.enter/2,()=>{});assert.ok(d.x>900&&d.x<1400);
  d.update(DAD_TIMING.enter/2+.01,()=>{});assert.equal(d.state,'swat');assert.equal(d.x,1400);
  d.update(DAD_TIMING.swat,()=>{});assert.equal(d.state,'exit');assert.ok(d.x>1400);d.update(DAD_TIMING.exit-.02,()=>{});assert.ok(d.alpha<.2);
+});
+test('every refusal reason names its own banner; spent keeps charge numbers',()=>{
+ const banners=new Set(['paused','victory','busy','papi-active','empty','boss-invulnerable','spent','phase','nostate'].map(w=>refusalBanner(createDadCall(),w)));
+ assert.equal(banners.size,9,'each why gets distinct wording');
+ const s=createDadCall();s.charges=0;s.calls=3;
+ assert.match(refusalBanner(s,'spent'),/0\/1/);assert.match(refusalBanner(s,'spent'),/3\/3/);
 });
