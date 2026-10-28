@@ -20,7 +20,8 @@ export function refuseReason(st, c = {}) {
   if (c.papiActive) return 'papi-active';
   if (!c.hittable) return 'empty';
   if (c.bossInvuln || c.bossBeat) return 'boss-invulnerable';
-  if (!st.unlocked || st.charges < 1 || st.calls >= DAD.maxCalls) return 'spent';
+  if (!st.unlocked) return 'locked';
+  if (st.charges < 1 || st.calls >= DAD.maxCalls) return 'spent';
   if (c.bossPhase && (st.phaseCalls[c.bossPhase] || 0) >= DAD.perPhase) return 'phase';
   return '';
 }
@@ -34,7 +35,14 @@ export function refusalBanner(st, why) {
     case 'papi-active': return "PAPI'S ON STAGE — ONE CALL-IN AT A TIME.";
     case 'empty': return 'NO TARGETS IN SIGHT.';
     case 'boss-invulnerable': return 'THE BOSS IS BRAGGING — WAIT FOR AN OPENING.';
-    case 'spent': return `DAD'S OUT OF SWATS (${st?.charges | 0}/${DAD.maxCharges} · CALL ${Math.min(st?.calls | 0, DAD.maxCalls)}/${DAD.maxCalls}).`;
+    case 'locked': return 'DAD ARRIVES IN ZONE 3.';
+    case 'spent': {
+      const base = `DAD'S OUT OF SWATS (${st?.charges | 0}/${DAD.maxCharges} · CALL ${Math.min(st?.calls | 0, DAD.maxCalls)}/${DAD.maxCalls}).`;
+      const recharging = (st?.charges | 0) < 1 && (st?.calls | 0) < DAD.maxCalls;
+      if (!recharging) return base;
+      const wait = Math.max(0, Math.ceil(DAD.recharge - (st?.since || 0)));
+      return `${base} · ${st?.kos | 0}/${DAD.kos} KOs · ${wait}s`;
+    }
     case 'phase': return 'DAD ALREADY SWATTED THIS PHASE.';
     default: return "DAD'S ON HIS COFFEE BREAK.";
   }

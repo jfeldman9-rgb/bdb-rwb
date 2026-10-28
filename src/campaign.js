@@ -224,7 +224,7 @@ export class Campaign {
     this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice', barkPapacito(this.barks)); this.armVoice('papi_chorus', 1.4); return true;
   }
   useDad() {
-    if(this.stageNo===1 && !this.dadCall.unlocked){this.banner('DAD ARRIVES IN ZONE 3.');return false;}
+    if(this.stageNo===1 && !this.dadCall.unlocked){this.banner(refusalBanner(this.dadCall,'locked'));return false;}
     const visible=this.enemies.filter(e=>e.alive&&e.x>=this.camX&&e.x<=this.camX+1280);
     const phase=this.wingmen?.phase||visible.find(e=>e.boss)?.phase;
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
