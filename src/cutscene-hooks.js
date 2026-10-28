@@ -1,11 +1,34 @@
-import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled } from './cutscene.js';
+import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
 import { KEYS } from './input.js';
-export function createStoryPlayer(query, root=globalThis){
- const player=new CutscenePlayer(root,{maxMs:30000});let handle=null;
- const key=e=>{const action=KEYS[e.code];if(handle&&SKIP_ACTIONS.has(action)){e.preventDefault();handle.skip('key',action==='start'||action==='pause');}};
+import { consumePress } from './press-ownership.js';
+/**
+ * Pause the Phaser loop behind a full-screen clip (battery/draw on iPhone).
+ * Returns the matching resume; safe when the game is already paused or gone.
+ */
+export function pauseForClip(game) {
+  const owns = !!game && !game.isPaused && typeof game.pause === 'function';
+  if (owns) game.pause();
+  return () => { if (owns && game.isPaused && !game.pendingDestroy) game.resume?.(); };
+}
+export function createStoryPlayer(query, root=globalThis, input=null, game=null){
+ const player=new CutscenePlayer(root,{maxMs:STORY_MAX_MS});let handle=null, resume=()=>{}, settle=null;
+ const key=e=>{const action=KEYS[e.code];if(handle&&SKIP_ACTIONS.has(action)){if(input)consumePress(input,action);else e.preventDefault();handle.skip('key',action==='start'||action==='pause');}};
  root.addEventListener?.('keydown',key);
- return { player, bless:()=>player.bless(), play(key,done){
-   if(!cutscenesEnabled(query,root.navigator)||!STAGE_CLIPS[key]){done();return;}
-   handle=player.play(STAGE_CLIPS[key],{done:()=>{handle=null;done();},touch:root.matchMedia?.('(pointer: coarse)').matches});
- },destroy(){handle?.abort();handle=null;root.removeEventListener?.('keydown',key);} };
+ return { player, bless:()=>player.bless(), play(clipKey,done){
+   if(handle?.active){
+    const old=handle, prevDone=settle, prevResume=resume;
+    handle=null; settle=null;
+    old.abort();
+    prevResume();
+    resume=()=>{};
+    prevDone?.('abort');
+   }
+   if(!cutscenesEnabled(query,root.navigator)||!STAGE_CLIPS[clipKey]){done();return;}
+   // Park the Phaser loop for the intro as well as the stage clips. A caller
+   // that already paused (startHeldClip) keeps the resume; this one no-ops.
+   const unpause=pauseForClip(game); resume=unpause; settle=done;
+   try{
+    handle=player.play(STAGE_CLIPS[clipKey],{done:(how)=>{handle=null;unpause();if(resume===unpause)resume=()=>{};if(settle===done)settle=null;done(how);},touch:root.matchMedia?.('(pointer: coarse)').matches});
+   }catch(e){handle=null;unpause();if(resume===unpause)resume=()=>{};if(settle===done)settle=null;done();}
+ },destroy(){handle?.abort();handle=null;settle=null;resume();resume=()=>{};root.removeEventListener?.('keydown',key);} };
 }

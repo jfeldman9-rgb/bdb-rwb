@@ -10,14 +10,14 @@
   ],
   "anims": [
     {
-      "name": "dad_run",
+      "name": "dad_enter",
       "frames": [
-        "dad_run_01",
-        "dad_run_02",
-        "dad_run_03",
-        "dad_run_04",
-        "dad_run_05",
-        "dad_run_06"
+        "dad_enter_00",
+        "dad_enter_01",
+        "dad_enter_02",
+        "dad_enter_03",
+        "dad_enter_04",
+        "dad_enter_05"
       ],
       "pages": [
         0,
@@ -35,45 +35,66 @@
         83,
         83
       ],
-      "loop": true,
+      "loop": false,
       "fps": 12
     },
     {
       "name": "dad_swat",
       "frames": [
-        "dad_run_01",
-        "dad_run_02",
-        "dad_run_03",
-        "dad_run_04"
+        "dad_swat_00",
+        "dad_swat_01",
+        "dad_swat_02",
+        "dad_swat_03",
+        "dad_swat_04",
+        "dad_swat_05",
+        "dad_swat_06",
+        "dad_swat_07"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
+        63,
+        63,
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
       ],
       "loop": false,
-      "fps": 14
+      "fps": 16
     },
     {
-      "name": "dad_cheer",
+      "name": "dad_exit",
       "frames": [
-        "dad_run_01",
-        "dad_run_02",
-        "dad_run_03"
+        "dad_exit_00",
+        "dad_exit_01",
+        "dad_exit_02",
+        "dad_exit_03",
+        "dad_exit_04",
+        "dad_exit_05"
       ],
       "pages": [
+        0,
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
+        83,
+        83,
+        83,
         83,
         83,
         83
@@ -82,11 +103,16 @@
       "fps": 12
     }
   ],
-  "placeholder": true,
-  "source": "local coloured silhouettes",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 13,
-    "unique": 6,
-    "reused": 7
+    "logical": 20,
+    "unique": 20,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
   }
 }

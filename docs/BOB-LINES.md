@@ -17,3 +17,11 @@ Style: punchy, blunt, dumb-fun action (2–6 words). Not clever Bond wordplay. Y
 | `bob_papiwait_01` | Need more protein. | Need the ladies! |
 
 Jason-mandated verbatim: **I brought the eggplant.** / **Die, Yetti, die!**
+
+Yetti captions, locked by Jason (MUSE-100 #63). The audio files stay; the on-screen text matches these sentences:
+
+- Stay away from the Colombians room.
+- Bob why is your car purple?
+- Pork Chop Sandwiches!
+
+Dad, unchanged: **Son, sometimes you just need to use the fly swatter to keep the women away!**

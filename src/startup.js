@@ -1,5 +1,6 @@
 // DOM-only startup recovery. Keep this independent of Phaser so a graphics or
 // module-load failure cannot strand the player behind an endless loading label.
+import { resumeGame } from './recovery.js';
 export function createStartupGuard(root = globalThis) {
   const doc = root.document;
   const byId = id => doc?.getElementById(id);
@@ -9,17 +10,19 @@ export function createStartupGuard(root = globalThis) {
   const messages = {
     graphics: ['Graphics could not start', 'This browser could not create the WebGL graphics context Bob needs. Try Reload game once. If this returns, open this same preview in a WebGL-capable browser or device.'],
     assets: ['Some game files could not load', 'The game stopped before the title screen because a required file did not load. Check your connection, then reload this same preview.'],
+    chapter: ['A chapter file could not load', 'This chapter did not finish loading. Check your connection, then reload this same preview.'],
     startup: ['The game could not start', 'A startup error stopped the game before the title screen. Try Reload game. If it happens again, share this preview link and the error code below.'],
   };
   const guard = {
     get failed() { return failed; },
     get finished() { return finished; },
     fail(error, kind) {
-      if (failed || finished) return false;
+      // Title ready() detaches the boot listener. A later chapter can still miss a file.
+      if (failed || (finished && kind !== 'assets')) return false;
       failed = true;
       const message = typeof error === 'string' ? error : error?.message || '';
       const category = kind === 'assets' ? 'assets' : /webgl|graphics context/i.test(message) ? 'graphics' : 'startup';
-      const [title, detail] = messages[category];
+      const [title, detail] = category === 'assets' && finished ? messages.chapter : messages[category];
       const boot = byId('boot'); if (boot) boot.hidden = true;
       const overlay = byId('startup-error'); if (overlay) overlay.hidden = false;
       const heading = byId('startup-title'); if (heading) heading.textContent = title;
@@ -36,7 +39,7 @@ export function createStartupGuard(root = globalThis) {
     ready() {
       if (failed) return false;
       finished = true; detach();
-      const retry = byId('startup-retry'); retry?.removeEventListener('click', reload);
+      // Keep the Reload listener. The card is reused once a stage is running.
       return true;
     },
     watchLoader(loader) {
@@ -51,8 +54,12 @@ export function createStartupGuard(root = globalThis) {
     },
     destroy() { detach(); byId('startup-retry')?.removeEventListener('click', reload); },
   };
-  const reload = () => root.location?.reload();
-  byId('startup-retry')?.addEventListener('click', reload);
+  // The Reload card reopens the running stage instead of the title when a
+  // stage was already in progress; otherwise it is a plain reload.
+  const reload = () => { try { resumeGame(root, root.__game); } catch (e) { root.location?.reload(); } };
+  const retry = byId('startup-retry');
+  if (retry) retry.__bdbResume = true;
+  retry?.addEventListener('click', reload);
   // Boot's create hook can run after the module import has resolved. Capture
   // those startup errors too, ignoring unrelated extension-origin errors.
   const onError = event => {

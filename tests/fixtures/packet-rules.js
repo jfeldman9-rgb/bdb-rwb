@@ -11,8 +11,15 @@ export function isBossFinisherReady(
   phase,
   bosses,
 ) {
-  const liveBosses = bosses.filter((boss) => boss.alive);
-  return phase === 3 && liveBosses.length === 2 && liveBosses.every((boss) => boss.hp <= 1);
+  if (phase !== 3) return false;
+  let live = 0;
+  for (let i = 0; i < bosses.length; i++) {
+    const boss = bosses[i];
+    if (!boss?.alive) continue;
+    if (boss.hp > 1) return false;
+    live++;
+  }
+  return live >= 1;
 }
 
 export function collectShake(

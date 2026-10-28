@@ -1,6 +1,6 @@
 {
   "project": "bdb-rwb",
-  "generated": "2026-10-27 America/Phoenix",
+  "generated": "2026-10-28 America/Phoenix",
   "model": "eleven_v3",
   "format": "mono 24kHz 64kbps mp3 + loudnorm",
   "cast": {
@@ -57,7 +57,19 @@
     "Narrator": {
       "voice_id": null,
       "name": "Jason IndexTTS clone",
-      "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav — not quick this pass"
+      "reason": "IndexTTS 2.5 CPU; ref jason_ref_nodenoise.wav; emo_vector calm.15 melancholic.05 (US-accent low-emo from AB.md); de-harsh + -16 LUFS; mono 24kHz 64kbps mp3",
+      "engine": "VoiceStudio IndexTTS 2.5",
+      "ref": "/workspace/jasonvoice/ref/jason_ref_nodenoise.wav",
+      "emo_vector": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.05,
+        0,
+        0.15
+      ]
     }
   },
   "credits": {
@@ -67,52 +79,59 @@
     "note": "Dad+Bob re-render ~572 credits (count=1, eleven_v3); prior cast pass separate",
     "dad_bob_rerender_est": 572
   },
-  "line_count": {
-    "rendered_prod": 32,
-    "present": 29,
-    "narrator_pending": 8
-  },
+  "line_count": 52,
   "present": [
+    "bdb_laugh",
     "bdb_open",
     "bdb_produce",
-    "bdb_laugh",
-    "claudia_open",
-    "claudia_question",
-    "claudia_leave",
-    "yetti_turnback",
-    "choir_serious",
-    "lecturer_intervention",
-    "wingman_council",
-    "dad_call_01",
-    "dad_call_02",
-    "dad_call_03",
-    "dad_done_01",
-    "dad_done_02",
-    "dad_catchphrase",
-    "papi_chorus",
-    "bob_papi_01",
+    "bob_cory_joke_01",
+    "bob_cory_joke_02",
+    "bob_dadwait_01",
     "bob_hurt_01",
     "bob_hurt_02",
     "bob_hurt_03",
-    "bob_respawn_01",
-    "bob_dadwait_01",
+    "bob_papacito_01",
+    "bob_papacito_02",
+    "bob_papi_01",
     "bob_papiwait_01",
-    "wingman_phase2",
-    "wingman_phase3",
-    "wingman_defeat",
+    "bob_respawn_01",
+    "bob_where_claudia_01",
+    "bob_where_claudia_02",
+    "choir_serious",
+    "choirmaster_intro",
+    "claudia_leave",
+    "claudia_open",
+    "claudia_question",
+    "dad_call_01",
+    "dad_call_02",
+    "dad_call_03",
+    "dad_catchphrase",
+    "dad_done_01",
+    "dad_done_02",
     "interventionist_intro",
-    "choirmaster_intro"
-  ],
-  "narrator_pending": [
+    "lecturer_intervention",
+    "nar_ch1",
+    "nar_ch2",
+    "nar_ch3",
     "nar_intro_01",
     "nar_intro_02",
     "nar_intro_03",
     "nar_kidnap",
-    "nar_ch1",
-    "nar_ch2",
-    "nar_ch3",
-    "nar_victory"
+    "nar_victory",
+    "papi_chorus",
+    "wingman_council",
+    "wingman_defeat",
+    "wingman_phase2",
+    "wingman_phase3",
+    "yetti_colombian_room_01",
+    "yetti_colombian_room_02",
+    "yetti_porkchop_01",
+    "yetti_porkchop_02",
+    "yetti_purple_car_01",
+    "yetti_purple_car_02",
+    "yetti_turnback"
   ],
+  "narrator_pending": [],
   "samples_for_jason": [
     "assets/audio/voice/samples/sample_bob.mp3",
     "assets/audio/voice/samples/sample_choirmaster.mp3",
@@ -156,6 +175,34 @@
       "voice_id": "6q6UVsvekS0UjrUXFz79",
       "voice_name": "Benedict - Premium British (RP) Male",
       "model": "eleven_v3"
+    },
+    {
+      "id": "bob_cory_joke_01",
+      "path": "assets/audio/voice/bob_cory_joke_01.mp3",
+      "bytes": 53949,
+      "speaker": "Bob",
+      "text": "Why does Cory like guys?",
+      "source": "elevenlabs",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3",
+      "prompt_tag": "[yelling]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR",
+      "tag": "personal_joke"
+    },
+    {
+      "id": "bob_cory_joke_02",
+      "path": "assets/audio/voice/bob_cory_joke_02.mp3",
+      "bytes": 55203,
+      "speaker": "Bob",
+      "text": "Why does Cory like guys?",
+      "source": "elevenlabs",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3",
+      "prompt_tag": "[yelling]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR",
+      "tag": "personal_joke"
     },
     {
       "id": "bob_dadwait_01",
@@ -202,6 +249,32 @@
       "model": "eleven_v3"
     },
     {
+      "id": "bob_papacito_01",
+      "path": "assets/audio/voice/bob_papacito_01.mp3",
+      "bytes": 55203,
+      "speaker": "Bob",
+      "text": "I'm the Papacito!",
+      "source": "elevenlabs",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3",
+      "prompt_tag": "[yelling]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "bob_papacito_02",
+      "path": "assets/audio/voice/bob_papacito_02.mp3",
+      "bytes": 52695,
+      "speaker": "Bob",
+      "text": "I'm the Papacito!",
+      "source": "elevenlabs",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3",
+      "prompt_tag": "[yelling]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
       "id": "bob_papi_01",
       "path": "assets/audio/voice/bob_papi_01.mp3",
       "bytes": 10220,
@@ -235,6 +308,32 @@
       "model": "eleven_v3"
     },
     {
+      "id": "bob_where_claudia_01",
+      "path": "assets/audio/voice/bob_where_claudia_01.mp3",
+      "bytes": 51441,
+      "speaker": "Bob",
+      "text": "Where is Claudia???",
+      "source": "elevenlabs",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3",
+      "prompt_tag": "[yelling]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "bob_where_claudia_02",
+      "path": "assets/audio/voice/bob_where_claudia_02.mp3",
+      "bytes": 56457,
+      "speaker": "Bob",
+      "text": "Where is Claudia???",
+      "source": "elevenlabs",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3",
+      "prompt_tag": "[yelling]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
       "id": "choir_serious",
       "path": "assets/audio/voice/choir_serious.mp3",
       "bytes": 11180,
@@ -247,8 +346,8 @@
       "path": "assets/audio/voice/choirmaster_intro.mp3",
       "bytes": 16748,
       "speaker": "Choirmaster",
-      "text": "From the top! And-a-one, and-a—",
-      "source": "sample→prod"
+      "text": "From the top! And-a-one, and-a\u2014",
+      "source": "sample\u2192prod"
     },
     {
       "id": "claudia_leave",
@@ -264,7 +363,7 @@
       "bytes": 31148,
       "speaker": "Claudia",
       "text": "Bob. Winged Yettis locked me in Moonlit Keep.",
-      "source": "sample→prod"
+      "source": "sample\u2192prod"
     },
     {
       "id": "claudia_question",
@@ -346,7 +445,7 @@
       "bytes": 37100,
       "speaker": "Interventionist",
       "text": "Bob. We all love you. That's why we're here.",
-      "source": "sample→prod"
+      "source": "sample\u2192prod"
     },
     {
       "id": "lecturer_intervention",
@@ -357,12 +456,100 @@
       "source": "job"
     },
     {
+      "id": "nar_ch1",
+      "path": "assets/audio/voice/nar_ch1.mp3",
+      "bytes": 26924,
+      "speaker": "Narrator",
+      "text": "Chapter One. The Boulevard of Better Judgment.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_ch2",
+      "path": "assets/audio/voice/nar_ch2.mp3",
+      "bytes": 27116,
+      "speaker": "Narrator",
+      "text": "Chapter Two. The Celestial Intervention.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_ch3",
+      "path": "assets/audio/voice/nar_ch3.mp3",
+      "bytes": 23084,
+      "speaker": "Narrator",
+      "text": "Chapter Three. Claudia's Moonlit Keep.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_intro_01",
+      "path": "assets/audio/voice/nar_intro_01.mp3",
+      "bytes": 39404,
+      "speaker": "Narrator",
+      "text": "This is Bob. Big Dick Bob, to his friends. And to most of his enemies.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_intro_02",
+      "path": "assets/audio/voice/nar_intro_02.mp3",
+      "bytes": 43820,
+      "speaker": "Narrator",
+      "text": "Bob and his ex are on again. Or off again. Nobody, including Bob, is sure.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_intro_03",
+      "path": "assets/audio/voice/nar_intro_03.mp3",
+      "bytes": 36524,
+      "speaker": "Narrator",
+      "text": "Then there's Claudia. The Colombian. It's\u2026 complicated.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_kidnap",
+      "path": "assets/audio/voice/nar_kidnap.mp3",
+      "bytes": 37484,
+      "speaker": "Narrator",
+      "text": "Heaven, it turns out, has opinions. And Yettis. With wings.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
+      "id": "nar_victory",
+      "path": "assets/audio/voice/nar_victory.mp3",
+      "bytes": 31724,
+      "speaker": "Narrator",
+      "text": "And Bob? Bob was, briefly, a man of good judgment.",
+      "source": "indextts2.5-lowemo",
+      "voice_name": "Jason IndexTTS clone",
+      "model": "index-tts-2.5",
+      "ref": "jason_ref_nodenoise.wav"
+    },
+    {
       "id": "papi_chorus",
       "path": "assets/audio/voice/papi_chorus.mp3",
       "bytes": 14444,
       "speaker": "Papi1/Candy",
       "text": "Papi! Papi! PAPI!",
-      "source": "sample→prod"
+      "source": "sample\u2192prod"
     },
     {
       "id": "papi_chorus_01",
@@ -394,14 +581,14 @@
       "bytes": 18476,
       "speaker": "Wingman",
       "text": "The council denies this rescue.",
-      "source": "sample→prod"
+      "source": "sample\u2192prod"
     },
     {
       "id": "wingman_defeat",
       "path": "assets/audio/voice/wingman_defeat.mp3",
       "bytes": 18092,
       "speaker": "Wingman",
-      "text": "We'll… reform.",
+      "text": "We'll\u2026 reform.",
       "source": "job"
     },
     {
@@ -421,12 +608,90 @@
       "source": "job"
     },
     {
+      "id": "yetti_colombian_room_01",
+      "path": "assets/audio/voice/yetti_colombian_room_01.mp3",
+      "bytes": 51441,
+      "speaker": "Yetti",
+      "text": "Stay away from the Colombians room.",
+      "source": "elevenlabs",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_name": "Daniel - Steady Broadcaster",
+      "model": "eleven_v3",
+      "prompt_tag": "[screaming]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "yetti_colombian_room_02",
+      "path": "assets/audio/voice/yetti_colombian_room_02.mp3",
+      "bytes": 50187,
+      "speaker": "Yetti",
+      "text": "Stay away from the Colombians room.",
+      "source": "elevenlabs",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_name": "Daniel - Steady Broadcaster",
+      "model": "eleven_v3",
+      "prompt_tag": "[screaming]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "yetti_porkchop_01",
+      "path": "assets/audio/voice/yetti_porkchop_01.mp3",
+      "bytes": 47680,
+      "speaker": "Yetti",
+      "text": "Pork Chop Sandwiches!",
+      "source": "elevenlabs",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_name": "Daniel - Steady Broadcaster",
+      "model": "eleven_v3",
+      "prompt_tag": "[screaming]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "yetti_porkchop_02",
+      "path": "assets/audio/voice/yetti_porkchop_02.mp3",
+      "bytes": 50187,
+      "speaker": "Yetti",
+      "text": "Pork Chop Sandwiches!",
+      "source": "elevenlabs",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_name": "Daniel - Steady Broadcaster",
+      "model": "eleven_v3",
+      "prompt_tag": "[screaming]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "yetti_purple_car_01",
+      "path": "assets/audio/voice/yetti_purple_car_01.mp3",
+      "bytes": 56457,
+      "speaker": "Yetti",
+      "text": "Bob why is your car purple?",
+      "source": "elevenlabs",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_name": "Daniel - Steady Broadcaster",
+      "model": "eleven_v3",
+      "prompt_tag": "[screaming]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
+      "id": "yetti_purple_car_02",
+      "path": "assets/audio/voice/yetti_purple_car_02.mp3",
+      "bytes": 58964,
+      "speaker": "Yetti",
+      "text": "Bob why is your car purple?",
+      "source": "elevenlabs",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_name": "Daniel - Steady Broadcaster",
+      "model": "eleven_v3",
+      "prompt_tag": "[screaming]",
+      "flow_id": "xDDPtaXmRsNEVzcluCGR"
+    },
+    {
       "id": "yetti_turnback",
       "path": "assets/audio/voice/yetti_turnback.mp3",
       "bytes": 11180,
       "speaker": "Yetti",
       "text": "Turn back Papi!",
-      "source": "sample→prod"
+      "source": "sample\u2192prod"
     }
   ],
   "rerender": {
@@ -453,5 +718,46 @@
       "bob_papiwait_01"
     ],
     "credits_est": 572
+  },
+  "narrator_render": {
+    "when": "2026-10-28 America/Phoenix",
+    "engine": "VoiceStudio IndexTTS 2.5 CPU",
+    "ref": "/workspace/jasonvoice/ref/jason_ref_nodenoise.wav",
+    "emo_vector": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.05,
+      0,
+      0.15
+    ],
+    "post": "deesser+highshelf/bell de-harsh, loudnorm -16 LUFS/-1.5 dBTP, mono 24kHz 64kbps mp3",
+    "lines": [
+      "nar_intro_01",
+      "nar_intro_02",
+      "nar_intro_03",
+      "nar_kidnap",
+      "nar_ch1",
+      "nar_ch2",
+      "nar_ch3",
+      "nar_victory"
+    ],
+    "cutscene_extra": [
+      "nar_rescue"
+    ],
+    "cutscene_extra_note": "nar_rescue also rendered for intro-v2 cutscene; lives under /workspace/bdb-art/cutscenes/intro-v2/audio/narrator/ (not in game assets)"
+  },
+  "bark_pass": {
+    "flow_id": "xDDPtaXmRsNEVzcluCGR",
+    "bob_voice": "6q6UVsvekS0UjrUXFz79",
+    "yetti_voice": "onwK4e9ZLuTAKqWW03F9",
+    "model": "eleven_v3",
+    "takes_each": 2,
+    "personal_joke": [
+      "bob_cory_joke_01",
+      "bob_cory_joke_02"
+    ]
   }
 }

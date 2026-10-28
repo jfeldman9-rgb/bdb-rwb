@@ -37,32 +37,54 @@ export function displayMs(value) {
   return Number.isFinite(value) ? (Math.ceil(value * 1000) / 1000).toFixed(3) : '—';
 }
 
+const metaSlots = new WeakMap();
+function sameShallow(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  let n = 0;
+  for (const k in a) { n++; if (a[k] !== b[k]) return false; }
+  let m = 0;
+  for (const k in b) m++;
+  return n === m;
+}
 export function deviceMetadata(root = globalThis) {
-  const game = root.__game, doc = root.document, nav = root.navigator;
-  const path = root.location?.pathname || '';
+  const game = root.__game, perfState = root.__perf;
+  const w = root.innerWidth ?? null, h = root.innerHeight ?? null;
+  const vw = root.visualViewport?.width ?? null, vh = root.visualViewport?.height ?? null;
+  const dpr = root.devicePixelRatio || 1;
+  const quality = perfState?.quality ?? 0, renderer = perfState?.renderer || null, software = perfState?.software ?? null;
+  const search = root.location?.search || '', path = root.location?.pathname || '';
+  const cw = game?.canvas?.width ?? null, ch = game?.canvas?.height ?? null, rs = game?.rs ?? null;
+  let slot = metaSlots.get(root);
+  if (slot && slot.w === w && slot.h === h && slot.vw === vw && slot.vh === vh && slot.dpr === dpr
+    && slot.quality === quality && slot.renderer === renderer && slot.software === software
+    && slot.search === search && slot.path === path && slot.cw === cw && slot.ch === ch && slot.rs === rs) return slot.value;
+  const doc = root.document, nav = root.navigator;
   const immutableCommit = path.match(/(?:^|\/)([a-f\d]{40})(?:\/|$)/i)?.[1] || null;
   const flags = {};
-  const query = new URLSearchParams(root.location?.search || '');
+  const query = new URLSearchParams(search);
   for (const key of ['demo', 'autostart', 'god', 'skip', 'bloom', 'lit', 'rs', 'ml', 'q', 'hud', 'vig', 'debug']) {
     if (query.has(key)) flags[key] = query.get(key);
   }
-  return {
+  const value = {
     build: { label: doc?.querySelector('meta[name="bdb-build"]')?.content || 'bdb-step2', commit: immutableCommit,
       url: root.location ? `${root.location.origin || ''}${path}${Object.keys(flags).length ? '?' + new URLSearchParams(flags) : ''}` : null },
-    renderer: root.__perf?.renderer || null, softwareRenderer: root.__perf?.software ?? null,
-    quality: root.__perf?.quality ?? 0, renderScale: game?.rs ?? null, dpr: root.devicePixelRatio || 1,
-    viewport: { width: root.innerWidth ?? null, height: root.innerHeight ?? null,
-      visualWidth: root.visualViewport?.width ?? null, visualHeight: root.visualViewport?.height ?? null },
-    canvas: { width: game?.canvas?.width ?? null, height: game?.canvas?.height ?? null },
+    renderer, softwareRenderer: software,
+    quality, renderScale: rs, dpr,
+    viewport: { width: w, height: h, visualWidth: vw, visualHeight: vh },
+    canvas: { width: cw, height: ch },
     device: { userAgent: nav?.userAgent || null, platform: nav?.platform || null,
       maxTouchPoints: nav?.maxTouchPoints ?? null, screenWidth: root.screen?.width ?? null, screenHeight: root.screen?.height ?? null },
     flags,
   };
+  if (!slot) { slot = {}; metaSlots.set(root, slot); }
+  Object.assign(slot, { w, h, vw, vh, dpr, quality, renderer, software, search, path, cw, ch, rs, value });
+  return value;
 }
 
 export function createPerf({ now = () => globalThis.performance.now(), dateNow = () => new Date().toISOString(), metadata = () => deviceMetadata() } = {}) {
   const suspended = new Map();
-  let baselineFight = false, baselineContext = {}, segmentKey = null;
+  let baselineFight = false, baselineContext = {}, segmentMeta = null, segmentFight = false, segmentBase = null;
   const meter = {
     last: null, lastSampleMs: null, all: [], fightFrames: [], inFight: false,
     summary: null, fight: null, context: {}, history: [], excluded: {},
@@ -84,20 +106,21 @@ export function createPerf({ now = () => globalThis.performance.now(), dateNow =
       const active = options.active ?? true;
       const inFight = !!(options.inFight ?? this.inFight);
       const context = options.context ?? this.context;
-      this.inFight = inFight; this.context = { ...context }; this.lastSampleMs = null;
+      this.inFight = inFight;
+      if (!sameShallow(this.context, context)) this.context = { ...context };
+      this.lastSampleMs = null;
       if (!Number.isFinite(at) || !active || suspended.size) { this.last = null; return null; }
       if (this.last !== null) {
         const delta = at - this.last;
         if (delta > 0 && Number.isFinite(delta)) {
           const currentMetadata = metadata();
           this.captureMetadata ||= currentMetadata;
-          const sampleContext = { ...baselineContext, inFight: baselineFight };
-          const key = JSON.stringify([sampleContext, currentMetadata]);
-          if (key !== segmentKey) {
+          if (currentMetadata !== segmentMeta || baselineFight !== segmentFight || !sameShallow(segmentBase, baselineContext)) {
+            const sampleContext = { ...baselineContext, inFight: baselineFight };
             this.history.push({ firstFrame: this.totalFrames + 1, offsetMs: Math.max(0, this.last - this.startedAtMs),
               context: sampleContext, metadata: currentMetadata });
             if (this.history.length > SAMPLE_LIMITS.history) { this.history.shift(); this.droppedHistorySegments++; }
-            segmentKey = key;
+            segmentMeta = currentMetadata; segmentFight = baselineFight; segmentBase = baselineContext;
           }
           this.all.push(delta); if (this.all.length > SAMPLE_LIMITS.all) this.all.shift();
           this.totalFrames++;
@@ -109,7 +132,8 @@ export function createPerf({ now = () => globalThis.performance.now(), dateNow =
         }
       }
       // The interval belongs to the active/fight context at its starting boundary.
-      this.last = at; baselineFight = inFight; baselineContext = { ...context };
+      this.last = at; baselineFight = inFight;
+      if (!sameShallow(baselineContext, context)) baselineContext = { ...context };
       return this.lastSampleMs;
     },
     update() {
@@ -154,7 +178,8 @@ export function createPerf({ now = () => globalThis.performance.now(), dateNow =
     reset() {
       this.last = null; this.lastSampleMs = null; this.all = []; this.fightFrames = [];
       this.inFight = false; baselineFight = false; baselineContext = {}; this.context = {};
-      this.summary = null; this.fight = null; this.history = []; segmentKey = null;
+      this.summary = null; this.fight = null; this.history = [];
+      segmentMeta = null; segmentFight = false; segmentBase = null;
       this.totalFrames = 0; this.totalFightFrames = 0; this.droppedHistorySegments = 0;
       this.captureMetadata = null; this.startedAt = dateNow(); this.startedAtMs = now(); this.excluded = {};
       // Preserve real lifecycle state, but start its accounting afresh for this capture.
@@ -164,6 +189,19 @@ export function createPerf({ now = () => globalThis.performance.now(), dateNow =
     },
   };
   return meter;
+}
+
+/** Attach the WebGL renderer string to the live meter instead of replacing it. */
+export function noteRenderer(renderer, root = globalThis) {
+  const software = /swiftshader|llvmpipe/i.test(renderer || '');
+  const meter = root.__perf;
+  if (meter && typeof meter.report === 'function') {
+    meter.renderer = renderer;
+    meter.software = software;
+    return meter;
+  }
+  root.__perf = { renderer, software };
+  return root.__perf;
 }
 
 export function bindPerfLifecycle(meter, root = globalThis) {

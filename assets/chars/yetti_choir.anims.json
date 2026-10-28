@@ -12,12 +12,47 @@
     {
       "name": "yetti_choir_sing",
       "frames": [
+        "yetti_choir_sing_00",
         "yetti_choir_sing_01",
         "yetti_choir_sing_02",
         "yetti_choir_sing_03",
         "yetti_choir_sing_04",
         "yetti_choir_sing_05",
-        "yetti_choir_sing_06"
+        "yetti_choir_sing_06",
+        "yetti_choir_sing_07"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_choir_note",
+      "frames": [
+        "yetti_choir_note_00",
+        "yetti_choir_note_01",
+        "yetti_choir_note_02",
+        "yetti_choir_note_03",
+        "yetti_choir_note_04",
+        "yetti_choir_note_05"
       ],
       "pages": [
         0,
@@ -28,27 +63,30 @@
         0
       ],
       "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
       ],
-      "loop": true,
-      "fps": 10
+      "loop": false,
+      "fps": 16
     },
     {
       "name": "yetti_choir_hurt",
       "frames": [
-        "yetti_choir_sing_01",
-        "yetti_choir_sing_02"
+        "yetti_choir_hurt_00",
+        "yetti_choir_hurt_01",
+        "yetti_choir_hurt_02"
       ],
       "pages": [
+        0,
         0,
         0
       ],
       "holds": [
+        71,
         71,
         71
       ],
@@ -56,31 +94,42 @@
       "fps": 14
     },
     {
-      "name": "yetti_choir_down",
+      "name": "yetti_choir_knockdown",
       "frames": [
-        "yetti_choir_sing_01",
-        "yetti_choir_sing_02",
-        "yetti_choir_sing_03"
+        "yetti_choir_knockdown_00",
+        "yetti_choir_knockdown_01",
+        "yetti_choir_knockdown_02",
+        "yetti_choir_knockdown_03",
+        "yetti_choir_knockdown_04"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        83,
-        83,
-        83
+        71,
+        71,
+        71,
+        71,
+        71
       ],
       "loop": false,
-      "fps": 12
+      "fps": 14
     }
   ],
-  "placeholder": true,
-  "source": "local coloured silhouettes",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 11,
-    "unique": 6,
-    "reused": 5
+    "logical": 22,
+    "unique": 22,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
   }
 }

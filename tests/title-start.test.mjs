@@ -105,7 +105,10 @@ test('index.html exposes TAP TO START and rotate-start for phones', async () => 
   assert.match(html, /id="start"/);
   assert.match(html, /TAP TO START/);
   assert.match(html, /id="rotate-start"/);
-  assert.match(html, /body:not\(\.playing\) #rotate/);
+  assert.match(html, /@media \(orientation:portrait\) and \(hover:none\) and \(pointer:coarse\)\{#rotate\{display:flex\}\}/);
+  assert.doesNotMatch(html, /body:not\(\.playing\) #rotate/);
+  assert.doesNotMatch(html, /letterboxed/);
+  assert.match(html, /body\.playing #rotate-start\{display:none\}/);
   assert.match(html, /pointer-events:none/); // canvas inert on title
   assert.match(html, /Or tap anywhere/);
 });

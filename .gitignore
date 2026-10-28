@@ -8,3 +8,4 @@ logs/
 # voice render scratch
 assets/audio/voice/_raw/
 assets/audio/voice/_urls.json
+build/

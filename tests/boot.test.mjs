@@ -29,4 +29,16 @@ test('no excluded engine content or modules in gameplay imports',async()=>{
 test('title, HUD, story and voice registry contain only BDB player-facing text',async()=>{
  for(const file of ['index.html','src/hud.js','src/story.js','src/voice-lines.js','src/audio.js','src/main.js'])assert.doesNotMatch(await readFile(file,'utf8'),/Riley|Loial|Twix|Trolloc|Moiraine|Winternight|balefire|elon-console/i,file);
 });
-test('git has no remotes',()=>assert.equal(execFileSync('git',['remote','-v'],{encoding:'utf8'}),''));
+test('git remotes stay private (none, or only origin→jfeldman9-rgb/bdb-rwb)',()=>{
+ const out=execFileSync('git',['remote','-v'],{encoding:'utf8'}).trim();
+ if(!out) return;
+ const lines=out.split(/\n/).filter(Boolean);
+ const repo='https://github.com/jfeldman9-rgb/bdb-rwb';
+ const ok=lines.every(l=>{
+  const m=l.match(/^origin\t(\S+) \((fetch|push)\)$/);
+  if(!m) return false;
+  const url=m[1].replace(/\.git$/,'').replace(/^https:\/\/[^/@]+@/,'https://');
+  return url===repo;
+ });
+ assert.ok(ok, lines.map(l=>l.replace(/\/\/[^/\s]+@/,'//')).join('\n'));
+});

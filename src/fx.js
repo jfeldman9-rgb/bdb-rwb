@@ -2,7 +2,7 @@
 import { HITSTOP, SHAKE, VW } from './config.js';
 export class FX {
   constructor(scene) {
-    this.s = scene; this.hitstop = 0; this.trauma = 0; this.slowmo = 0; this.lightsOn = true; this.quality = 0;
+    this.s = scene; this.trauma = 0; this.lightsOn = true; this.quality = 0;
     this._sx = 0; this._sy = 0; this._dt = 1 / 60; this._out = [0, 0];
     this.makeTextures();
     const add = scene.add;
@@ -13,6 +13,7 @@ export class FX {
     this.snowPuff = add.particles(0, 0, 'flake', { emitting: false, lifespan: 600, speedX: { min: -120, max: 120 }, speedY: { min: -160, max: -40 }, gravityY: 300, scale: { min: 0.3, max: 0.7 }, alpha: { start: 0.9, end: 0 } }).setDepth(3991);
     this.embers = add.particles(0, 0, 'ember', { emitting: false, lifespan: 480, speed: { min: 20, max: 120 }, scale: { start: 1.2, end: 0 }, blendMode: 'ADD' }).setDepth(4001);
     this.debris = add.particles(0, 0, 'chip', { emitting: false, lifespan: 900, speed: { min: 200, max: 520 }, angle: { min: -160, max: -20 }, gravityY: 1400, rotate: { min: 0, max: 360 }, scale: { min: 0.6, max: 1.3 }, tint: [0x7a5230, 0x5c3b22, 0x9a6a3e] }).setDepth(4001);
+    this.splatP = add.particles(0, 0, 'dot', { emitting: false, lifespan: 340, speed: { min: 70, max: 280 }, scale: { start: 0.85, end: 0 }, gravityY: 820, tint: [0x6b2d91, 0x9b59b6, 0x4a1c6b, 0xc48a3a] }).setDepth(4002);
     this.flash = add.image(0, 0, 'glow').setBlendMode('ADD').setVisible(false).setDepth(4002); this.flashT = 0;
     this.hitLight = scene.lights.addLight(0, 0, 260, 0xffe0a0, 0, 60);
     this.booms = [];
@@ -27,7 +28,7 @@ export class FX {
     radial('glow', 128, [[0, 'rgba(255,255,255,1)'], [0.25, 'rgba(255,220,140,.9)'], [0.6, 'rgba(255,120,30,.35)'], [1, 'rgba(255,80,0,0)']]);
     radial('core', 64, [[0, 'rgba(255,255,240,1)'], [0.5, 'rgba(255,200,90,1)'], [1, 'rgba(255,90,10,0)']]);
     radial('ember', 12, [[0, 'rgba(255,240,200,1)'], [0.6, 'rgba(255,140,40,.8)'], [1, 'rgba(255,60,0,0)']]);
-    radial('shadow', 64, [[0, 'rgba(0,0,0,.6)'], [0.7, 'rgba(0,0,0,.28)'], [1, 'rgba(0,0,0,0)']]);
+    // 'shadow' is the fighter ground ellipse, owned by GameScene. A second createCanvas returns null and create() throws.
     radial('dust', 32, [[0, 'rgba(220,228,240,.8)'], [1, 'rgba(220,228,240,0)']]);
     radial('smoke', 64, [[0, 'rgba(60,55,60,.55)'], [1, 'rgba(60,55,60,0)']]);
     const g = s.make.graphics({ x: 0, y: 0 }, false);
@@ -36,16 +37,23 @@ export class FX {
     g.fillStyle(0xffffff, 1); g.fillRect(0, 0, 14, 5); g.generateTexture('chip', 14, 5); g.clear();
     g.fillStyle(0xffffff, 1); g.fillRect(0, 0, 4, 4); g.generateTexture('px', 4, 4); g.destroy();
   }
+  /** Muzzle flash only. Hit-stop stays on the sim tier so a shot does not freeze twice. */
+  muzzle(x, y, dir = 1) {
+    this.flash.setPosition(x, y).setVisible(true).setScale(0.42).setAlpha(0.9);
+    this.flashT = 0.05;
+    (dir >= 0 ? this.sparksR : this.sparksL).emitParticleAt(x, y, 6);
+  }
+  /** Eggplant pulp. Straight shots only; the splat sits on the impact point. */
+  splat(x, y) { this.splatP.emitParticleAt(x, y, 8); this.debris.emitParticleAt(x, y, 4); }
   /** a landed hit: freeze, shake, sparks, light. dir = +1 if the hit travels right */
   impact(kind, x, y, dir = 1) {
     if (!HITSTOP[kind]) kind = 'medium';
-    this.hitstop = Math.max(this.hitstop, HITSTOP[kind] / 60);
+    // Hit-stop lives on the campaign step. A second freeze here never reached the sim.
     this.trauma = Math.min(1, this.trauma + SHAKE[kind]);
     const n = { light: 9, medium: 14, heavy: 24, finisher: 34 }[kind] >> (this.quality >= 2 ? 1 : 0);
     (dir > 0 ? this.sparksR : this.sparksL).emitParticleAt(x, y, n); this.dots.emitParticleAt(x, y, n >> 1);
     this.flash.setPosition(x, y).setVisible(true).setScale(kind === 'light' ? 0.55 : kind === 'medium' ? 0.8 : 1.15).setAlpha(0.7);
     this.flashT = 0.06 + HITSTOP[kind] / 120;
-    if (kind === 'finisher') this.slowmo = 0.26; else if (kind === 'heavy') this.slowmo = Math.max(this.slowmo, 0.1);
     const L = this.hitLight; L.x = x; L.y = y; L.intensity = kind === 'light' ? 1.2 : kind === 'medium' ? 1.6 : 2.1; L.radius = kind === 'light' ? 200 : 330;
   }
   thump(x, y, big) { this.dust.emitParticleAt(x, y, big ? 14 : 8); this.snowPuff.emitParticleAt(x, y, big ? 12 : 6); this.trauma = Math.min(1, this.trauma + (big ? 0.35 : 0.2)); }
@@ -59,9 +67,10 @@ export class FX {
     this.trauma = Math.max(0, this.trauma - dt * 1.8);
     const L = this.hitLight; L.intensity = Math.max(0, L.intensity - dt * 16);
     if (this.flashT > 0) { this.flashT -= dt; this.flash.setAlpha(Math.max(0, Math.min(0.7, this.flashT * 8))); if (this.flashT <= 0) this.flash.setVisible(false); }
-    for (const b of this.booms.slice()) {
+    for (let i = this.booms.length - 1; i >= 0; i--) {
+      const b = this.booms[i];
       b.t += dt; b.L.radius = b.rad + b.t * 900; b.L.intensity = Math.max(0, b.power * (1 - b.t / 0.45));
-      if (b.t > 0.45) { this.s.lights.removeLight(b.L); this.booms.splice(this.booms.indexOf(b), 1); }
+      if (b.t > 0.45) { this.s.lights.removeLight(b.L); this.booms.splice(i, 1); }
     }
   }
   shakeOffset() {
@@ -73,5 +82,13 @@ export class FX {
       this._sx += (rx - this._sx) * k; this._sy += (ry - this._sy) * k;
     }
     this._out[0] = this._sx; this._out[1] = this._sy; return this._out;
+  }
+  destroy() {
+    for (const p of [this.sparksR, this.sparksL, this.dots, this.dust, this.snowPuff, this.embers, this.debris, this.splatP, this.flash]) {
+      try { p?.destroy(); } catch (e) { /* scene shutdown already dropped the display list */ }
+    }
+    try { if (this.hitLight) this.s.lights.removeLight(this.hitLight); } catch (e) { /* lights plugin gone */ }
+    for (const b of this.booms) { try { this.s.lights.removeLight(b.L); } catch (e) { /* same */ } }
+    this.booms.length = 0;
   }
 }

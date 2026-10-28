@@ -2,7 +2,9 @@ let ctx = null, master, music, sfxBus, voiceBus, duckG, comp, noiseBuf;
 let muted = false, musicOn = true, musicEl = null, musicSrc = null;
 const clips = Object.create(null), gates = Object.create(null), oneShots = new Map();
 const clipDrop = new Set();
-let voiceSrc = null, voiceRequest = 0, voicePending = false, voicePendingAt = 0, voiceId = null;
+let voiceSrc = null, voiceRequest = 0, voicePending = false, voicePendingAt = 0, voiceId = null, voiceEndsAt = 0;
+/** Grace past the sounding line's end that a queued line survives; caps a stuck source. */
+export const VOICE_QUEUE_GRACE = 1, VOICE_QUEUE_MAX = 10;
 // Optional per-stage voice policy (Stage 8 only). null keeps the Stage 1-7 rule: every new line interrupts.
 let voicePolicy = null; const voiceQueue = [];
 let loopSrc = null, loopToken = 0, loopId = null;
@@ -93,6 +95,7 @@ function trackSource(source, ...nodes) {
     for (const node of nodes) node.disconnect();
     if (voiceSrc === source) {
       voiceSrc = null;
+      voiceEndsAt = 0;
       // A replacement line may already own voiceId. Only a natural end clears it.
       if (!voicePending && voiceId === source.clipId) voiceId = null;
       if (!source.stopped && !voicePending) playQueued();
@@ -137,6 +140,10 @@ function duck(depth = 0.5, hold = 0.18, rel = 0.45) {
   if (!ctx || muted) return; const t = ctx.currentTime, g = duckG.gain;
   g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(depth, t + 0.025); g.setValueAtTime(depth, t + 0.025 + hold); g.linearRampToValueAtTime(1, t + 0.025 + hold + rel);
 }
+/** First chip stays at 1250 Hz. Each later chip steps up so the break is brighter. */
+export function clangPitch(chip = 1) {
+  return 1250 + Math.max(0, (chip | 0) - 1) * 180;
+}
 export const sfx = {
   swing() { if (!gate('swing', 40)) return; noise({ f0: vary(1900), f1: 380, dur: 0.08, vol: 0.13, filter: 'bandpass', q: 0.9 }); },
   whiff() { if (!gate('whiff', 60)) return; noise({ f0: vary(2600), f1: 500, dur: 0.12, vol: 0.12, filter: 'bandpass', q: 1.2 }); },
@@ -172,7 +179,7 @@ export const sfx = {
   fall() { tone({ f0: 1800, f1: 500, dur: 0.7, vol: 0.12, type: 'sine' }); },
   grumble() { if (!gate('grumble', 300)) return; tone({ f0: vary(85, 0.15), f1: 60, dur: 0.45, vol: 0.16, type: 'sawtooth' }); noise({ f0: 380, f1: 160, dur: 0.4, vol: 0.12, attack: 0.06 }); },
   // Stage 2 (cloud) cues
-  clang() { if (!gate('clang', 70)) return; tone({ f0: vary(1250), f1: 880, dur: 0.11, vol: 0.14, type: 'square' }); tone({ f0: vary(1870), dur: 0.22, vol: 0.09, type: 'triangle' }); noise({ f0: 5200, f1: 2000, dur: 0.08, vol: 0.18, filter: 'highpass' }); },
+  clang(chip = 1) { if (!gate('clang', 70)) return; const f0 = clangPitch(chip), lift = (f0 - 1250) / 180; tone({ f0: vary(f0), f1: 880 + lift * 80, dur: 0.11, vol: 0.14, type: 'square' }); tone({ f0: vary(1870 + lift * 90), dur: 0.22, vol: 0.09, type: 'triangle' }); noise({ f0: 5200, f1: 2000, dur: 0.08, vol: 0.18, filter: 'highpass' }); },
   glint() { if (!gate('glint', 200)) return; tone({ f0: 2600, f1: 3400, dur: 0.16, vol: 0.06, type: 'sine' }); tone({ f0: 3900, dur: 0.1, delay: 0.06, vol: 0.04, type: 'sine' }); },
   dread() { if (!gate('dread', 350)) return; tone({ f0: 55, f1: 40, dur: 0.18, vol: 0.22, type: 'sine' }); tone({ f0: 82, f1: 48, dur: 0.12, vol: 0.08, type: 'triangle', delay: 0.08 }); },
   shaken() { if (!gate('shaken', 200)) return; tone({ f0: 520, f1: 90, dur: 0.2, vol: 0.28, type: 'sawtooth' }); noise({ f0: 1800, f1: 200, dur: 0.16, vol: 0.2, filter: 'bandpass' }); },
@@ -416,6 +423,19 @@ export function residentClipIds() { return Object.keys(clips); }
  * 'interrupt', or the seconds the new line may wait for its turn (0 or 'skip' drops it). null restores the default.
  */
 export function setVoicePolicy(fn) { voicePolicy = typeof fn === 'function' ? fn : null; voiceQueue.length = 0; }
+/** How long the active policy holds `id` behind `cur`. 0 when no policy is installed. */
+export function voiceWait(id, cur) { return voicePolicy ? voicePolicy(id, cur) : 0; }
+/** Stage open: install the narration policy, then let the scene play the lines that just fired. */
+export function presentStage(scene) {
+  setVoicePolicy(narrationYields);
+  scene.handleEvents();
+}
+/** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
+ *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
+const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_|dad_catchphrase$)/;
+export function narrationYields(id, cur) {
+  return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
+}
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';
 const pendingStale = () => voicePending && audioNow() - voicePendingAt > 3;
 // Only opted-in speech gets a deadline; the audio clock pauses in background tabs.
@@ -452,8 +472,15 @@ export function say(id, onCaption, interrupt = true, fromQueue = false, options 
   // A stopped audio clock (autoplay lock, hidden tab) cannot finish a line, so the default rule applies.
   if (voicePolicy && !fromQueue && (voiceSrc || voicePending && !pendingStale()) && voiceId && audioLive()) {
     // A line already sounding or waiting is not restarted or queued twice.
-    const rule = voiceId === id || voiceQueue.some(q => q.id === id) ? 0 : options?.wait ?? voicePolicy(id, voiceId);
-    if (rule !== 'interrupt') { if (rule > 0) voiceQueue.push({ id, onCaption, until: audioNow() + rule, options }); return cap; }
+    // The budget covers the sounding line's remaining duration, not a fixed
+    // window, so a queued line survives long narrations instead of expiring.
+    const base = voiceId === id || voiceQueue.some(q => q.id === id) ? 0 : options?.wait ?? voicePolicy(id, voiceId);
+    if (base !== 'interrupt') {
+      const remaining = voiceSrc && voiceEndsAt > audioNow() ? voiceEndsAt - audioNow() : 0;
+      const rule = base > 0 ? Math.min(Math.max(base, remaining + VOICE_QUEUE_GRACE), VOICE_QUEUE_MAX) : 0;
+      if (rule > 0) voiceQueue.push({ id, onCaption, until: audioNow() + rule, behind: voiceId, queuedAt: audioNow(), options });
+      return cap;
+    }
   }
   if (options?.requires && !options.requires.started) return cap;
   const request = ++voiceRequest, shouldPlay = !muted;
@@ -467,6 +494,12 @@ export function say(id, onCaption, interrupt = true, fromQueue = false, options 
     voicePending = false;
     if (!buf || muted || !ctx) { if (voiceId === id) voiceId = null; settleClip(id); playQueued(); return; }
     const s = ctx.createBufferSource(); s.buffer = buf; s.clipId = id; s.connect(voiceBus); trackSource(s); voiceSrc = s; s.start();
+    voiceEndsAt = audioNow() + (buf?.duration || 0);
+    // Lines queued while this one was still loading waited behind it without a
+    // known duration; stretch their deadlines to its real end (capped).
+    // Every line still waiting, not only the one queued directly behind this id.
+    // Otherwise a third line expires while the second is still sounding.
+    for (const q of voiceQueue) q.until = Math.min(Math.max(q.until, voiceEndsAt + VOICE_QUEUE_GRACE), q.queuedAt + VOICE_QUEUE_MAX);
     if (options?.ticket) options.ticket.started = true;
     duck(0.45, buf.duration, 0.4);
   });

@@ -1,0 +1,18 @@
+title ok
+desktop gameplay {
+  playing: true,
+  scene: 'gameplay',
+  stage: 1,
+  zone: 0,
+  hud: true,
+  canvas: true
+}
+touch gameplay {
+  body: 'touch playing',
+  touchDisplay: 'block',
+  stickW: 124.796875,
+  fire: true,
+  stage: 1
+}
+ERRORS []
+SMOKE_OK {"desk":{"playing":true,"scene":"gameplay","stage":1,"zone":0,"hud":true,"canvas":true},"touch":{"body":"touch playing","touchDisplay":"block","stickW":124.796875,"fire":true,"stage":1},"errCount":0}

@@ -6,4 +6,8 @@ export const STORY = Object.freeze({
   victory: 'CLAUDIA RESCUED. JUDGMENT STILL PENDING.',
   dad: 'Son, sometimes you just need to use the fly swatter to keep the women away!',
 });
-export const TUTORIALS = ['HOLD FIRE. DASH THROUGH GOLDEN SHIELDS.', 'FIGHT ON THEIR SHADOW LANE. JUMP THE RUSH.', 'PAPI CLEARS THE CROWD. DAD HAS YOUR BACK.'];
+export const TUTORIALS = Object.freeze([
+  Object.freeze(['MOVE + HOLD FIRE. EGGPLANTS FLY STRAIGHT.', 'GOLD SHIELD BLOCKS EGGPLANTS. DASH THROUGH IT!']),
+  Object.freeze(["SHOOT THE HOVER'S SHADOW LANE.", 'RED FLASH = RUSH. JUMP IT OR STEP LANES!']),
+  Object.freeze(['CHOIR FIRST — IT BUFFS THE REST. DAD IS READY!']),
+]);

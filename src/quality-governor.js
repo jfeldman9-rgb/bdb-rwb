@@ -77,12 +77,12 @@ export function installGovernor(game, { q, rs0, vw, vh, meter, floor = 0, log = 
   function applyLevel(st, lv) {
     let removedBloom = false;
     while (level < lv) {
-      level++; st.fx.quality = level;
+      level++; if (st.fx) st.fx.quality = level;
       if (level === 1) { st.setBloom(false); removedBloom = true; }
       if (level === 2) { if (st.snowFront) st.snowFront.frequency = 240; }
       if (level === 4) st.setBackdropLit(false);
     }
-    st.fx.quality = level;
+    if (st.fx) st.fx.quality = level;
     st.kit?.setQuality?.(level);
     // The scale follows the tier, so a scene restart that replays the tiers lands on the same scale.
     game.setRS(tierScale(level, rs0));
@@ -92,9 +92,10 @@ export function installGovernor(game, { q, rs0, vw, vh, meter, floor = 0, log = 
   game.governor = () => {
     const st = game.scene.getScene('gameplay'); if (!st) return;
     if (appliedRun !== st.runId) {
-      // Scene restarts recreate filters/particles. Reapply the current quality tier
-      // instead of reporting q5 while silently rendering full-cost q0 effects.
-      if (inited) { const previous = level; level = 0; applyLevel(st, previous); }
+      // Scene restarts (and the first gameplay sighting after a pre-gameplay
+      // downgrade) recreate the fx rig. Reapply the current tier instead of
+      // reporting it while silently rendering full-cost effects.
+      const previous = level; level = 0; applyLevel(st, previous);
       appliedRun = st.runId; win.reset();
     }
     if (!inited) {

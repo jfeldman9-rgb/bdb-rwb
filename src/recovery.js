@@ -1,5 +1,6 @@
 // Freeze-guard recovery (restart fix). The Reload card reopens the stage the player was on instead of the title.
 // In the Stage 1 pre-fight sum (main.js imports it) and capped again under restartHotfix.
+import { installGraphicsNotice } from './graphics-notice.js';
 
 /** The current URL with ?stage=N&autostart=1&resume=1; every other parameter is kept. */
 export function resumeUrl(href, stage) {
@@ -27,7 +28,16 @@ export function showStuck(root, error, game) {
   set('startup-title', 'The game hit a snag');
   set('startup-description', 'This stage stopped running. Reload game picks up at the start of this stage.');
   set('startup-code', `Code: FRAME_ERROR ${error?.name || ''}`);
-  by('startup-retry')?.addEventListener?.('click', () => resumeGame(root, game));
+  const retry = by('startup-retry');
+  // startup.js already resumes from this button. One persistent listener, not {once:true},
+  // so a later stuck card still reloads. The game handle is refreshed every time.
+  if (retry && !retry.__bdbResume) {
+    retry.__bdbStuckGame = game;
+    if (!retry.__bdbStuck) {
+      retry.__bdbStuck = true;
+      retry.addEventListener?.('click', () => resumeGame(root, retry.__bdbStuckGame));
+    }
+  }
   card.hidden = false;
   return true;
 }
@@ -50,4 +60,87 @@ export function installResumeCleanup(game, q, root = globalThis) {
   };
   game.events.on('step', check);
   return true;
+}
+
+/** How long a running, unpaused stage may go without a frame before the stuck card. */
+export const FREEZE_MS = 8000;
+
+/**
+ * Notices a stalled gameplay loop. The timer sits outside Phaser, so it still
+ * runs when the frame loop has died. GameScene.update calls `game.beat` each frame.
+ * A paused stage (manual, cutscene, rotate) is not a stall.
+ */
+export function installFreezeGuard(game, root = globalThis, opts = {}) {
+  const limit = opts.limit ?? FREEZE_MS;
+  const clock = () => root.performance?.now?.() ?? Date.now();
+  let last = clock();
+  let shown = false;
+  let strikes = 0;
+  let pendingError = null;
+  let stageSeen = null;
+  const scene = () => game?.scene?.getScene?.('gameplay');
+  const loading = (s) => typeof s?.load?.isLoading === 'function' && s.load.isLoading();
+  const stamp = () => { last = clock(); };
+  const clearStrikes = () => { strikes = 0; pendingError = null; };
+  const rememberStage = (s) => {
+    const stage = s?.stageNo;
+    if (stage == null) return;
+    if (stageSeen != null && stage !== stageSeen) clearStrikes();
+    stageSeen = stage;
+  };
+  const note = () => { stamp(); clearStrikes(); rememberStage(scene()); };
+  const trip = (error) => {
+    if (shown) return;
+    if (!scene()?.started) return;
+    shown = true;
+    showStuck(root, error instanceof Error ? error : new Error(String(error || 'frame')), game);
+  };
+  if (game) game.beat = note;
+  const timer = root.setInterval?.(() => {
+    const s = scene();
+    // A chapter download is not a stall. started stays false until create, and a loader still in flight is ignored.
+    if (!s?.started || loading(s) || s.world?.paused || game?.isPaused) { stamp(); return; }
+    rememberStage(s);
+    if (strikes >= 2) { trip(pendingError || new Error('error')); return; }
+    if (clock() - last > limit) trip(new Error('freeze'));
+  }, opts.interval ?? 1000);
+  const onError = (event) => {
+    const s = scene();
+    if (!s?.started) return;
+    rememberStage(s);
+    const origin = root.location?.origin;
+    const file = event?.filename || '';
+    // Empty filename is the cross-origin "Script error." A one-off throw while the loop still beats is not a stall.
+    if (!file || (origin && !file.startsWith(origin + '/'))) return;
+    strikes++;
+    pendingError = event?.error || event?.message || 'error';
+    if (strikes >= 2) trip(pendingError);
+  };
+  root.addEventListener?.('error', onError);
+  return {
+    note,
+    destroy() {
+      if (timer != null) root.clearInterval?.(timer);
+      if (game?.beat === note) game.beat = null;
+      root.removeEventListener?.('error', onError);
+    },
+  };
+}
+
+/** Freeze guard plus a graphics-retry that reopens the running stage. */
+export function installStageRecovery(game, root = globalThis) {
+  const freeze = installFreezeGuard(game, root);
+  const notice = installGraphicsNotice(root, () => resumeGame(root, game));
+  let dead = false;
+  const api = {
+    notice,
+    destroy() {
+      if (dead) return;
+      dead = true;
+      freeze.destroy();
+      notice.destroy();
+    },
+  };
+  game?.events?.once?.('destroy', () => api.destroy());
+  return api;
 }

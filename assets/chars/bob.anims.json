@@ -106,12 +106,13 @@
     {
       "name": "bob_shoot",
       "frames": [
+        "bob_shoot_00",
         "bob_shoot_01",
-        "bob_shoot_01",
+        "bob_shoot_02",
         "bob_shoot_03",
-        "bob_shoot_03",
+        "bob_shoot_04",
         "bob_shoot_05",
-        "bob_shoot_05",
+        "bob_shoot_06",
         "bob_shoot_07"
       ],
       "pages": [
@@ -121,9 +122,11 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "holds": [
+        63,
         63,
         63,
         63,
@@ -229,8 +232,13 @@
   "placeholder": false,
   "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 50,
-    "unique": 45,
-    "reused": 5
+    "logical": 51,
+    "unique": 49,
+    "reused": 2
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
   }
 }

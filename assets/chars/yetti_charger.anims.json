@@ -10,16 +10,49 @@
   ],
   "anims": [
     {
+      "name": "yetti_charger_idle",
+      "frames": [
+        "yetti_charger_idle_00",
+        "yetti_charger_idle_01",
+        "yetti_charger_idle_02",
+        "yetti_charger_idle_03",
+        "yetti_charger_idle_04",
+        "yetti_charger_idle_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
       "name": "yetti_charger_walk",
       "frames": [
+        "yetti_charger_walk_00",
         "yetti_charger_walk_01",
         "yetti_charger_walk_02",
         "yetti_charger_walk_03",
         "yetti_charger_walk_04",
         "yetti_charger_walk_05",
-        "yetti_charger_walk_06"
+        "yetti_charger_walk_06",
+        "yetti_charger_walk_07"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0,
@@ -28,40 +61,25 @@
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71,
-        71,
-        71
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
       ],
       "loop": true,
-      "fps": 14
+      "fps": 12
     },
     {
-      "name": "yetti_charger_telegraph",
+      "name": "yetti_charger_windup",
       "frames": [
-        "yetti_charger_walk_01",
-        "yetti_charger_walk_02"
-      ],
-      "pages": [
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100
-      ],
-      "loop": false,
-      "fps": 10
-    },
-    {
-      "name": "yetti_charger_rush",
-      "frames": [
-        "yetti_charger_walk_01",
-        "yetti_charger_walk_02",
-        "yetti_charger_walk_03",
-        "yetti_charger_walk_04"
+        "yetti_charger_windup_00",
+        "yetti_charger_windup_01",
+        "yetti_charger_windup_02",
+        "yetti_charger_windup_03"
       ],
       "pages": [
         0,
@@ -79,16 +97,48 @@
       "fps": 16
     },
     {
-      "name": "yetti_charger_hurt",
+      "name": "yetti_charger_rush",
       "frames": [
-        "yetti_charger_walk_01",
-        "yetti_charger_walk_02"
+        "yetti_charger_rush_00",
+        "yetti_charger_rush_01",
+        "yetti_charger_rush_02",
+        "yetti_charger_rush_03",
+        "yetti_charger_rush_04",
+        "yetti_charger_rush_05"
       ],
       "pages": [
+        0,
+        0,
+        0,
+        0,
         0,
         0
       ],
       "holds": [
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": true,
+      "fps": 16
+    },
+    {
+      "name": "yetti_charger_hurt",
+      "frames": [
+        "yetti_charger_hurt_00",
+        "yetti_charger_hurt_01",
+        "yetti_charger_hurt_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
         71,
         71
       ],
@@ -96,31 +146,42 @@
       "fps": 14
     },
     {
-      "name": "yetti_charger_down",
+      "name": "yetti_charger_knockdown",
       "frames": [
-        "yetti_charger_walk_01",
-        "yetti_charger_walk_02",
-        "yetti_charger_walk_03"
+        "yetti_charger_knockdown_00",
+        "yetti_charger_knockdown_01",
+        "yetti_charger_knockdown_02",
+        "yetti_charger_knockdown_03",
+        "yetti_charger_knockdown_04"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0
       ],
       "holds": [
-        83,
-        83,
-        83
+        71,
+        71,
+        71,
+        71,
+        71
       ],
       "loop": false,
-      "fps": 12
+      "fps": 14
     }
   ],
-  "placeholder": true,
-  "source": "local coloured silhouettes",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 17,
-    "unique": 6,
-    "reused": 11
+    "logical": 32,
+    "unique": 32,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
   }
 }
