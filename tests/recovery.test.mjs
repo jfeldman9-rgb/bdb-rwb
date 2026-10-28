@@ -82,6 +82,8 @@ test('a missing chapter file still raises the card after the title is ready', ()
   assert.equal(guard.fail(null, 'assets'), true);
   assert.equal(els['startup-error'].hidden, false);
   assert.match(els['startup-code'].textContent, /REQUIRED_ASSET_FAILED/);
+  assert.doesNotMatch(els['startup-description'].textContent, /before the title screen/);
+  assert.match(els['startup-description'].textContent, /chapter/i);
 });
 
 function freezeRig() {
