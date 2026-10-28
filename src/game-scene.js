@@ -12,6 +12,7 @@ import { say,sfx,playTrack,preloadClips,releaseClips,stopSceneAudio } from './au
 import { stageLines } from './voice-lines.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
+import { playDadCall, abortDadCall } from './dad-call-cutscene.js';
 
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
@@ -36,7 +37,7 @@ export class GameScene extends Phaser.Scene {
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
   this.game.inp.clear();preloadClips(stageLines(this.stageNo));playTrack(`stage${this.stageNo}`);
-  this.events.once('shutdown',()=>{this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
+  this.events.once('shutdown',()=>{abortDadCall(this);this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();this.hud.update(this.world);
  }
  setPauseReason(reason,on){if(on)this.pauseReasons.add(reason);else this.pauseReasons.delete(reason);this.world.paused=this.pauseReasons.size>0;this.game.inp.clear();}
@@ -89,6 +90,8 @@ export class GameScene extends Phaser.Scene {
   if(type==='boss')playTrack(`boss${this.stageNo}`);if(type==='clear')sfx.levelClear();
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
+  if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}
+  if(type==='cutscene'){this.setPauseReason('cutscene',true); this.game.story.play(data,()=>{this.setPauseReason('cutscene',false);});}
   if(type==='dad')sfx.dadHorn();
   if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);cam.shake(160,.008);sfx.hit(true);
    for(let i=0;i<18;i++)this.particles.push({x:data.x-85+Math.random()*60-30,y:data.y-12,vx:Math.random()*360-180,vy:-80-Math.random()*240,life:.35+Math.random()*.35,color:i%3?0xfff3b0:0xffffff});}

@@ -34,7 +34,7 @@ class Title extends Phaser.Scene {
   this.begin=()=>{if(this.starting)return;this.starting=true;unlock();this.game.story.bless();
    this.save={...this.save,difficulty:resolveDifficulty(difficulty.value,this.save.beaten,coarsePointer()),autoFire:doc.getElementById('auto-fire').checked};persistSave(this.save);
    doc.getElementById('title').hidden=true;this.game.inp.clear();
-   this.game.story.play('intro',()=>this.scene.start('gameplay',{stage:Number(chapter.value),difficulty:this.save.difficulty,save:this.save}));
+   this.game.story.play((typeof q!=='undefined'&&q.get?.('intro')==='v2')?'intro_v2':'intro',()=>this.scene.start('gameplay',{stage:Number(chapter.value),difficulty:this.save.difficulty,save:this.save}));
   };
   this.disposeTitleStart=wireTitleStart({doc,begin:()=>this.begin(),coarse:coarsePointer()});
   this.events.once('shutdown',()=>this.disposeTitleStart?.());

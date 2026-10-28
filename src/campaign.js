@@ -12,6 +12,7 @@ import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W } from './config.js';
 import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
+import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack } from './barks.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -23,7 +24,7 @@ export class Campaign {
     this.save = normalizeSave(save); this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
-    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.loadStage(stage);
+    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(); this.kidnapPlayed = false; this.rescuePreBossPlayed = false; this.loadStage(stage);
   }
   emit(type, data) { this.events.push({ type, data }); }
   banner(text) { this.message = text; this.messageTime = 3; this.emit('banner', text); }
@@ -40,6 +41,8 @@ export class Campaign {
     this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
     this.shieldHintShown = false; this.papiHintShown = false;
     this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
+    if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
+    const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
   }
   dropTrio(x, y = this.bob?.y ?? 630) { const laneY = clamp(y, LANE_TOP, LANE_BOT); for (let i=0;i<3;i++) this.pickups.push({ x: clamp(x+i*35,this.bounds.l+65,this.bounds.r-65), y: laneY, kind: 'shake' }); }
   /** Boss arena index: one past the last fight zone. */
@@ -61,6 +64,8 @@ export class Campaign {
     const tutorial = this.stageNo===1 && this.save.bestScore===0 && teachText && !this.seenTutorials.has(teachKey);
     this.banner(tutorial ? teachText : `ZONE ${this.zoneIndex+1} · WAVE ${this.waveIndex+1}`);
     if(tutorial)this.seenTutorials.add(teachKey);
+    const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
+    const yw = barkYettiWave(this.barks, this.elapsed); if (yw) this.emit('voice', yw);
   }
   enterZone() {
     const zone=this.def.zones[this.zoneIndex]; this.locked=true;
@@ -87,6 +92,7 @@ export class Campaign {
     if (z.type==='wingman') { this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase); }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; boss.hp=Math.min(bossPhaseHp(boss.maxHp,phase),bossHp??Infinity); this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
+    if (this.stageNo === 3 && !this.rescuePreBossPlayed) { this.rescuePreBossPlayed = true; this.emit('cutscene', 'rescue_pre_boss'); }
     this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
     if (z.type==='choirmaster') this.summonWalkers();
   }
@@ -98,6 +104,7 @@ export class Campaign {
   summonWalkers() { this.summonAdds(['walker','walker']); }
   snowball(x,y,dir,kind='snowball') { this.hostile.push({x,y,dir,kind,speed:kind==='halo'?260:320,alive:true}); }
   hurtBob(charger=false) { if (this.bob.takeHit({charger})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); } }
+  yellYettiAttack() { const id = barkYettiAttack(this.barks, this.elapsed); if (id) this.emit('voice', id); }
   recordKo(e, source = 'bob') {
     if (e.recorded) return; e.recorded=true; this.stats.kos++;
     if (source==='bob') { this.score += e.boss?2500:300; noteBobKo(this.dadCall); }
@@ -132,7 +139,7 @@ export class Campaign {
     }
     this.papiTime=2.5; this.stats.papi++; this.score+=result.score;
     for(const e of result.killed)this.recordKo(e,'papi');
-    this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice','bdb_laugh'); return true;
+    this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice', barkPapacito(this.barks)); return true;
   }
   useDad() {
     if(this.stageNo===1 && !this.dadCall.unlocked){this.banner('DAD ARRIVES IN ZONE 3.');return false;}
@@ -141,8 +148,15 @@ export class Campaign {
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
       hittable:visible.some(e=>e.canBeHit),bossPhase:phase?`${this.stageNo}:${phase}`:null,bossInvuln:visible.some(e=>e.boss&&!e.canBeHit)});
     if(!result.ok){this.banner("DAD'S ON HIS COFFEE BREAK.");return false;}
-    this.dad=new Dad(this.camX,this.bob.y,this.bob.x+150); this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
-    this.emit('voice','dad_catchphrase'); this.emit('dad'); return true;
+    this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
+    this.emit('dad_callin'); return true;
+  }
+  /** After the call-in cutscene (or immediately if cutscenes are off). */
+  finishDadCallin() {
+    if (this.dad) return;
+    this.dad = new Dad(this.camX, this.bob.y, this.bob.x + 150);
+    this.emit('voice', 'dad_catchphrase');
+    this.emit('dad');
   }
   /** Lose a life, keep progress: zones resume at the wave reached; a mini-boss keeps the damage dealt. */
   respawn() {
@@ -177,6 +191,8 @@ export class Campaign {
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
+    const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
+    const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
     const fightZone=this.zoneIndex<this.bossZone?this.def.zones[this.zoneIndex]:null;
     const boss=this.bossActive?this.def.boss:null;
     updateCamera(this,dt,{bobX:this.bob.x,facing:this.bob.facing,locked:this.locked,zone:this.locked&&!this.bossActive?fightZone:null,boss});

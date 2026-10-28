@@ -127,7 +127,7 @@ export class Yetti {
     }
     if (Math.abs(dx)<reach && Math.abs(dy)< (ranged ? 110 : 30) && this.cooldown<=0) {
       this.state='telegraph'; this.timer=(this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65) / pace;
-      this.attackX=b.x; this.attackY=this.y; this.rushDir=this.facing; return;
+      this.attackX=b.x; this.attackY=this.y; this.rushDir=this.facing; world.yellYettiAttack?.(); return;
     }
     const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff*(boss>=3?1.45:boss===2?1.3:1);
     const oldX=this.x;

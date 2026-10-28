@@ -7,7 +7,17 @@ import { isMuted, onMuteChange } from './audio.js';
 // Kept out of the 25 MB pre-fight sum; tools/audit-stage1.mjs counts it under cutscenes.
 
 export const CLIP_BASE = 'assets/cutscenes/';
-export const STAGE_CLIPS = Object.freeze({ intro: ['opening'], victory: ['victory'] });
+export const INTRO_V2 = Object.freeze({
+  // Flag default OFF until Jason OKs intro_v2. Enable with ?intro=v2.
+  enabled(q) { return q?.get?.('intro') === 'v2'; },
+});
+export const STAGE_CLIPS = Object.freeze({
+  intro: ['opening'],
+  intro_v2: ['intro_v2'],
+  kidnap: ['kidnap_1', 'kidnap_2'],
+  rescue_pre_boss: ['rescue_1'],
+  victory: ['rescue_2'],
+});
 export const EVENT_CLIPS = STAGE_CLIPS;
 export const SKIP_ACTIONS = Object.freeze(new Set(['fire', 'jump', 'dash', 'papi', 'dad', 'start', 'pause']));
 export const START_MS = 4000, STALL_MS = 3000, MAX_CLIP_MS = 30000, TICK_MS = 250, GUARD_MS = 450, VOLUME = 0.85;
