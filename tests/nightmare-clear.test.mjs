@@ -149,6 +149,38 @@ test('nightmare bot clears stage 2 and stage 3 zone 5 without a third ranged bod
   }
 });
 
+test('a dead Wingman stays dead when phase 3 respawns', () => {
+  const w = new Campaign({ stage: 3, difficulty: 'nightmare' });
+  w.startBoss(3);
+  const wings = w.enemies.filter(e => e.type === 'wingman');
+  wings[0].hp = 40;
+  wings[1].alive = false;
+  wings[1].hp = 0;
+  wings[1].state = 'dead';
+  w.bob.hp = 1;
+  w.hurtBob(true);
+  for (let i = 0; i < 120 && w.stats.deaths === 0; i++) w.update(1 / 60, {});
+  const again = w.enemies.filter(e => e.type === 'wingman');
+  assert.equal(w.stats.deaths, 1);
+  assert.equal(again.length, 2);
+  assert.equal(again[0].alive, true);
+  assert.equal(again[0].hp, 40);
+  assert.equal(again[1].alive, false);
+  assert.equal(again[1].hp, 0);
+});
+
+test('a Wingman phase change forgets the previous phase HP', () => {
+  const w = new Campaign({ stage: 3 });
+  w.startBoss(1);
+  w.checkpoint.wingHp = [12];
+  w.checkpoint.wingDead = [false];
+  w.enemies[0].hp = 0;
+  w.wingmen.update(0.01, w);
+  assert.equal(w.wingmen.phase, 2);
+  assert.equal(w.checkpoint.wingHp, undefined);
+  assert.equal(w.checkpoint.wingDead, undefined);
+});
+
 test('a Wingman keeps damage already dealt when Bob dies', () => {
   const w = new Campaign({ stage: 3, difficulty: 'nightmare' });
   w.startBoss(2);

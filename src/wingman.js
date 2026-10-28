@@ -73,7 +73,10 @@ export class Wingmen {
       for (const e of world.enemies.filter(e=>e.type==='wingman')) { e.state='split'; e.timer=this.phase===3?2:1; }
       world.banner(this.phase===2?'PHASE II: HEAVENLY HR VIOLATION':'PHASE III: TWO WINGMEN. ONE TERRIBLE PLAN.');
       world.emit('voice',this.phase===2?'wingman_phase2':'wingman_phase3');
-      world.dropTrio(world.bob.x+50); world.checkpoint.phase=this.phase; world.summonAdds?.(WINGMAN_ADDS[this.phase]);
+      world.dropTrio(world.bob.x+50); world.checkpoint.phase=this.phase;
+      // The new phase has new bodies. The previous phase's HP must not be applied to them.
+      world.checkpoint.wingHp=undefined; world.checkpoint.wingDead=undefined;
+      world.summonAdds?.(WINGMAN_ADDS[this.phase]);
       bosses=world.enemies.filter(e=>e.type==='wingman');
     }
     const ready=isBossFinisherReady(this.phase,bosses);
