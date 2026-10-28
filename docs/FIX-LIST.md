@@ -16,7 +16,7 @@
 | **P0-5** | **Done.** Portrait phones (`orientation:portrait`, `hover:none`, `pointer:coarse`) keep `#rotate` up during play, same as RWB. Gameplay pauses on `rotate` only when that block flips. The letterbox escape hint is gone. `#rotate-start` stays for the title and hides once `.playing`. |
 | **K1** | **Done.** A stage change does not drain events on the dying scene. `create` handles them after `syncViews`, so the kidnap clip pauses stage 2. `tests/stage-cutscene.test.mjs`. |
 | **P1-3** | **Done.** `narrationYields`: a line landing on narration waits 2.5s, anything else yields. Installed before `handleEvents`. Cory and Yetti taunts roll once a second. |
-| **P1-4** | Pending |
+| **P1-4** | **Done.** Registered lines now have an emit path (intros, open, produce, laugh, hurts, Dad call/done, Papi wait/chorus, choir, turn-back, Claudia, wingman defeat, victory). Wording unchanged. |
 | **P1-6** | **Done.** Story and victory clips duck music and hold later voice events until the clip's done callback. A synchronous skip releases the hold before the next event. |
 | **P1-7** | Pending |
 | **P1-14** | **Done.** Victory destroys the cage and plays `claudia_freed`. The retired produce line is gone from `#victory`. |

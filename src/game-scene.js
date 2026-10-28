@@ -142,7 +142,7 @@ export class GameScene extends Phaser.Scene {
   for(const p of this.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);}
   this.particles=this.particles.filter(p=>p.life>0);
  }
- playHeld(ids){for(const id of ids||[]){say(id,(who,line)=>this.hud?.say(who,line));if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);}}
+ playHeld(ids){(ids||[]).forEach((id,i)=>{say(id,(who,line)=>this.hud?.say(who,line),true,false,i?{wait:2.5*i}:null);if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);});}
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
   this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
