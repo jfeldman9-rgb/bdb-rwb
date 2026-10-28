@@ -17,7 +17,7 @@ import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cu
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
-import { RECOIL_KICK, stepRecoil, hostileShape } from './shot-feel.js';
+import { RECOIL_KICK, stepRecoil, hostileShape, killImpact } from './shot-feel.js';
 
 /** Opening bed. A cutscene already queued on this load fades the track the same frame, so leave it silent until the clip ends. */
 export function trackForStageStart(stageNo, events) {
@@ -195,7 +195,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='dad')sfx.dadHorn();
   if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);this.fx?.impact('finisher',data.x,data.y-40,-1);sfx.hit(true);
    for(let i=0;i<18;i++)this.particles.push({x:data.x-85+Math.random()*60-30,y:data.y-12,vx:Math.random()*360-180,vy:-80-Math.random()*240,life:.35+Math.random()*.35,color:i%3?0xfff3b0:0xffffff});}
-  if(type==='hit'||type==='ko'){sfx.hit(type==='ko');const kind=type==='ko'?'heavy':(data?.kind||'light');if(type==='hit')this.fx?.impact(kind,data.x,data.y-90,data.dir||1);this.fx?.splat(data.x,data.y-70);for(let i=0;i<(type==='ko'?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}
+  if(type==='hit'||type==='ko'){const impact=killImpact(type,data);if(impact){sfx.hit(impact.heavy);const kind=data?.kind||(impact.heavy?'heavy':'light');if(impact.kick)this.fx?.impact(kind,data.x,data.y-90,data.dir||1);if(impact.splat)this.fx?.splat(data.x,data.y-70);for(let i=0;i<(impact.heavy?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}}
  }}
  update(time,delta){
   this.game.beat?.();

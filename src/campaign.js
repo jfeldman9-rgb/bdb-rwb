@@ -269,9 +269,10 @@ export class Campaign {
     this.camX=clamp(cp.x-VW*CAM_LEAD,0,WORLD_W-VW);this.camMax=this.camX;
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
     if(cp.zone===this.bossZone)this.startBoss(cp.phase);
-    this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
-    if (mercy === 'dad') this.banner("MERCY. DAD'S BACK ON THE LINE.");
-    else if (mercy === 'breath') { this.dropTrio(this.bob.x + 40); this.banner('MERCY. CATCH YOUR BREATH.'); }
+    this.emit('voice','bob_respawn_01');
+    if (mercy === 'dad') this.banner(`${STORY.checkpoint} · MERCY. DAD'S BACK ON THE LINE.`);
+    else if (mercy === 'breath') { this.dropTrio(this.bob.x + 40); this.banner(`${STORY.checkpoint} · MERCY. CATCH YOUR BREATH.`); }
+    else this.banner(STORY.checkpoint);
   }
   armVoice(id, delay = 0) { if (!id) return; (this.voiceAt ||= []).push({ id, at: this.elapsed + delay }); }
   flushVoice() {

@@ -74,6 +74,7 @@ test('nightmare mercy is the third death in that zone, not adventure and not the
   assert.equal(n.zoneDeaths[4], 3);
   assert.equal(n.dadCall.charges, 1);
   assert.ok(n.dadCall.calls < 3);
+  assert.match(n.message, /CHECKPOINT: EGO INTACT/);
   assert.match(n.message, /MERCY/);
   n.dadCall.charges = 0;
   n.dadCall.calls = 3;
@@ -99,6 +100,7 @@ test('boss mercy clears that phase so the restored swat can be used', () => {
   die(w);
   assert.equal(w.dadCall.phaseCalls['2:1'], undefined);
   assert.equal(refuseReason(w.dadCall, { hittable: true, bossPhase: '2:1' }), '');
+  assert.match(w.message, /CHECKPOINT: EGO INTACT/);
   assert.match(w.message, /MERCY/);
 });
 
