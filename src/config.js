@@ -1,5 +1,7 @@
 // Logical viewport and lane constants for The Legend of Claudia.
 export const VW = 1280, VH = 720;
+/** Bob steady-state screen X as fraction of VW (RWB free-roam, not RWB free-roam). */
+export const CAM_LEAD = 0.28;
 export const LANE_TOP = 572, LANE_BOT = 690;      // walkable depth band (screen y of feet)
 export const WORLD_W = 5200;
 export const q = new URLSearchParams(globalThis.location?.search || '');

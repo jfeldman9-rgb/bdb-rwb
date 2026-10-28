@@ -38,11 +38,11 @@ test('Stage 1 spawn rows stay inside the gun band from Bob\'s default lane',asyn
 test('Stage 1 tutorials land on the wave that teaches them',()=>{
   const w=new Campaign();const banners=()=>{const b=w.events.filter(e=>e.type==='banner').map(e=>e.data).join(' | ');w.events=[];return b;};
   const clearWave=()=>{for(const e of w.enemies){e.alive=false;e.hp=0;}w.update(1/60,{});};
-  w.bob.x=260;w.update(1/60,{});assert.match(banners(),/HOLD FIRE/);
+  w.bob.x=260;w.camX=0;w.camMax=0;w.update(1/60,{});assert.match(banners(),/HOLD FIRE/);
   clearWave();assert.ok(w.enemies.some(e=>e.type==='guard'));assert.match(banners(),/DASH THROUGH/);
-  clearWave();banners();w.bob.x=1500;w.update(1/60,{});assert.ok(w.enemies.some(e=>e.type==='hover'));assert.match(banners(),/SHADOW/);
+  clearWave();banners();w.bob.x=1500;w.camX=1500-400;w.camMax=w.camX;w.bounds={l:w.camX,r:w.camX+1280};w.update(1/60,{});assert.ok(w.enemies.some(e=>e.type==='hover'));assert.match(banners(),/SHADOW/);
   clearWave();assert.ok(w.enemies.some(e=>e.type==='charger'));assert.match(banners(),/JUMP/);
-  clearWave();banners();w.bob.x=2800;w.update(1/60,{});assert.ok(w.enemies.some(e=>e.type==='choir'));assert.match(banners(),/CHOIR FIRST/);assert.equal(w.dadCall.unlocked,true);
+  clearWave();banners();w.bob.x=2800;w.camX=2800-400;w.camMax=w.camX;w.bounds={l:w.camX,r:w.camX+1280};w.update(1/60,{});assert.ok(w.enemies.some(e=>e.type==='choir'));assert.match(banners(),/CHOIR FIRST/);assert.equal(w.dadCall.unlocked,true);
 });
 test('first blocked eggplant teaches the dash once; locked Dad names Zone 3',()=>{
   const w=new Campaign();w.events=[];const g=new Yetti('guard',800,630);w.enemies=[g];

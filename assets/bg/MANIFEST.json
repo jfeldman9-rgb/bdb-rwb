@@ -1,0 +1,24 @@
+{
+  "s1": [
+    "s1-far",
+    "s1-mid0",
+    "s1-mid1",
+    "s1-mid2",
+    "s1-mid3",
+    "s1-floor"
+  ],
+  "s2": [
+    "s2-far",
+    "s2-mid0",
+    "s2-mid1",
+    "s2-mid2",
+    "s2-floor"
+  ],
+  "s3": [
+    "s3-far",
+    "s3-mid0",
+    "s3-mid1",
+    "s3-mid2",
+    "s3-floor"
+  ]
+}

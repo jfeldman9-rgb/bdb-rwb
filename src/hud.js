@@ -37,4 +37,9 @@ export class HUD {
   if(w.bob.state==='grabbed'){g.lineStyle(8,0xffdc8c);g.beginPath();g.arc(640,620,32,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,w.bob.grabMash/6));g.strokePath();}
   for(const [id,label,count]of [['tbPapi','PAPI',w.papi.charges],['tbDad','DAD',w.dadCall.charges]]){const el=document.getElementById(id);if(el){el.textContent=`${label} ${count}`;el.classList.toggle('empty',!count);}}
  }
+  flashGo(plate){
+    this._goPlate = plate || '';
+    this.prompt.setText('KEEP GOING  →');
+  }
+
 }

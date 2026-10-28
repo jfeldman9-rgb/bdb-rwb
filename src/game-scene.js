@@ -4,6 +4,7 @@ import { Fighter } from './fighter.js';
 import { TYPES } from './yettis.js';
 import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES } from './stages.js';
+import { buildBackdrop } from './backdrop.js';
 import { HUD } from './hud.js';
 import { PapacitoFX } from './papacito-fx.js';
 import { q } from './config.js';
@@ -19,17 +20,15 @@ export class GameScene extends Phaser.Scene {
   const prev=this.game.residentChars||[],next=STAGE_CHARS[this.stageNo],delta=residencyDelta(prev,next);
   releaseChars(this,delta.release);queueCharPages(this,next);this.game.residentChars=next;
   for(const key of this.game.residentTextures||[])if(!STAGE_TEXTURES[this.stageNo].includes(key)&&this.textures.exists(key))this.textures.remove(key);
-  const bg=this.world.def.bg;if(!this.textures.exists(bg))this.load.image(bg,`assets/bg/${bg}.webp`);
-  this.game.residentTextures=STAGE_TEXTURES[this.stageNo];
+  const keys=STAGE_TEXTURES[this.stageNo]||[];
+  for(const key of keys)if(!this.textures.exists(key))this.load.image(key,`assets/bg/${key}.webp`);
+  this.game.residentTextures=keys;
   const loadError=file=>{window.__bdbStartup?.fail(`Asset ${file.key}`,'assets');document.getElementById('boot').textContent='Could not load chapter. Reload to retry.';};
   this.load.once('loaderror',loadError);this.load.once('complete',()=>this.load.off('loaderror',loadError));
  }
  create(){
   this.game.campaign=this.world;this.metas=makeCharAnims(this,STAGE_CHARS[this.stageNo]);
-  this.add.image(640,360,this.world.def.bg).setDisplaySize(1280,720).setScrollFactor(0).setTint(0x9094b1);
-  const floor=this.add.graphics().setScrollFactor(0);floor.fillStyle(0x111b2b,.75);floor.fillRect(0,550,1280,170);floor.lineStyle(2,0xcaa66c,.45);floor.lineBetween(0,555,1280,555);
-  floor.lineStyle(1,0xc4cee4,.13);for(const y of [595,635,675])floor.lineBetween(0,y,1280,y);
-  this.add.text(32,490,this.world.def.title,{fontFamily:'Arial',fontSize:18,color:'#ffe0a1',fontStyle:'bold'}).setScrollFactor(0).setAlpha(.55);
+  this.backdrop=buildBackdrop(this,this.world.def);
   if(!this.textures.exists('shadow')){const g=this.make.graphics({x:0,y:0},false);g.fillStyle(0x03050c,.5);g.fillEllipse(32,32,63,60);g.generateTexture('shadow',64,64);g.destroy();}
   this.dadLabel=this.add.text(0,0,'BDB',{fontFamily:'Arial',fontSize:20,fontStyle:'bold',color:'#fff0ad',stroke:'#192235',strokeThickness:4}).setDepth(19001).setVisible(false);
   this.g=this.add.graphics().setDepth(19000);this.hud=new HUD(this);this.papiFX=new PapacitoFX(this);
@@ -37,28 +36,22 @@ export class GameScene extends Phaser.Scene {
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(4830,350,120,150);for(let x=4850;x<4950;x+=22)cage.lineBetween(x,350,x,500);}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
   this.game.inp.clear();preloadClips(stageLines(this.stageNo));playTrack(`stage${this.stageNo}`);
-  this.events.once('shutdown',()=>{for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
+  this.events.once('shutdown',()=>{this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();this.hud.update(this.world);
  }
  setPauseReason(reason,on){if(on)this.pauseReasons.add(reason);else this.pauseReasons.delete(reason);this.world.paused=this.pauseReasons.size>0;this.game.inp.clear();}
  makeView(model,key,scale,tint=0xffffff){const v=new Fighter(this,{key,prefix:key+'_',native:1,scale,anchorX:.5,hp:1,team:0,shadowW:135},model.x,model.y);v.sprite.setLighting(false).setTint(tint);return v;}
  syncViews(){
-  const w=this.world;this.bounds=w.bounds;this.cameras.main.scrollX=w.camX;
+  const w=this.world;this.bounds=w.bounds;this.cameras.main.setScroll(Math.round(w.camX),0);
   const live=new Set();
   for(const model of [w.bob,...w.enemies.filter(e=>e.alive)]){
    live.add(model);let view=this.views.get(model);const isBob=model===w.bob,key=isBob?'bob':model.type==='wingman'?'wingman':TYPES[model.type].art;
-   if(!view){view=this.makeView(model,key,isBob ? .46 : model.type==='interventionist' ? .59 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
+   if(!view){view=this.makeView(model,key,isBob ? .46 : model.boss ? .54 : .42,isBob?0xffffff:model.type==='wingman'?(model.role===2?0xffb1d6:0xd0beff):TYPES[model.type].tint);this.views.set(model,view);}
    Object.assign(view,{x:model.x,y:model.y,z:model.z||0,state:model.state});view.face(model.facing);
-   let anim;
-   if(isBob)anim=model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle';
-   else if(model.type==='hover')anim=model.state==='hurt'?'hurt':model.state==='telegraph'?'shoot':model.state==='down'?'down':'fly';
-   else if(model.type==='charger')anim=model.state==='hurt'?'hurt':model.state==='telegraph'?'telegraph':model.state==='rush'?'rush':model.state==='down'?'down':'walk';
-   else if(model.type==='choir'||model.type==='choirmaster')anim=model.state==='hurt'?'hurt':model.state==='down'?'down':model.type==='choirmaster'&&model.state==='telegraph'?'ring':'sing';
-   else if(model.type==='lecturer'||model.type==='interventionist')anim=model.state==='hurt'?'hurt':model.state==='down'?'down':model.state==='slam'&&model.type==='interventionist'?'slam':model.state==='hold'?'hold':model.state==='telegraph'?'grab':'walk';
-   else if(model.type==='wingman')anim=model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':model.state==='hurt'?'hurt':'hover';
-   else anim=model.state==='hurt'?'hurt':model.state==='down'?'knockdown':model.state==='telegraph'||model.state==='rush'?'attack':model.state==='approach'?'walk':'idle';
-   if(!this.anims.exists(key+'_'+anim))anim=this.metas[key].anims[0].name.slice(key.length+1);
-   view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);if(model.type==='interventionist')view.sprite.setTint(model.phase>=2?0xffc4a8:0xffffff);view.sync();
+   let anim=isBob?(model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle'):
+    model.state==='hurt'?'hurt':model.state==='down'?'knockdown':model.state==='telegraph'||model.state==='rush'?'attack':model.state==='approach'?'walk':'idle';
+   if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key];anim=model.type==='wingman'?(model.state==='split'?'split':model.state==='telegraph'?'telegraph':model.state==='recover'?'land':'hover'):model.type==='interventionist'?(model.state==='telegraph'?'grab':'walk'):'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
+   view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
   }
   for(const [m,v]of this.views)if(!live.has(m)){v.destroy();this.views.delete(m);}
   if(w.dad){if(!this.dadView)this.dadView=this.makeView(w.dad,'dad',.52);Object.assign(this.dadView,{x:w.dad.x,y:w.dad.y,z:0});this.dadView.play(w.dad.state,1,false);this.dadView.sync();}
@@ -89,6 +82,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='voice'){say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}
   if(type==='fire')sfx.fire();if(type==='pickup')sfx.pickup();if(type==='hurt')sfx.hurt();if(type==='shield')sfx.clang();
   if(type==='boss')playTrack(`boss${this.stageNo}`);if(type==='clear')sfx.levelClear();
+  if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
   if(type==='dad')sfx.dadHorn();
   if(type==='hit'||type==='ko'){sfx.hit(type==='ko');for(let i=0;i<(type==='ko'?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}

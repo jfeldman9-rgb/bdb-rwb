@@ -8,7 +8,9 @@ import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
 import { normalizeSave, clearStage } from './save.js';
-import { clamp, LANE_TOP, LANE_BOT } from './config.js';
+import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W } from './config.js';
+import { updateCamera } from './camera.js';
+import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
@@ -25,7 +27,7 @@ export class Campaign {
   loadStage(stage) {
     this.stageNo = stage; this.def = resolveStage(stage); this.bob = new Bob({ difficulty: this.difficultyKey });
     this.zoneIndex = 0; this.waveIndex = 0; this.locked = false; this.enemies = []; this.projectiles = []; this.hostile = []; this.pickups = [];
-    this.bounds = { l: 0, r: 5200 }; this.camX = 0; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
+    this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
     this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
     this.shieldHintShown = false; this.papiHintShown = false;
     this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
@@ -40,14 +42,18 @@ export class Campaign {
     if(tutorial)this.seenTutorials.add(teachKey);
   }
   enterZone() {
-    const zone=this.def.zones[this.zoneIndex]; this.locked=true; this.bounds={l:zone.l,r:zone.r}; this.camX=zone.l;
+    const zone=this.def.zones[this.zoneIndex]; this.locked=true;
+    this.camX=zone.l; this.camMax=Math.max(this.camMax||0,zone.l);
+    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,zone,snap:true});
     if (zone.dad) unlockDad(this.dadCall);
     if (zone.shakes) this.dropTrio(this.bob.x+40);
     this.spawnWave();
   }
   startBoss(phase = 1) {
-    const z=this.def.boss; this.bossActive=true; this.locked=true; this.bounds={l:z.l,r:z.r}; this.camX=z.l;
+    const z=this.def.boss; this.bossActive=true; this.locked=true;
+    this.camX=z.l; this.camMax=Math.max(this.camMax||0,z.l);
     this.checkpoint={zone:3,x:z.l+200,phase}; this.bob.x=Math.max(this.bob.x,z.l+120);
+    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:true,boss:z,snap:true});
     if (z.type==='wingman') { this.wingmen=new Wingmen(); this.enemies=this.wingmen.spawn(z.l+880,phase); }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
@@ -107,7 +113,9 @@ export class Campaign {
     this.stats.deaths++; const cp={...this.checkpoint};
     this.bob=new Bob({x:cp.x,difficulty:this.difficultyKey});this.bob.inv=2;
     this.enemies=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.shieldHintShown=false;
-    this.zoneIndex=cp.zone;this.waveIndex=0;this.locked=false;this.bounds={l:0,r:5200};this.bossActive=false;
+    this.zoneIndex=cp.zone;this.waveIndex=0;this.locked=false;this.bossActive=false;
+    this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=Math.max(this.camMax||0,this.camX);
+    updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
     if(cp.zone===3)this.startBoss(cp.phase);
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
   }
@@ -130,8 +138,10 @@ export class Campaign {
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
+    const fightZone=this.zoneIndex<3?this.def.zones[this.zoneIndex]:null;
+    const boss=this.bossActive?this.def.boss:null;
+    updateCamera(this,dt,{bobX:this.bob.x,facing:this.bob.facing,locked:this.locked,zone:this.locked&&!this.bossActive?fightZone:null,boss});
     if(!this.locked){
-      this.camX=clamp(this.bob.x-400,0,3920);
       if(this.zoneIndex<3&&this.bob.x>=this.def.zones[this.zoneIndex].at)this.enterZone();
       else if(this.zoneIndex===3&&this.bob.x>=this.def.boss.at)this.startBoss();
     }
@@ -160,7 +170,7 @@ export class Campaign {
     } else if(this.locked&&!this.enemies.some(e=>e.alive)){
       const zone=this.def.zones[this.zoneIndex];this.waveIndex++;
       if(this.waveIndex<zone.waves.length)this.spawnWave();
-      else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.bounds={l:0,r:5200};this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.bob.hp=this.bob.maxHp;this.banner(STORY.checkpoint);}
+      else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.bob.hp=this.bob.maxHp;this.banner(STORY.checkpoint);this.emit('go',{plate:plateKeyForCam(this.camX,this.def)});updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});}
     }
   }
 }
