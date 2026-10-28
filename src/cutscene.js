@@ -21,6 +21,8 @@ export const STAGE_CLIPS = Object.freeze({
 export const EVENT_CLIPS = STAGE_CLIPS;
 export const SKIP_ACTIONS = Object.freeze(new Set(['fire', 'jump', 'dash', 'papi', 'dad', 'start', 'pause']));
 export const START_MS = 4000, STALL_MS = 3000, MAX_CLIP_MS = 30000, TICK_MS = 250, GUARD_MS = 450, VOLUME = 0.85;
+/** Story/stage clips. Must stay strictly above every file in STAGE_CLIPS (intro_v2 is the long one). */
+export const STORY_MAX_MS = 90000;
 export const SEEN_KEY = 'bdb-cutscenes-seen';
 
 const on = (q, k) => !!q?.has?.(k) && q.get(k) !== '0';
@@ -51,7 +53,7 @@ export class CutscenePlayer {
     this.root = root; this.base = o.base ?? CLIP_BASE;
     this.startMs = o.startMs ?? START_MS; this.stallMs = o.stallMs ?? STALL_MS; this.maxMs = o.maxMs ?? MAX_CLIP_MS;
     this.tickMs = o.tickMs ?? TICK_MS; this.guardMs = o.guardMs ?? GUARD_MS; this.volume = o.volume ?? VOLUME;
-    // Wall-clock cap only for callers that pass maxMs (Dad: 11 s). Intro/stage clips keep the old behaviour.
+    // Finite maxMs is a per-clip wall clock (Dad passes 11s; story passes STORY_MAX_MS). Non-finite leaves the duration guard.
     this.capMs = Number.isFinite(o.maxMs) ? o.maxMs : null;
     this.srcOf = typeof o.src === 'function' ? o.src : null;
     this.video = null; this.run = null; this.blessed = false; this.log = [];

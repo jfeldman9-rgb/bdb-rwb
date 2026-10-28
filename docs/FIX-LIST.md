@@ -2,8 +2,30 @@
 
 **Date:** 2026-10-28 (America/Phoenix)  
 **Sources merged:** Argon (`docs/ARGON-REVIEW.md`, reviewed on `/workspace/bdb-argon` snapshot), Claude Opus 5.5 (`docs/REVIEW-CLAUDE.md`, score 6/10), Muse Wonder Full feel gate (`docs/REVIEW-MUSE.md`, score 5/10).  
-**Kimi:** section reserved below — not run this pass.  
+**Kimi:** merged below (score 6/10, `docs/REVIEW-KIMI.md`, reviewed `e99c7b0`).  
 **Commit reviewed:** `51b6de6` (Paint Yetti roles into KTX atlases).
+
+## Pass 1 status (Grok 4.7, branch `bdb-pass1-grok`)
+
+| ID | Status |
+|---|---|
+| **P0-1** | **Done.** Story player uses `STORY_MAX_MS` (90s), above every `STAGE_CLIPS` file. `tests/cutscene-cap.test.mjs` checks each clip. |
+| **P0-2** | **Done.** Nightmare: third death in a zone restores Dad (or a shake trio before he arrives). At most two ranged Yettis share a lane. Bot clears S2 zone 5 (~56s, 2 deaths) and S3 zone 5 (~91s, 5 deaths). `vy` stays 0. |
+| **P0-3** | **Done.** Dead enemies keep their view for 0.5s, play knockdown, then fade. `tests/corpses.test.mjs`. |
+| **P0-4** | **Done.** `GameScene` owns `FX`: muzzle flash, visual recoil, eggplant splat, lane-step dust. Hit-stop uses `HITSTOP` tiers (light stays 4 frames). Presses during the freeze are latched. `setBloom`, `setBackdropLit`, and `runId` exist so a later governor install does not throw. `tests/feel.test.mjs`. |
+| **P0-5** | **Done.** Portrait phones (`orientation:portrait`, `hover:none`, `pointer:coarse`) keep `#rotate` up during play, same as RWB. Gameplay pauses on `rotate` only when that block flips. The letterbox escape hint is gone. `#rotate-start` stays for the title and hides once `.playing`. |
+| **K1** | **Done.** A stage change does not drain events on the dying scene. `create` handles them after `syncViews`, so the kidnap clip pauses stage 2. `tests/stage-cutscene.test.mjs`. |
+| **P1-3** | **Done.** `narrationYields`: a line landing on narration waits 2.5s, anything else yields. Installed before `handleEvents`. Cory and Yetti taunts roll once a second. |
+| **P1-4** | **Done.** Registered lines now have an emit path (intros, open, produce, laugh, hurts, Dad call/done, Papi wait/chorus, choir, turn-back, Claudia, wingman defeat, victory). Wording unchanged. |
+| **P1-6** | **Done.** Story and victory clips duck music and hold later voice events until the clip's done callback. A synchronous skip releases the hold before the next event. |
+| **P1-1** | **Done** with P0-4. Hit-stop uses the `HITSTOP` tiers. Presses during the freeze are latched. |
+| **P1-2** | **Done** with P0-4. Fire carries a muzzle point. The view flashes, recoils, and splats. `vy` stays 0. |
+| **P1-7** | **Done** for the governor. `installGovernor` runs from boot and a software-renderer downgrade uses the scene fx hooks. `recovery.js` is still unwired. |
+| **P1-9** | **Done** with P0-4. Lane changes, dashes, lands, and jumps kick dust and the existing step/land/jump sounds. |
+| **P1-14** | **Done.** Victory destroys the cage and plays `claudia_freed`. The retired produce line is gone from `#victory`. |
+| **P1-20** | **Done.** Private origin only. A token user and a missing `.git` suffix still count as `jfeldman9-rgb/bdb-rwb`. |
+| **K2** | **Done.** `installPressOwnership` is on the game input. A story skip consumes the pause press Input already recorded. |
+| **P1-5, P1-8, P1-10–P1-13, P1-15–P1-19, P2** | Deferred. |
 
 ## Locked rules (do not put conflicting items on this list)
 - Eggplant fires straight (`vy=0`); **no aiming**.
@@ -103,5 +125,50 @@
 
 ---
 
-## Kimi (later)
-_Reserved. When Kimi reviews `bdb-scroll`, append findings here with source `Kimi`, dedupe against IDs above, and bump priority only if new evidence warrants._
+## Kimi (bdb-scroll @ e99c7b0, reviewed 2026-10-28)
+
+Full review: `docs/REVIEW-KIMI.md` (score **6/10**). Read-only pass over all of `src/` + `index.html`; tests run: 119/120 (the one red is P1-20, reproduced).
+
+### Confirms existing items (with fresh evidence)
+| ID | Verdict | New evidence from this pass |
+|---|---|---|
+| **P0-1** | Confirmed | `cutscene-hooks.js:3` (`maxMs:30000`) + `cutscene.js:56,200-208`; the `cutscene.js:55` comment claiming intro clips keep old behaviour is stale. Fix: pass `maxMs: Infinity` so the duration-aware guard engages. |
+| **P0-2** | Confirmed | Math verified: guard = 48 hp × `hpScale:2.2` ≈ 106 hp vs 12×0.8 = 9.6 dmg eggplant ⇒ 12 hits each (`yettis.js:5`, `stage2/3-def.js:2`, `eggplant.js:1`); ranged overlap unbounded via `campaign.js` `this.hostile`. |
+| **P0-3** | Confirmed | `game-scene.js:71,80` — view destroyed the frame `alive=false`; `roleAnim`'s `dead→knockdown` mapping (`game-scene.js:21`) is unreachable. |
+| **P0-4** | Confirmed | `fx.js` has zero importers; sim hardcodes `hitStop=4/60` (`campaign.js:121`) so the `HITSTOP` tier table (`config.js:10`) is also dead. |
+| **P0-5** | Confirmed | `index.html:46` — `body:not(.playing)` qualifier suppresses the rotate overlay for all of gameplay. |
+| **P1-1** | Confirmed | Same hardcoded 4/60 hit-stop (`campaign.js:121`); blocked on P0-4. |
+| **P1-2** | Confirmed | `emit('fire')` carries no muzzle payload (`campaign.js:205`, `game-scene.js:112`) — add `{x,y,dir}` for recoil/flash/splat. |
+| **P1-3** | Confirmed | `campaign.js:42-44` emits `nar_chN` + where-bark same frame (narration dies instantly); `setVoicePolicy` (`audio.js:418`) never called. New: `barkYettiTaunt` is 12%/frame after a 7 s cooldown (`barks.js:56-60`) ⇒ taunt ~every 7 s of combat. |
+| **P1-4** | Confirmed | ~25 of 49 registered lines have no emit path (`bdb_open`, `bdb_produce`, `bdb_laugh`, `claudia_*`, `dad_call/done`, `bob_hurt_*`, `papi_chorus`, `wingman_defeat`, `nar_victory`, …). |
+| **P1-5** | Confirmed | `dad-call-cutscene.js:76-78` builds a separate un-blessed video element; `scene.cutscene.press` (line 75) has no caller. |
+| **P1-6** | Confirmed | `game-scene.js:117` handles `cutscene` without touching music; `music.js` `MusicDirector` imported nowhere; music + `nar_kidnap` VO + video audio stack the same frame. |
+| **P1-7** | Confirmed + escalated evidence | Not only unwired (`main.js:50-58`): `quality-governor.js:81-84` touches `st.fx`/`st.setBloom`/`st.setBackdropLit`/`st.runId`, none of which exist on `GameScene` — installing it today throws on first downgrade. Land P0-4 first. `recovery.js` (freeze-guard card) also fully unwired. |
+| **P1-10** | Confirmed | `takeCall`'s `why` (`dad-call.js:30`) discarded at `campaign.js:150`. |
+| **P1-11** | Confirmed | Kills resolve at activation (`campaign.js:141`), runners arrive ~0.5 s later (`papacito-fx.js:9`). |
+| **P1-12** | Partially mitigated — downgrade candidate | `summonAdds` tops up to a fixed count (`campaign.js:100-103`), so timer+telegraph+roar summons can't overrun; now cosmetic. |
+| **P1-13** | Confirmed | Only the dad call uses `game.pause()` (`dad-call-cutscene.js:71-73`); intro/victory render at full rate behind full-screen video. |
+| **P1-14** | Confirmed | `"Legally, it's produce."` still at `index.html:74`. (`claudia_freed` line does not exist in `voice-lines.js` yet.) |
+| **P1-15** | Confirmed | `main.js:47` takes only `start`/`fire`; `PAD_MAP` sends Start to `pause` (`input.js:7`). |
+| **P1-16** | Confirmed (clamp half) | `dad.js:20` has no upper clamp — `standX = bob.x+150` lands off-screen near the right wall. Doc's "second swat" contradicts the packed single-swat atlas; treat as docs bug, not code. |
+| **P1-17** | Confirmed | `#top-buttons button` ≈ 30 px tall (`index.html:33`); `.tb` cluster does meet 44 px. |
+| **P1-18** | Confirmed | Slab at `hud.js:34`; permanent stage title at `parallax.js:37-39`. |
+| **P1-20** | Confirmed | Reproduced: `tests/boot.test.mjs:32` "git has no remotes" fails; suite otherwise green. |
+| **P2-1** | Already satisfied — close | `audio:{noAudio:true}` (`main.js:52`) disables Phaser's audio stack entirely. |
+| **P2-2** | Confirmed | `audio.js:221-222` computes `NaN` loop length (no track defines loop points); masked by `el.loop=true`. |
+| **P2-5** | Confirmed | All seven `MUSIC` entries stream the same `bdb-rise.mp3` (`audio.js:196`). |
+| **P2-10** | Root cause found | `roleAnim` has no `roar`/`slam`/`recover` case (`game-scene.js:18-37`) — roar renders as idle/sing; silent fallback (`game-scene.js:76-77`) masks it. |
+| **P2-12** | Confirmed | `game-scene.js:62-63` preload/release ~49 clips per stage; `stageLines` (`voice-lines.js:25`) includes stages' lines the current one never plays. |
+
+### New items from Kimi (not previously listed)
+| ID | Priority | Item | Where |
+|---|---|---|---|
+| **K1** | P1 | Stage-transition cutscenes lose their pause: `kidnap` is emitted inside `loadStage` (`campaign.js:43`), `handleEvents` runs before the restart check (`game-scene.js:129-130`), so the new scene starts unpaused and the stage-2 sim runs live under the video; arrows/WASD steer Bob into zone 1 behind it. Fix: deliver queued events to the restarted scene (drain once in `create`). | `campaign.js:43`, `game-scene.js:129-130` |
+| **K2** | P2 | Escape/Enter skips a story clip AND toggles manual pause underneath (handler only `preventDefault`s; Input registered first). `press-ownership.js` solves this and is never installed. | `cutscene-hooks.js:4`, `game-scene.js:126` |
+| **K3** | P2 | Respawn keeps stale `camMax`, flooring the camera past `checkpoint.x`; Bob is clamped ~200 px forward into the zone instead of walking up. Fix: `camMax = min(camMax, camX)` on respawn. | `campaign.js:170`, `camera.js:36`, `bob.js:70` |
+| **K4** | P2 | Victory text always claims "Nightmare unlocked", including post-`beaten` replays. | `game-scene.js:132` |
+| **K5** | P2 | `setRain` never called — stage-2 rain ambience is dead code. | `audio.js:359` |
+| **K6** | P2 | Per-frame DOM writes (2× `getElementById` + `textContent`) and 5 filtered-array allocations per frame on the hot path — iPhone GC/layout pressure. | `hud.js:38`, `game-scene.js:71,93-105` |
+| **K7** | P2 | `Fighter.play` `console.warn`s every frame for a missing anim (60/s log spam on iPhone Safari). | `fighter.js:16` |
+
+**Priority movement:** P1-7 keeps its slot but is now known-blocked on P0-4 (governor references the missing `st.fx`); P1-12 downgrade candidate (see above); P2-1 close as done. All other ranks stand — no bump without bot/device evidence.

@@ -1,8 +1,9 @@
-import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled } from './cutscene.js';
+import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
 import { KEYS } from './input.js';
-export function createStoryPlayer(query, root=globalThis){
- const player=new CutscenePlayer(root,{maxMs:30000});let handle=null;
- const key=e=>{const action=KEYS[e.code];if(handle&&SKIP_ACTIONS.has(action)){e.preventDefault();handle.skip('key',action==='start'||action==='pause');}};
+import { consumePress } from './press-ownership.js';
+export function createStoryPlayer(query, root=globalThis, input=null){
+ const player=new CutscenePlayer(root,{maxMs:STORY_MAX_MS});let handle=null;
+ const key=e=>{const action=KEYS[e.code];if(handle&&SKIP_ACTIONS.has(action)){if(input)consumePress(input,action);else e.preventDefault();handle.skip('key',action==='start'||action==='pause');}};
  root.addEventListener?.('keydown',key);
  return { player, bless:()=>player.bless(), play(key,done){
    if(!cutscenesEnabled(query,root.navigator)||!STAGE_CLIPS[key]){done();return;}

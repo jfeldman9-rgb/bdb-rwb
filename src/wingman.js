@@ -78,6 +78,8 @@ export class Wingmen {
     } else this.softlockTime=0;
     if (ready && !this.ready) world.banner('PAPACITO FINISHER READY');
     this.ready=ready;
-    this.complete = this.phase===3 && world.enemies.filter(e=>e.type==='wingman').every(e=>!e.alive);
+    const defeated = this.phase===3 && world.enemies.filter(e=>e.type==='wingman').every(e=>!e.alive);
+    if (defeated && !this.complete) world.emit('voice', 'wingman_defeat');
+    this.complete = defeated;
   }
 }
