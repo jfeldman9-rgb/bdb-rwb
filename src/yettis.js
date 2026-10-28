@@ -147,7 +147,7 @@ export class Yetti {
             if (this.type === 'choirmaster') world.summonAdds?.(BOSS_ADDS.choirmaster[this.phase - 1]);
           } else if (Math.abs(b.x-this.x) < 95 && Math.abs(b.y-this.attackY) < 35 && b.z < 65) {
             if (['lecturer','interventionist'].includes(this.type) && b.grab(this)) { this.state = 'hold'; world.emit('voice','lecturer_intervention'); return; }
-            world.hurtBob();
+            world.hurtBob(false, this.x);
           } else if (this.type === 'interventionist' && this.phase >= 2) {
             // Phase III slams both ways, so backing off behind him is no longer safe.
             for (const dir of this.phase >= 3 ? [this.rushDir, -this.rushDir] : [this.rushDir]) world.snowball(this.x, this.attackY, dir, 'shockwave');
@@ -162,7 +162,7 @@ export class Yetti {
     }
     if (this.state === 'rush') {
       this.x += this.rushDir * 430 * pace * dt; this.timer -= dt;
-      if (Math.abs(b.x-this.x)<70 && Math.abs(b.y-this.y)<34 && b.z<70) world.hurtBob(true);
+      if (Math.abs(b.x-this.x)<70 && Math.abs(b.y-this.y)<34 && b.z<70) world.hurtBob(true, this.x);
       this.x = clamp(this.x, world.bounds.l+55, world.bounds.r-55);
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = this.boss ? 1 : 2; }
       return;
