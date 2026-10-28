@@ -129,7 +129,7 @@ Fresh-clone bot-sim after, fresh stage starts then the continued campaign:
 | Nightmare S1 / S2 / S3 | 252.7/7, 280.6/8, 286.1/7 | 229.8/5, 304.0/9, 285.6/9 | 235.5/6, 285.7/9, 283.1/9 |
 | Nightmare campaign | 815.2 s / 21 (252.7 / 270.2 / 284.8) | 856.7 s / 25 (229.8 / 319.9 / 299.5) | 856.5 s / 27 (235.5 / 291.5 / 322.1) |
 
-Nightmare stage 3 fresh starts moved from 326.6/10, 326.1/10, 328.4/11 to 286.1/7, 285.6/9, 283.1/9. All three sit in 280–310 s. The continued 120 Hz campaign's stage 3 is 322.1 s (12 deaths against 9 on a fresh start). That run still has Dad and Papacito charges from the earlier chapters. Adventure stage 3 at 60 Hz fresh starts moved from 225.4 s / 5 deaths to 209.0 s / 3. Every Adventure fresh stage stays inside 140–240 s.
+Nightmare stage 3 fresh starts moved from 326.6/10, 326.1/10, 328.4/11 to 286.1/7, 285.6/9, 283.1/9. All three sit in 280–310 s. The continued 120 Hz campaign's stage 3 is 322.1 s (12 deaths against 9 on a fresh start). Dad's three swats are already spent by then, and Papacito charges are 0. Restoring one Dad charge on that same run brings stage 3 back to 283.1 s, matching a fresh start. Adventure stage 3 at 60 Hz fresh starts moved from 225.4 s / 5 deaths to 209.0 s / 3. Every Adventure fresh stage stays inside 140–240 s.
 
 Choirmaster HP stays 1140. The eggplant still fires straight (`vy` 0). `CAM_LEAD` is still 0.28. There is still no shop. `assets/cutscenes/intro_v3.mp4` is untouched.
 
