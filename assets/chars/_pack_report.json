@@ -3,7 +3,7 @@
   "disk_webp_bytes": 3220488,
   "disk_webp_MiB": 3.071,
   "all_chars_gpu_RGBA_MiB": 35.312,
-  "stage1_resident_gpu_RGBA_MiB": 31.831,
+  "stage1_resident_gpu_RGBA_MiB": 33.482,
   "pages": 14,
   "compressed": {
     "formats": {
@@ -22,12 +22,12 @@
       "yetti_lecturer",
       "interventionist",
       "dad",
-      "papi_runners"
+      "papi_stampede"
     ],
     "stage1_gpu_MiB": {
-      "rgba_webp": 31.831,
-      "astc": 7.958,
-      "etc2": 7.958
+      "rgba_webp": 33.482,
+      "astc": 8.370,
+      "etc2": 8.370
     },
     "all_chars_gpu_MiB": {
       "rgba_webp": 35.312,

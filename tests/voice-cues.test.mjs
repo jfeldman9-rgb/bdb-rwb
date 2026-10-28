@@ -22,6 +22,10 @@ test('wired lines keep their locked wording', () => {
   assert.equal(LINES.bob_papiwait_01[1], 'Need the ladies!');
   assert.equal(LINES.bob_papi_01[1], 'Not now, ladies!');
   assert.equal(LINES.papi_chorus[1], 'Papi! Papi! PAPI!');
+  assert.equal(LINES.papi_crowd_01[1], 'We love you Papacito! Pick me!');
+  assert.equal(LINES.papi_crowd_02[1], 'We love you Papacito! Pick me!');
+  assert.equal(LINES.papi_crowd_01[0], 'Crowd');
+  assert.equal(LINES.papi_crowd_02[0], 'Crowd');
   assert.equal(LINES.yetti_turnback[1], 'Turn back Papi!');
   assert.equal(LINES.choir_serious[1], 'Papi, be serious.');
   assert.equal(LINES.wingman_defeat[1], "We'll… reform.");
@@ -54,6 +58,10 @@ test('every locked quote is pinned in the captions and the voice manifest', asyn
     assert.equal(LINES[id][1], text);
     assert.equal(files.get(id), text);
   }
+  for (const id of ['papi_crowd_01', 'papi_crowd_02']) {
+    assert.equal(LINES[id][1], 'We love you Papacito! Pick me!');
+    assert.equal(files.get(id), 'We love you Papacito! Pick me!');
+  }
   const papacito = "Hold on Claudia! Papacito is coming! It's eggplant time!";
   const texts = [...Object.values(LINES).map(line => line[1]), ...files.values()];
   for (const text of texts) {
@@ -70,8 +78,8 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   assert.equal(voices(early).includes('bdb_open'), false);
   early.update(0.2, {});
   assert.ok(voices(early).includes('bdb_open'));
-  early.update(4, {});
-  assert.ok(voices(early).includes('nar_intro_01'));
+  early.update(20, {});
+  assert.equal(voices(early).some((id) => /^nar_intro_/.test(id)), false);
 
   const w = new Campaign();
   const e = w.spawnYetti('walker', 500, 630);
@@ -82,11 +90,16 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   w.events = [];
   w.hit(e, 1, 1, true);
   assert.equal(voices(w).includes('bdb_produce'), false);
-  e.hp = 1;
-  w.elapsed = 10;
-  w.hit(e, 30, 1, false);
+  w.elapsed = 30;
+  w.events = [];
+  for (let i = 0; i < 4; i++) w.recordKo({ recorded: false, boss: false, type: 'walker', x: 400, y: 630 }, 'bob');
   assert.ok(voices(w).includes('bdb_laugh'));
 
+  w.elapsed = 50;
+  w.bob.inv = 0;
+  w.events = [];
+  w.hurtBob();
+  assert.equal(voices(w).some((id) => id.startsWith('bob_hurt_')), false);
   w.bob.inv = 0;
   w.events = [];
   w.hurtBob();
@@ -96,12 +109,14 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   assert.match(w.message, /ZONE 3/);
   assert.equal(voices(w).includes('bob_dadwait_01'), false);
 
+  w.elapsed = 70;
   w.events = [];
   w.spawnYetti('choir', 900, 630);
   assert.ok(voices(w).includes('choir_serious'));
   const turned = new Yetti('walker', 900, 630);
   turned.facing = 1;
   w.bob.x = 200;
+  w.elapsed = 110;
   w.events = [];
   turned.update(1 / 60, w);
   assert.ok(voices(w).includes('yetti_turnback'));
@@ -149,9 +164,25 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   crowd.papi.charges = 1;
   crowd.events = [];
   assert.equal(crowd.usePapi(), true);
-  assert.ok(voices(crowd).some(id => id.startsWith('bob_papacito_')));
-  crowd.update(1.5, {});
-  assert.ok(voices(crowd).includes('papi_chorus'));
+  assert.equal(voices(crowd).some(id => id.startsWith('bob_papacito_')), false);
+  assert.ok(voices(crowd).includes('papi_crowd_01'));
+  assert.match(crowd.message, /PAPACITO STAMPEDE/);
+  crowd.papiTime = 0;
+  crowd.papiPending = null;
+  crowd.papi.charges = 1;
+  crowd.spawnYetti('walker', 640, 630);
+  crowd.events = [];
+  assert.equal(crowd.usePapi(), true);
+  assert.ok(voices(crowd).includes('papi_crowd_02'));
+  const fin = new Campaign({ stage: 3 });
+  fin.wingmen = { phase: 3 };
+  fin.enemies = [{ boss: true, alive: true, hp: 1, x: 400, y: 630, type: 'wingman' }];
+  fin.papi.charges = 1;
+  fin.events = [];
+  assert.equal(fin.usePapi(), true);
+  assert.ok(voices(fin).some(id => id.startsWith('bob_papacito_')));
+  assert.ok(voices(fin).some(id => id.startsWith('papi_crowd_')));
+  assert.match(fin.message, /COUNCIL ADJOURNED/);
   const quiet = new Campaign({ stage: 2 });
   quiet.enemies = [];
   quiet.papi.charges = 1;

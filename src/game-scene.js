@@ -14,7 +14,7 @@ import { stageLines, LINES } from './voice-lines.js';
 import { showStuck } from './recovery.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
-import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cutscene.js';
+import { playDadCall, abortDadCall, installDadGestureBless, dadCallDubbed } from './dad-call-cutscene.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
@@ -243,20 +243,21 @@ export class GameScene extends Phaser.Scene {
   ev.length=0;
   const bossTrack=bossTrackForBatch(this.stageNo,batch);
   for(const {type,data}of batch){
-  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else{say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
+  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else if(!dadCallDubbed(data,this.cutscene)){say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
   if(type==='shield')sfx.clang(data?.chips||1);
   if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear')sfx.levelClear();
   if(type==='go')this.hud?.flashGo?.(data?.plate);
-  if(type==='papi'){this.papiFX.start();sfx.papi();}
+  if(type==='papi'){this.papiFX.start();sfx.stampede();}
   if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}
   if(type==='cutscene')this.startHeldClip(data,held=>this.playHeld(held));
   if(type==='victory')this.presentVictory();
   if(type==='dad')sfx.dadHorn();
   if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);this.fx?.impact('finisher',data.x,data.y-40,-1);sfx.hit(true);
    for(let i=0;i<18;i++)this.particles.push({x:data.x-85+Math.random()*60-30,y:data.y-12,vx:Math.random()*360-180,vy:-80-Math.random()*240,life:.35+Math.random()*.35,color:i%3?0xfff3b0:0xffffff});}
+  if(type==='ko'&&data?.source==='papi'){this.fx?.dust.emitParticleAt(data.x,data.y,14);for(let i=0;i<6;i++)this.particles.push({x:data.x,y:data.y-90,vx:Math.random()*220-110,vy:-150-Math.random()*180,life:.45+Math.random()*.35,color:i%2?0xfff6c2:0xffffff});}
   if(type==='hit'||type==='ko'){const impact=killImpact(type,data);if(impact){sfx.hit(impact.heavy);const kind=data?.kind||(impact.heavy?'heavy':'light');if(impact.kick)this.fx?.impact(kind,data.x,data.y-90,data.dir||1);if(impact.splat)this.fx?.splat(data.x,data.y-70);for(let i=0;i<(impact.heavy?15:5);i++)this.particles.push({x:data.x,y:data.y-100,vx:Math.random()*240-120,vy:-Math.random()*180,life:.5+Math.random()*.5,color:type==='ko'?0xffe6cb:0xc28aff});}}
  }}
  update(time,delta){

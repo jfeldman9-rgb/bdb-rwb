@@ -171,6 +171,13 @@ export const sfx = {
   gameOver() { [440, 415, 392, 370, 349, 330, 220].forEach((n, i) => tone({ f0: n, dur: 0.3, delay: i * 0.22, vol: 0.22, type: 'triangle' })); },
   // 1.1 recipes
   papi() { tone({ f0: 180, f1: 880, dur: 0.35, vol: 0.22, type: 'sawtooth' }); noise({ f0: 3000, f1: 400, dur: 0.4, vol: 0.2, filter: 'highpass' }); tone({ f0: 90, f1: 40, dur: 0.4, vol: 0.35, type: 'sine' }); duck(0.3, 0.1, 1.2); },
+  stampede() {
+    tone({ f0: 392, f1: 523, dur: 0.12, vol: 0.2, type: 'triangle' });
+    tone({ f0: 659, dur: 0.16, delay: 0.1, vol: 0.16, type: 'triangle' });
+    tone({ f0: 48, f1: 36, dur: 2.3, vol: 0.3, type: 'sine' });
+    noise({ f0: 140, f1: 70, dur: 2.3, vol: 0.16, attack: 0.04 });
+    for (let i = 0; i < 28; i++) noise({ f0: 980, f1: 220, dur: 0.045, vol: 0.07, delay: i / 12, filter: 'bandpass', q: 0.8 });
+  },
   dadHorn() { tone({ f0: 220, f1: 330, dur: 0.22, vol: 0.28, type: 'sawtooth' }); tone({ f0: 330, f1: 440, dur: 0.24, delay: 0.18, vol: 0.24, type: 'sawtooth' }); },
   // power-ups
   powerUp() { [784, 988, 1175, 1568].forEach((n, i) => tone({ f0: n, dur: 0.12, delay: i * 0.06, vol: 0.18, type: 'triangle' })); },
@@ -434,6 +441,7 @@ export function presentStage(scene) {
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
 const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
+  if (/^papi_crowd_/.test(id || '')) return 'interrupt';
   return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
 }
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';

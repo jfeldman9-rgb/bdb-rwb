@@ -5,7 +5,9 @@ export function queueCharJson(scene){for(const key of ALL_CHARS)scene.load.json(
 // GPU-compressed pages (tools/compress-ktx.py): Phaser's load.texture takes the first format the
 // renderer supports in key order, so iPhone gets ASTC, older GLES3 gets ETC2, everything else the webp.
 export function charPageSources(m,p){const dir='assets/chars/',atlasURL=`${dir}${p}.json`,src={};
-  for(const fmt of ['ASTC','ETC'])if(m.gpu?.[fmt])src[fmt]={type:'KTX',textureURL:`${dir}${p}.${m.gpu[fmt]}`,atlasURL};
+  // The stampede KTX pages still hold the hot-pink matte. The webp is keyed, so this page stays on IMG.
+  const keyed=String(p).startsWith('papi_stampede');
+  if(!keyed)for(const fmt of ['ASTC','ETC'])if(m.gpu?.[fmt])src[fmt]={type:'KTX',textureURL:`${dir}${p}.${m.gpu[fmt]}`,atlasURL};
   src.IMG={textureURL:`${dir}${p}.webp`,atlasURL};return src;}
 export function queueCharPages(scene,keys=CHARS){for(const key of keys){const m=scene.cache.json.get(key+'.A');for(const p of m.pages)if(!scene.textures.exists(p)){
   if(m.gpu)scene.load.texture(p,charPageSources(m,p));else scene.load.atlas(p,`assets/chars/${p}.webp`,`assets/chars/${p}.json`);}}}

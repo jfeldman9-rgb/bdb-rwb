@@ -45,7 +45,7 @@ test('stage 2 narration waits out the kidnap clip instead of being cut off', () 
   finish();
   assert.equal(scene.pauseReasons.has('cutscene'), false);
   assert.ok(scene.captions.some(line => line.includes('Chapter Two')));
-  assert.ok(scene.captions.includes('Heaven, it turns out, has opinions. And Yettis. With wings.'));
+  assert.equal(scene.captions.includes('Heaven, it turns out, has opinions. And Yettis. With wings.'), false);
 });
 
 test('a skipped clip that finishes synchronously does not swallow the next line', () => {
