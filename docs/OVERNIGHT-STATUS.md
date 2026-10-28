@@ -42,3 +42,11 @@ Pass 1: Grok 4.7 (Cursor) did it, on `bdb-pass1-grok` (draft PR into `bdb-scroll
 Done: P0-1 through P0-5, K1, K2, P1-1, P1-2, P1-3, P1-4, P1-6, P1-7 (governor only), P1-9, P1-14, P1-20.
 
 Deferred: P1-5, P1-8, P1-10 through P1-13, P1-15 through P1-19, the `recovery.js` card, and P2. No deploy.
+
+## Pass 2: Muse Spark (Cursor)
+
+Branch `cursor/bdb-pass2-d377` (stands in for the requested `bdb-pass2` name; branch policy requires the `cursor/` prefix), draft PR #2 into `bdb-pass1-grok`. No merge, no deploy. `npm test` 168/168 green (was 143). Bot band holds at 30/60/120 Hz (e.g. 60 Hz stages 166/190/226 s).
+
+Done: P1-5 (Dad clip keys + iOS bless), P1-8 (hurt knockback slide), P1-10 (refusal banners keep charge numbers), P1-11 (Papi wipe lands with runners), P1-12 (choirmaster single summon source; also fixed its volley skip excluding every band), P1-13 (Phaser parked behind story video), P1-15 (pad Start begins, Enter pauses), P1-16 (Dad stand clamp; 2nd swat is a docs bug), P1-17 (44pt pause/mute + safe-area), P1-18 (translucent HUD band, per-Wingman bars, street label dropped), P1-19 scoped (zone-4 stagger only; zone heals softened on Nightmare only — wider cuts pushed stage 3 to 263 s at 120 Hz), `recovery.js` wired (resume cleanup + stage-aware reload). Kimi F1 (voice queue follows sounding-line duration; test fails on old code), F2 (pre-gameplay downgrade keeps floor), F3 (bosses pin lanes). Gaps G1–G4, G6 closed (G1 voice-queue, G2 corpse integration, G3 breath mercy, G4 boss-lane, G6 pre-gameplay governor).
+
+Deferred: P2 (untouched), Kimi F4–F8, G5 (browser-only). Locked rules re-verified intact; `assets/cutscenes/intro_v3.mp4` untouched.
