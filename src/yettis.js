@@ -48,14 +48,17 @@ function laneLoad(enemies, lane, except) {
   }
   return n;
 }
-/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. */
+/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. Bosses hold their lane while their adds spread around them. */
 export function stepRangedLane(self, enemies, dy, speed, dt) {
+  if (self.boss) return;
   const mine = laneOf(self.y);
   if (self._laneGoal === mine) self._laneGoal = null;
   if (laneLoad(enemies, mine, self) >= MAX_RANGED_PER_LANE) {
     const pile = enemies.filter(e => e.alive && RANGED_TYPES.has(e.type) && (e._laneGoal ?? laneOf(e.y)) === mine);
-    pile.sort((a, b) => a.x - b.x || (a.id > b.id ? 1 : -1));
-    if (pile.slice(0, MAX_RANGED_PER_LANE).includes(self)) return;
+    // Pinned bosses keep their lane; the stay slots go to the leftmost others.
+    const rest = pile.filter(e => !e.boss).sort((a, b) => a.x - b.x || (a.id > b.id ? 1 : -1));
+    const pinned = pile.length - rest.length;
+    if (rest.slice(0, Math.max(0, MAX_RANGED_PER_LANE - pinned)).includes(self)) return;
     let best = -1, bestN = MAX_RANGED_PER_LANE;
     for (let i = 0; i < 3; i++) {
       if (i === mine) continue;
