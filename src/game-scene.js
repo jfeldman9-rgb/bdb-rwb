@@ -12,7 +12,7 @@ import { say,sfx,playTrack,preloadClips,releaseClips,stopSceneAudio,setVoicePoli
 import { stageLines } from './voice-lines.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
-import { playDadCall, abortDadCall } from './dad-call-cutscene.js';
+import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cutscene.js';
 import { pauseForClip } from './cutscene-hooks.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { syncRotatePause } from './rotate-block.js';
@@ -65,7 +65,8 @@ export class GameScene extends Phaser.Scene {
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);this.claudiaCage=cage;}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
   this.game.inp.clear();preloadClips(stageLines(this.stageNo));setVoicePolicy(narrationYields);playTrack(`stage${this.stageNo}`);
-  this.events.once('shutdown',()=>{abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
+  this.offDadBless=installDadGestureBless(globalThis);
+  this.events.once('shutdown',()=>{this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();this.handleEvents();this.hud.update(this.world);
  }
  setBloom(on){this.bloomEnabled=!!on;}

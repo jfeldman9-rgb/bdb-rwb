@@ -15,6 +15,7 @@ import { wireTitleStart } from './title-start.js';
 import { installPressOwnership } from './press-ownership.js';
 import { installGovernor, readQualityFloor } from './quality-governor.js';
 import { installResumeCleanup } from './recovery.js';
+import { blessDadFromGesture } from './dad-call-cutscene.js';
 
 class Boot extends Phaser.Scene {
  constructor(){super('boot');}
@@ -34,7 +35,7 @@ class Title extends Phaser.Scene {
   for(const o of chapter.options)o.disabled=Number(o.value)>this.save.unlockedStage;
   chapter.value=String(Math.min(this.save.unlockedStage,Math.max(1,Number(q.get('stage'))||1)));
   doc.getElementById('auto-fire').checked=this.save.autoFire;
-  this.begin=()=>{if(this.starting)return;this.starting=true;unlock();this.game.story.bless();
+  this.begin=()=>{if(this.starting)return;this.starting=true;unlock();this.game.story.bless();blessDadFromGesture();
    this.save={...this.save,difficulty:resolveDifficulty(difficulty.value,this.save.beaten,coarsePointer()),autoFire:doc.getElementById('auto-fire').checked};persistSave(this.save);
    doc.getElementById('title').hidden=true;this.game.inp.clear();
    this.game.story.play((typeof q!=='undefined'&&q.get?.('intro')==='v2')?'intro_v2':'intro',()=>this.scene.start('gameplay',{stage:Number(chapter.value),difficulty:this.save.difficulty,save:this.save}));

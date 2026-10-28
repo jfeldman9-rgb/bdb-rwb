@@ -51,8 +51,45 @@ export function abortDadCall(scene) {
   offKeys?.(); offKeys = null;
   unpauseGame?.(); unpauseGame = null;
   try { player?.video?.pause(); } catch { /* detached */ }
-  player = null;
+  // Keep the player. iOS sound blessing is per <video> element, and a new one
+  // per stage is a new element the start gesture never touched.
   if (scene) { scene.cutscene = null; scene.setPauseReason?.('cutscene', false); }
+}
+
+export function ensureDadPlayer(root = globalThis) {
+  if (!player || player.root !== root) {
+    player = new CutscenePlayer(root, { base: DAD_CLIP_BASE, startMs: START, stallMs: STALL, maxMs: MAX, guardMs: GUARD });
+  }
+  return player;
+}
+
+/** True once a user gesture has primed the shared Dad element. */
+export function dadPlayerBlessed() { return !!player?.blessed; }
+/** The element object iOS blessed. Same reference across stages. */
+export function dadVideoElement() { return player?.video || null; }
+
+/** Call from the gesture that starts the game, before any Dad clip exists. */
+export function blessDadFromGesture(root = globalThis) {
+  if (handle?.active) return false;
+  try { ensureDadPlayer(root).bless(); return true; } catch { return false; }
+}
+
+/**
+ * Idle taps bless the Dad element. While a clip is up this does nothing:
+ * the overlay's own tap unmutes, and blessing here would unmute on pointerdown
+ * before touchend and turn "tap for sound" into a skip.
+ */
+export function installDadGestureBless(root = globalThis) {
+  ensureDadPlayer(root);
+  const gesture = () => { if (!handle?.active) player?.bless?.(); };
+  root.addEventListener?.('pointerdown', gesture, true);
+  root.addEventListener?.('touchend', gesture, true);
+  root.addEventListener?.('keydown', gesture, true);
+  return () => {
+    root.removeEventListener?.('pointerdown', gesture, true);
+    root.removeEventListener?.('touchend', gesture, true);
+    root.removeEventListener?.('keydown', gesture, true);
+  };
 }
 
 /**
@@ -63,17 +100,15 @@ export function abortDadCall(scene) {
  */
 export function installDadKeys(root, input) {
   const key = e => {
-    if (!handle?.active) { player?.bless?.(); return; }
+    if (!handle?.active) return;
     const action = KEYS[e.code];
     if (!action || !SKIP_ACTIONS.has(action)) return;
     if (input) consumePress(input, action);
     else e.preventDefault?.();
     handle.skip('key', action === 'start' || action === 'pause');
   };
-  const touch = () => player?.bless?.();
   root.addEventListener?.('keydown', key);
-  root.addEventListener?.('pointerdown', touch);
-  return () => { root.removeEventListener?.('keydown', key); root.removeEventListener?.('pointerdown', touch); };
+  return () => { root.removeEventListener?.('keydown', key); };
 }
 
 /** false when cutscenes off — caller runs the wipe immediately. */
@@ -97,9 +132,7 @@ export function playDadCall(scene, then) {
   unpauseGame = pauseForClip(scene.game);
   scene.cutscene = { dad: true, press(a) { handle?.skip?.(a || 'press', a === 'pause' || a === 'start'); } };
   try {
-    if (!player || player.root !== root) {
-      player = new CutscenePlayer(root, { base: DAD_CLIP_BASE, startMs: START, stallMs: STALL, maxMs: MAX, guardMs: GUARD });
-    }
+    ensureDadPlayer(root);
     const off = () => abortDadCall(scene);
     scene.events?.once?.('shutdown', off);
     offShutdown = () => scene.events?.off?.('shutdown', off);
