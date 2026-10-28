@@ -10,7 +10,7 @@
 | ID | Status |
 |---|---|
 | **P0-1** | **Done.** Story player uses `STORY_MAX_MS` (90s), above every `STAGE_CLIPS` file. `tests/cutscene-cap.test.mjs` checks each clip. |
-| **P0-2** | Pending |
+| **P0-2** | **Done.** Nightmare: third death in a zone restores Dad (or a shake trio before he arrives). At most two ranged Yettis share a lane. Bot clears S2 zone 5 (~56s, 2 deaths) and S3 zone 5 (~91s, 5 deaths). `vy` stays 0. |
 | **P0-3** | Pending |
 | **P0-4** | Pending |
 | **P0-5** | Pending |

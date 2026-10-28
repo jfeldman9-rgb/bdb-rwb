@@ -21,6 +21,58 @@ export const BOSS_ADDS = Object.freeze({
   choirmaster: Object.freeze([['walker', 'walker'], ['walker', 'hover', 'walker'], ['charger', 'hover', 'guard']]),
 });
 const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95] });
+/** Ranged roles that stack snowballs when they share a lane. Boss choirmaster counts; melee does not. */
+export const RANGED_TYPES = new Set(['guard', 'hover', 'choir', 'choirmaster']);
+export const MAX_RANGED_PER_LANE = 2;
+export const LANE_H = 59;
+export function laneOf(y) { return clamp(Math.round((y - LANE_TOP) / LANE_H), 0, 2); }
+export function laneY(i) { return clamp(LANE_TOP + i * LANE_H, LANE_TOP, LANE_BOT); }
+export function rangedInLane(enemies, lane, except) {
+  let n = 0;
+  for (const e of enemies) if (e !== except && e.alive && RANGED_TYPES.has(e.type) && laneOf(e.y) === lane) n++;
+  return n;
+}
+export function freestLane(enemies, except) {
+  let best = 0, bestN = Infinity;
+  for (let i = 0; i < 3; i++) {
+    const n = rangedInLane(enemies, i, except);
+    if (n < bestN) { best = i; bestN = n; }
+  }
+  return best;
+}
+function laneLoad(enemies, lane, except) {
+  let n = 0;
+  for (const e of enemies) {
+    if (e === except || !e.alive || !RANGED_TYPES.has(e.type)) continue;
+    if ((e._laneGoal ?? laneOf(e.y)) === lane) n++;
+  }
+  return n;
+}
+/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. */
+export function stepRangedLane(self, enemies, dy, speed, dt) {
+  const mine = laneOf(self.y);
+  if (self._laneGoal === mine) self._laneGoal = null;
+  if (laneLoad(enemies, mine, self) >= MAX_RANGED_PER_LANE) {
+    const pile = enemies.filter(e => e.alive && RANGED_TYPES.has(e.type) && (e._laneGoal ?? laneOf(e.y)) === mine);
+    pile.sort((a, b) => a.x - b.x || (a.id > b.id ? 1 : -1));
+    if (pile.slice(0, MAX_RANGED_PER_LANE).includes(self)) return;
+    let best = -1, bestN = MAX_RANGED_PER_LANE;
+    for (let i = 0; i < 3; i++) {
+      if (i === mine) continue;
+      const n = laneLoad(enemies, i, self);
+      if (n < bestN) { best = i; bestN = n; }
+    }
+    if (best < 0) return;
+    self._laneGoal = best;
+    const target = laneY(best);
+    self.y = clamp(self.y + Math.sign(target - self.y) * Math.max(speed, 160) * dt, LANE_TOP, LANE_BOT);
+    return;
+  }
+  const next = clamp(self.y + clamp(dy, -Math.abs(speed) * 0.6 * dt, Math.abs(speed) * 0.6 * dt), LANE_TOP, LANE_BOT);
+  const dest = laneOf(next);
+  if (dest !== mine && laneLoad(enemies, dest, self) >= MAX_RANGED_PER_LANE) return;
+  self.y = next;
+}
 const ROAR = 1.1;
 /** Flinch window: a held eggplant stream staggers a Yetti at most this often, so packs still close in. Bonks always stagger. */
 export const POISE = Object.freeze({ light: .45, heavy: .9 });
@@ -132,7 +184,8 @@ export class Yetti {
     const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff*(boss>=3?1.45:boss===2?1.3:1);
     const oldX=this.x;
     if (Math.abs(dx)>pref) this.x += Math.sign(dx)*speed*dt;
-    this.y = clamp(this.y+clamp(dy,-speed*.6*dt,speed*.6*dt),LANE_TOP,LANE_BOT);
+    if (ranged) stepRangedLane(this, world.enemies, dy, speed, dt);
+    else this.y = clamp(this.y+clamp(dy,-speed*.6*dt,speed*.6*dt),LANE_TOP,LANE_BOT);
     this.x = clamp(this.x,world.bounds.l+55,world.bounds.r-55);
     this.state = Math.abs(this.x-oldX)>.01 ? 'approach' : 'wait';
   }

@@ -31,6 +31,16 @@ export function takeCall(st, c) {
   if (c.bossPhase) st.phaseCalls[c.bossPhase] = (st.phaseCalls[c.bossPhase] || 0) + 1;
   return { ok: true };
 }
+/** Third death in one zone. Nightmare only calls this. Restores a Dad charge, or a shake trio when he has not arrived yet. */
+export const ZONE_MERCY_DEATHS = 3;
+export function grantZoneMercy(dadCall) {
+  if (!dadCall?.unlocked) return 'breath';
+  dadCall.charges = Math.max(1, dadCall.charges | 0);
+  if (dadCall.calls >= DAD.maxCalls) dadCall.calls = DAD.maxCalls - 1;
+  dadCall.on = false;
+  dadCall.since = Math.max(dadCall.since || 0, DAD.recharge);
+  return 'dad';
+}
 export function bossFloor(e) { return e.phase >= 3 ? 1 : Math.max(1, Math.floor(e.maxHp * DAD.gates[(e.phase || 1) - 1])); }
 export function callEffect(e) {
   if (!e?.alive || e.canBeHit === false || e.invuln) return null;

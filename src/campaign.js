@@ -1,9 +1,9 @@
 import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
-import { Yetti, bossPhaseHp } from './yettis.js';
+import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane } from './yettis.js';
 import { Wingmen } from './wingman.js';
 import { collectShake, papacitoEffect } from './papacito.js';
-import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect } from './dad-call.js';
+import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy } from './dad-call.js';
 import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
@@ -39,7 +39,7 @@ export class Campaign {
     this.stageStart = this.elapsed;
     this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
     this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
-    this.shieldHintShown = false; this.papiHintShown = false;
+    this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
     if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
     const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
@@ -75,7 +75,12 @@ export class Campaign {
     if (zone.shakes) this.dropTrio(this.bob.x+40);
     this.spawnWave();
   }
-  spawnYetti(type,x,y) { const e=new Yetti(type,x,y,this.def.hpScale??1); this.enemies.push(e); return e; }
+  spawnYetti(type,x,y) {
+    const e=new Yetti(type,x,y,this.def.hpScale??1);
+    // A third ranged body in one lane is how Nightmare zone 5 walls. Park the extra on a freer lane.
+    if (RANGED_TYPES.has(type) && rangedInLane(this.enemies, laneOf(e.y), e) >= MAX_RANGED_PER_LANE) e.y = laneY(freestLane(this.enemies, e));
+    this.enemies.push(e); return e;
+  }
   tickPending(dt) {
     if(!this.pending.length)return;
     // An empty arena pulls the next straggler in quickly instead of leaving dead air.
@@ -165,12 +170,19 @@ export class Campaign {
     if(boss)this.checkpoint.bossHp=boss.hp;
     const cp={...this.checkpoint};
     this.bob=new Bob({x:cp.x,difficulty:this.difficultyKey});this.bob.inv=2;
+    let mercy = null;
+    if (this.difficultyKey === 'nightmare') {
+      const n = this.zoneDeaths[cp.zone] = (this.zoneDeaths[cp.zone] || 0) + 1;
+      if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall);
+    }
     this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.shieldHintShown=false;
     this.zoneIndex=cp.zone;this.waveIndex=cp.wave??0;this.locked=false;this.bossActive=false;
     this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=Math.max(this.camMax||0,this.camX);
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
     if(cp.zone===this.bossZone)this.startBoss(cp.phase);
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
+    if (mercy === 'dad') this.banner("MERCY. DAD'S BACK ON THE LINE.");
+    else if (mercy === 'breath') { this.dropTrio(this.bob.x + 40); this.banner('MERCY. CATCH YOUR BREATH.'); }
   }
   finishStage() {
     if(this.clearTimer)return;
