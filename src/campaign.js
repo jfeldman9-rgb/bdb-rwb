@@ -248,12 +248,12 @@ export class Campaign {
     let mercy = null;
     if (this.difficultyKey === 'nightmare') {
       const n = this.zoneDeaths[cp.zone] = (this.zoneDeaths[cp.zone] || 0) + 1;
-      if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall);
+      if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall, cp.zone===this.bossZone?`${this.stageNo}:${cp.phase}`:null);
     }
     this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.papiPending=null;this.shieldHintShown=false;
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.zoneIndex=cp.zone;this.waveIndex=cp.wave??0;this.locked=false;this.bossActive=false;
-    this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=Math.max(this.camMax||0,this.camX);
+    this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=this.camX;
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
     if(cp.zone===this.bossZone)this.startBoss(cp.phase);
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');

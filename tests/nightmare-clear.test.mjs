@@ -4,7 +4,7 @@ import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
 import { Bob } from '../src/bob.js';
 import { createShot } from '../src/eggplant.js';
-import { ZONE_MERCY_DEATHS } from '../src/dad-call.js';
+import { ZONE_MERCY_DEATHS, refuseReason } from '../src/dad-call.js';
 import { laneOf, MAX_RANGED_PER_LANE, RANGED_TYPES } from '../src/yettis.js';
 
 function die(w) {
@@ -87,6 +87,34 @@ test('nightmare mercy is the third death in that zone, not adventure and not the
   adventure.checkpoint = { zone: 4, x: 5300, phase: 1 };
   for (let i = 0; i < 3; i++) die(adventure);
   assert.equal(adventure.dadCall.charges, 0);
+});
+
+test('boss mercy clears that phase so the restored swat can be used', () => {
+  const w = new Campaign({ stage: 2, difficulty: 'nightmare' });
+  w.startBoss(1);
+  w.dadCall.phaseCalls['2:1'] = 1;
+  w.dadCall.charges = 0;
+  w.dadCall.calls = 1;
+  w.zoneDeaths[w.bossZone] = ZONE_MERCY_DEATHS - 1;
+  die(w);
+  assert.equal(w.dadCall.phaseCalls['2:1'], undefined);
+  assert.equal(refuseReason(w.dadCall, { hittable: true, bossPhase: '2:1' }), '');
+  assert.match(w.message, /MERCY/);
+});
+
+test('respawn drops the camera high-water mark back to the checkpoint', () => {
+  const w = new Campaign({ stage: 2 });
+  w.checkpoint = { zone: 1, x: 400, phase: 1 };
+  w.zoneIndex = 1;
+  w.camX = 2000;
+  w.camMax = 2000;
+  w.bob.hp = 0;
+  w.bob.alive = false;
+  w.bob.setState('dead', 0);
+  w.respawn();
+  assert.ok(w.camMax < 2000);
+  assert.equal(w.camMax, w.camX);
+  assert.ok(w.camX < 400);
 });
 
 function clearZone5(stage) {
