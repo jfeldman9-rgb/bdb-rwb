@@ -12,6 +12,15 @@ import { backdropPlan, ART_GAPS } from '../src/backdrop.js';
 import { FAR_SCROLL, MID_SCROLL, buildParallax, syncParallax, destroyParallax } from '../src/parallax.js';
 import { resolveStage, STAGE_TEXTURES } from '../src/stages.js';
 
+// Kill every live and pending Yetti until the current zone unlocks (zones now run 2–4 staggered waves).
+function clearZone(w) {
+  for (let i = 0; i < 10 && w.locked; i++) {
+    for (const e of w.enemies) { e.alive = false; e.hp = 0; }
+    w.pending = [];
+    w.update(1 / 60);
+  }
+}
+
 // Minimal Phaser stand-in: every setter chains; visible/alpha are recorded.
 function fakeScene() {
   const obj = () => {
@@ -64,18 +73,20 @@ test('camMax never rewinds when unlocked', () => {
   assert.equal(state.camMax, 800);
 });
 
-test('each stage ships 3+ mid plates; zone transitions change the plate', () => {
+test('each stage ships one distinct mid plate per zone and boss; zone transitions change the plate', () => {
   assert.equal(FAR_SCROLL, 0.12);
   assert.equal(MID_SCROLL, 0.4);
   assert.ok(ART_GAPS.length >= 3);
   for (const no of [1, 2, 3]) {
     const keys = plateKeys(no);
     const mids = keys.filter((k) => k.includes('-mid'));
-    assert.ok(mids.length >= 3);
-    assert.deepEqual(STAGE_TEXTURES[no], keys);
     const def = resolveStage(no);
+    assert.ok(def.zones.length >= 5, `stage ${no} has ${def.zones.length} fight zones`);
+    assert.equal(STREAMS[no].zones.length, def.zones.length + 1);
+    assert.equal(mids.length, def.zones.length + 1, `stage ${no}: every zone and the boss get their own plate`);
+    assert.deepEqual(STAGE_TEXTURES[no], keys);
     const plan = backdropPlan(def);
-    assert.ok(plan.plates.length >= 3);
+    assert.equal(plan.plates.length, def.zones.length + 1);
     assert.equal(plan.far, STREAMS[no].far);
     // Each fight camera shows its own zone's plate, and every mid plate gets screen time.
     const seen = new Set();
@@ -110,14 +121,17 @@ test('mid plates cover the screen for their whole camera range (parallax space)'
 test('plate crossfade: incoming fades in over an opaque outgoing plate', () => {
   const def = resolveStage(1);
   const layers = buildParallax(fakeScene(), def);
-  assert.ok(layers.mids.length >= 4);
+  const n = def.zones.length + 1;
+  assert.equal(layers.mids.length, n);
+  const only = (k) => Array.from({ length: n }, (_, i) => +(i === k));
   const at = (cam) => { syncParallax(layers, cam); return layers.mids.map((m) => (m.image.visible ? +m.image.alpha.toFixed(2) : 0)); };
-  assert.deepEqual(at(0), [1, 0, 0, 0]);
+  assert.deepEqual(at(0), only(0));
   const mid = at(1280 - PLATE_FADE / 2);
   assert.equal(mid[0], 1);
   assert.equal(mid[1], 0.5);
-  assert.deepEqual(at(1280), [0, 1, 0, 0]);
-  assert.deepEqual(at(WORLD_W - VW), [0, 0, 0, 1]);
+  assert.deepEqual(at(1280), only(1));
+  for (const [i, z] of def.zones.entries()) assert.deepEqual(at(z.l), only(i), `zone ${i} camera`);
+  assert.deepEqual(at(WORLD_W - VW), only(n - 1));
   let prev = -1;
   for (let cam = 0; cam <= WORLD_W - VW; cam += 40) {
     const a = plateAlphas(cam, def);
@@ -156,10 +170,7 @@ test('between zones camera follow keeps Bob near the left third', () => {
   const w = new Campaign({ save: { bestScore: 1 } });
   w.bob.x = 280;
   w.enterZone();
-  for (const e of w.enemies) { e.alive = false; e.hp = 0; }
-  w.update(1 / 60);
-  for (const e of w.enemies) { e.alive = false; e.hp = 0; }
-  w.update(1 / 60);
+  clearZone(w);
   assert.equal(w.locked, false);
   // Hold still after walking so lerp settles, then assert left-third.
   for (let i = 0; i < 200 && !w.locked; i++) w.update(1 / 60, { x: 1 });
@@ -175,11 +186,8 @@ test('zone clear emits go and restores free-roam bounds', () => {
   const w = new Campaign({ save: { bestScore: 1 } });
   w.bob.x = 280;
   w.enterZone();
-  for (const e of w.enemies) { e.alive = false; e.hp = 0; }
-  w.update(1 / 60);
-  for (const e of w.enemies) { e.alive = false; e.hp = 0; }
   const before = w.events.length;
-  w.update(1 / 60);
+  clearZone(w);
   assert.equal(w.locked, false);
   assert.ok(w.events.slice(before).some((e) => e.type === 'go'));
   assert.equal(w.bounds.r - w.bounds.l, VW);
@@ -192,7 +200,8 @@ test('Adventure bot clears Stage 1 under the scrolling camera', (t) => {
     const wasLocked = w.locked, beforeX = w.bob.x;
     w.update(1 / 60, bot.update(1 / 60, w));
     w.events = [];
-    if (!wasLocked && !w.locked && w.bob.x > beforeX) maxRoamSx = Math.max(maxRoamSx, screenX(w.bob.x, w.camX));
+    // 1e-6: a Bob held in place past the line (zone just cleared) may drift by float round-off.
+    if (!wasLocked && !w.locked && w.bob.x > beforeX + 1e-6) maxRoamSx = Math.max(maxRoamSx, screenX(w.bob.x, w.camX));
   }
   assert.deepEqual(w.stats.stages, [1]);
   assert.ok(w.camMax > 0);

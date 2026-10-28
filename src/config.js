@@ -3,7 +3,8 @@ export const VW = 1280, VH = 720;
 /** Bob steady-state screen X as fraction of VW (RWB free-roam, not RWB free-roam). */
 export const CAM_LEAD = 0.28;
 export const LANE_TOP = 572, LANE_BOT = 690;      // walkable depth band (screen y of feet)
-export const WORLD_W = 5200;
+/** Five 1280-wide fight arenas plus an 80 px walk-up and a 1280-wide boss arena. */
+export const WORLD_W = 7760;
 export const q = new URLSearchParams(globalThis.location?.search || '');
 export const DPR = globalThis.devicePixelRatio || 1;
 export const HITSTOP = { light: 4, medium: 6, heavy: 9, finisher: 14 };   // frames @60

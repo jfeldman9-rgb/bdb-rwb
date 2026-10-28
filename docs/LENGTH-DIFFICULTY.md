@@ -33,16 +33,36 @@ Clear times are **Adventure bot** (BDB `Bot` + `Campaign`) or RWB full-stage evi
 
 ## After rebuild
 
-_(Filled by the Claude length pass — see commit message + `/tmp/bdb-length-claude-report.md`.)_
+Measured **2026-10-28** on `bdb-scroll` (length/difficulty pass, Claude Opus 5.5 `claude-opus-5-5`). Bot = unmodified `Bot` + `Campaign` (no cheats, same controls as before), `node tools/bot-sim.mjs adventure <hz>`. Per-stage numbers are a fresh run from that stage's start; campaign is one S1→S3 run.
 
 | Metric | BDB S1 after | BDB S2 after | BDB S3 after | Notes |
 | --- | --- | --- | --- | --- |
-| World length | | | | |
-| Zones + boss | | | | |
-| Mid plates | | | | |
-| Wave enemies / HP pool | | | | |
-| Boss HP / phases | | | | |
-| Bot clear (Adventure) | | | | |
-| Full campaign | | | | |
-| `npm test` | | | | |
+| World length | 7760 px | 7760 px | 7760 px | 5×1280 arenas + 80 px walk-up + 1280 boss arena (was 5200) |
+| Zones + boss | 5 + boss | 5 + boss | 5 + boss | RWB: 3 + boss. 3 waves per zone — 15 waves/stage (RWB 6) |
+| Mid plates | 6 (`s1-mid0..5`) | 6 (`s2-mid0..5`) | 6 (`s3-mid0..5`) | One per zone + boss; `mid3..5` (8 new) derived locally from existing art by `tools/derive-plates.py` |
+| Wave enemies / HP pool | 53 / 4182 | 55 / 4735 | 56 / 5000 | RWB S1 14 / 492. RWB-style `[type, side, delay]` staggered entries, flank spawns; `hpScale` 2.2 per stage; Yetti pace ×1.0 / ×1.1 / ×1.15 |
+| Enemy mix | walker 22, charger 9, guard 8, hover 6, choir 4, lecturer 4 | walker 12, hover 11, lecturer 9, charger 9, guard 8, choir 6 | lecturer 10, hover 10, guard 10, charger 10, walker 9, choir 7 | Every later zone mixes ≥ 3 roles (test-enforced) |
+| Boss HP / phases | Interventionist **1200**, 3 phases (66 % / 33 %) | Choirmaster **1140**, 3 phases | Wingmen **360 + 360 + 200×2**, 3 phases | One long bar like RWB; roar beat (untouchable) at each gate, adds per phase, P3 Interventionist charges + two-way slam |
+| Boss fight (bot, 60 Hz) | 33.8 s | 52.0 s | 49.3 s | was ~15–25 s |
+| Bot clear (Adventure) | **153.6 / 159.3 / 156.1 s** | **186.8 / 193.7 / 190.9 s** | **211.3 / 209.4 / 219.8 s** | 30 / 60 / 120 Hz. Target RWB S1 154–216 s ✔ |
+| Bot hits / deaths (solo stage, 60 Hz) | 4 / 0 | 8 / 1 | 14 / 3 | Before: S1 4/1, S2 0/0, S3 2/0 |
+| Full campaign | **553.7 / 564.5 / 551.6 s (~9.2 min)** | | | 30 / 60 / 120 Hz; 25–28 hits, 3 deaths, 13–14 Papi, 3 Dad (cap), ~190 KOs. Before: 146 s, 8 hits, 2 deaths, 7 Papi, 2 Dad |
+| `npm test` | **105 / 105 pass** | | | was 97; new floors: S1 bot ≥ 140 s, campaign ≥ 420 s, every stage 140–240 s, ≥ 12 hits |
 
+### What changed (mechanics)
+
+1. **Poise.** A held eggplant stream used to stun (0.14 s) and push back (12 px) on *every* shot, so 5 shots/s stun-locked any Yetti and walked it backwards. Now a Yetti flinches at most every 0.45 s (guard/charger/lecturer 0.9 s); point-blank bonks still always stagger. Packs actually close in.
+2. **Staggered, flanking waves.** Wave entries are `[type, 'L'|'R', delay]`; `L` steps in at Bob's back. A wave stays open while stragglers are pending; an empty arena pulls the next straggler in after 0.5 s (no dead air).
+3. **Lose a life, keep progress.** Zone deaths resume at the wave reached (was wave 1) and a mini-boss keeps the damage dealt (was a refill to the phase top). The sim is deterministic, so without this a bot retry replays the identical losing fight forever (seen: 150-death Interventionist loop at phase III).
+4. **Power economy.** Free shake trios only in S1 zone 2 (Papi lesson); guards and the boss phase II trio are the other sources. Papi ≈ 1.5 uses/min (was ≈ 2.9/min); Dad is still 3 calls per campaign.
+5. **Chapter pace** ramps Yetti speed/tells/projectiles (×1.1 S2, ×1.15 S3), capped at 1.25 total so Nightmare doesn't compound.
+
+### Browser check
+
+`tools/browser-smoke.mjs` (headless Chrome 156, SwiftShader, private debug port) played the `?demo=1` Adventure campaign through **victory** on the new content; live Phaser state at Stage 3 showed 6 plate runs with `s3-mid4` / `s3-mid5` / `s3-mid2` on top at the zone 4 / zone 5 / boss cameras and Claudia's cage in the new boss arena. The script's later touch-stick check (`held.x > before.x + 30`) is flaky under SwiftShader frame pacing: Bob moved 35 px here vs 32 px on `ab4cc15`, so not a regression.
+
+### Known gaps
+
+- **Nightmare** is not bot-clearable (S2/S3 zone 5 wave 2 snowball wall). It already wasn't at `ab4cc15` (S2 boss: 81 bot deaths), so this is not a regression, but Nightmare has not been tuned for the longer stages.
+- **Story** clears in ~415 s with 0 bot deaths (S1 125 s), below the RWB band by design (5 hearts, 1.6× damage).
+- New plates are mirrored/zoomed/regraded derivatives, not new paintings; `s1-mid5` keeps the readable (unmirrored) MOTEL sign.

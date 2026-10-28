@@ -1,5 +1,5 @@
 // Backdrop streams: one far plate + one mid plate per fight zone (incl. boss), shared floor.
-// Mirrors RWB zone-stream STREAMS shape, simplified for BDB's three stages.
+// Mirrors RWB zone-stream STREAMS shape: five fight zones + boss per BDB stage.
 //
 // Mid plates scroll at MID_SCROLL, so a zone's plate cannot sit at the zone's world X
 // (at 0.4 the boss plate would need camX ≈ 2.5 × zone.l to come on screen). Instead each
@@ -13,6 +13,8 @@ export const MID_SCROLL = 0.4;
 export const PLATE_FADE = 480;
 export const PLATE_W = 1400, PLATE_H = 540;
 
+// One distinct mid plate per fight zone plus the boss arena (last slot). The boss keeps the
+// stage's signature plate; s*-mid3..5 are derived locally by tools/derive-plates.py.
 export const STREAMS = Object.freeze({
   1: Object.freeze({
     far: 's1-far', floor: 's1-floor',
@@ -20,6 +22,8 @@ export const STREAMS = Object.freeze({
       Object.freeze({ plate: 's1-mid0' }),
       Object.freeze({ plate: 's1-mid1' }),
       Object.freeze({ plate: 's1-mid2' }),
+      Object.freeze({ plate: 's1-mid4' }),
+      Object.freeze({ plate: 's1-mid5' }),
       Object.freeze({ plate: 's1-mid3' }),
     ]),
   }),
@@ -28,7 +32,9 @@ export const STREAMS = Object.freeze({
     zones: Object.freeze([
       Object.freeze({ plate: 's2-mid0' }),
       Object.freeze({ plate: 's2-mid1' }),
-      Object.freeze({ plate: 's2-mid2' }),
+      Object.freeze({ plate: 's2-mid3' }),
+      Object.freeze({ plate: 's2-mid4' }),
+      Object.freeze({ plate: 's2-mid5' }),
       Object.freeze({ plate: 's2-mid2' }),
     ]),
   }),
@@ -37,7 +43,9 @@ export const STREAMS = Object.freeze({
     zones: Object.freeze([
       Object.freeze({ plate: 's3-mid0' }),
       Object.freeze({ plate: 's3-mid1' }),
-      Object.freeze({ plate: 's3-mid2' }),
+      Object.freeze({ plate: 's3-mid3' }),
+      Object.freeze({ plate: 's3-mid4' }),
+      Object.freeze({ plate: 's3-mid5' }),
       Object.freeze({ plate: 's3-mid2' }),
     ]),
   }),

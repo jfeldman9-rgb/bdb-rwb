@@ -27,7 +27,7 @@ export class HUD {
   this.chapter.setText(`THE LEGEND OF CLAUDIA  /  ${String(w.stageNo).padStart(2,'0')}`);
   this.health.setText('♥ '.repeat(Math.ceil(w.bob.hp))+'♡ '.repeat(Math.max(0,w.bob.maxHp-Math.ceil(w.bob.hp))));
   this.meter.setText(`SHAKES ${'▰'.repeat(w.papi.shakeRemainder)}${'▱'.repeat(3-w.papi.shakeRemainder)}   PAPI ${w.papi.charges}/2   DAD ${w.dadCall.charges? 'READY':w.dadCall.unlocked? `${w.dadCall.kos}/10 · ${Math.max(0,Math.ceil(45-w.dadCall.since))}s`:'ZONE 3'}`);
-  this.score.setText(`${String(Math.floor(w.score)).padStart(6,'0')}  PTS`);this.zone.setText(`${w.difficultyKey.toUpperCase()}  ·  ${w.bossActive?'BOSS':`ZONE ${Math.min(3,w.zoneIndex+1)}/3`}`);
+  this.score.setText(`${String(Math.floor(w.score)).padStart(6,'0')}  PTS`);this.zone.setText(`${w.difficultyKey.toUpperCase()}  ·  ${w.bossActive?'BOSS':`ZONE ${Math.min(w.def.zones.length,w.zoneIndex+1)}/${w.def.zones.length}`}`);
   this.banner.setText(w.paused?'PAUSED':w.victory?'CLAUDIA RESCUED.':w.messageTime>0?w.message:'');
   this.boss.setText(bossLabel(w));
   this.prompt.setText(stagePrompt(w));

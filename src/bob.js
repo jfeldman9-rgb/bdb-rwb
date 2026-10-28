@@ -1,4 +1,4 @@
-import { LANE_TOP, LANE_BOT, clamp } from './config.js';
+import { LANE_TOP, LANE_BOT, WORLD_W, clamp } from './config.js';
 import { DIFFICULTIES } from './difficulty.js';
 export const MASH_NEED = 6;
 export class Bob {
@@ -31,7 +31,7 @@ export class Bob {
     if (e) { e.state = 'hurt'; e.stun = 1.2; }
     return true;
   }
-  update(dt, input = {}, bounds = { l: 0, r: 5200 }) {
+  update(dt, input = {}, bounds = { l: 0, r: WORLD_W }) {
     this.time += dt; this.inv = Math.max(0, this.inv - dt); this.shootTime = Math.max(0, this.shootTime - dt);
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
     if (this.dashCooldown <= 0) this.dashStocks = 1;

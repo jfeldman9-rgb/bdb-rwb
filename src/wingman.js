@@ -18,10 +18,14 @@ export function isBossFinisherReady(
 
 import { actorId } from './actor-id.js';
 import { LANE_TOP } from './config.js';
+/** Per-Wingman HP by phase (phase III is the pair that the Papacito finisher ends). */
+export const WINGMAN_HP = Object.freeze({ 1: 360, 2: 360, 3: 200 });
+/** Minions the council calls in when a phase opens. */
+export const WINGMAN_ADDS = Object.freeze({ 2: ['guard', 'hover'], 3: ['guard', 'lecturer'] });
 export class Wingman {
   constructor(x, y, phase = 1, role = 1) {
     Object.assign(this, { id: actorId(), type: 'wingman', boss: true, x, y, z: 70, phase, role,
-      hp: phase === 3 ? 120 : 216, maxHp: phase === 3 ? 120 : 216, alive: true,
+      hp: WINGMAN_HP[phase], maxHp: WINGMAN_HP[phase], alive: true,
       facing: -1, state: 'hover', timer: 1.5, attackX: x, attackY: y, volley: 0 });
   }
   get canBeHit() { return this.alive && this.state !== 'split'; }
@@ -64,7 +68,7 @@ export class Wingmen {
       for (const e of world.enemies.filter(e=>e.type==='wingman')) { e.state='split'; e.timer=this.phase===3?2:1; }
       world.banner(this.phase===2?'PHASE II: HEAVENLY HR VIOLATION':'PHASE III: TWO WINGMEN. ONE TERRIBLE PLAN.');
       world.emit('voice',this.phase===2?'wingman_phase2':'wingman_phase3');
-      world.dropTrio(world.bob.x+50); world.checkpoint.phase=this.phase;
+      world.dropTrio(world.bob.x+50); world.checkpoint.phase=this.phase; world.summonAdds?.(WINGMAN_ADDS[this.phase]);
       bosses=world.enemies.filter(e=>e.type==='wingman');
     }
     const ready=isBossFinisherReady(this.phase,bosses);

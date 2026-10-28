@@ -4,7 +4,7 @@ import { STREAMS, streamZones, plateRuns, plateRect, plateKeys, plateKeyForCam }
 
 export const ART_GAPS = Object.freeze([
   'Per-chapter far sky plate ≥2172×724 (RWB bg-far); current s*-far.webp are 1600×720 derivatives',
-  'Stages 2 and 3 ship 3 mid plates; zone 3 and the boss arena share mid2 (stage 1 has 4)',
+  'Mid plates s*-mid3..5 are mirrored/regraded derivatives of existing art (tools/derive-plates.py), not bespoke paintings',
   'Per-chapter floor strips matching RWB bg-floor / bg-floor2 widths',
   'Optional world-space props (lamps, signs, cars) with normals for lit stages',
 ]);

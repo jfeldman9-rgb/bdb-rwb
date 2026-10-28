@@ -1,0 +1,24 @@
+// Headless Adventure bot timings: node tools/bot-sim.mjs [difficulty] [hz]
+// Prints per-stage clears (fresh stage start) and one full S1–3 campaign run.
+import { Campaign } from '../src/campaign.js';
+import { Bot } from '../src/bot.js';
+
+const difficulty = process.argv[2] || 'adventure';
+const hz = +(process.argv[3] || 60);
+
+function run(opts, done, cap = 1800) {
+  const w = new Campaign({ difficulty, ...opts }), bot = new Bot();
+  let hurts = 0;
+  for (let i = 0; i < hz * cap && !done(w); i++) {
+    w.update(1 / hz, bot.update(1 / hz, w));
+    hurts += w.events.filter(e => e.type === 'hurt').length;
+    w.events = [];
+  }
+  const { shots, papi, dad, kos, deaths, stages, phases, stageTimes } = w.stats;
+  return { seconds: +w.elapsed.toFixed(1), cleared: done(w), hurts, deaths, papi, dad, kos, shots, stages, stageTimes, phases };
+}
+
+const out = {};
+for (const stage of [1, 2, 3]) out[`stage${stage}`] = run({ stage }, w => w.stats.stages.includes(stage));
+out.campaign = run({}, w => w.victory);
+console.log(JSON.stringify(out, null, 1));
