@@ -1,0 +1,71 @@
+{
+  "dad": {
+    "line": "Son, sometimes you just need to use the fly swatter to keep the women away!",
+    "model": "eleven_v3 (A/B) + eleven_ttv_v3 design (C)",
+    "candidates": [
+      {
+        "id": "A",
+        "file": "samples/cast-audition/dad_cand_A_rory.mp3",
+        "voice": "Rory - New England Male",
+        "voice_id": "XHRRg1odihmrQ3xbCGa4",
+        "note": "Library en-boston, gravelly/raspy mature"
+      },
+      {
+        "id": "B",
+        "file": "samples/cast-audition/dad_cand_B_adam12.mp3",
+        "voice": "Adam 12",
+        "voice_id": "Ib97zM6uFBc71OWgj75I",
+        "note": "Library New Englander / en-boston"
+      },
+      {
+        "id": "C",
+        "file": "samples/cast-audition/dad_cand_C_design0_southie.mp3",
+        "voice": "Voice Design Southie (preview 0)",
+        "generated_voice_id": "1S9vaAuPfgP7iQzynh4n",
+        "note": "Custom thick Southie/Dorchester 60s; catchphrase spoken twice (design min length). Alts: dad_design_alt1/2. Must creative_save_designed_voice before full Dad re-render."
+      }
+    ],
+    "pick": "C (designed Southie) \u2014 thickest Boston; if too cartoon, fall back to A Rory",
+    "alts_design": [
+      "samples/cast-audition/dad_design_alt1.mp3",
+      "samples/cast-audition/dad_design_alt2.mp3"
+    ]
+  },
+  "bob": {
+    "line": "I brought options.",
+    "model": "eleven_v3",
+    "candidates": [
+      {
+        "id": "A",
+        "file": "samples/cast-audition/bob_cand_A_timothy.mp3",
+        "voice": "Timothy Pemberton Smythe - British Posh",
+        "voice_id": "qkG6pQFWpZTnYnoQZGFs",
+        "note": "Deep commanding aristocratic RP \u2014 most Bond"
+      },
+      {
+        "id": "B",
+        "file": "samples/cast-audition/bob_cand_B_benedict.mp3",
+        "voice": "Benedict - Premium British (RP) Male",
+        "voice_id": "6q6UVsvekS0UjrUXFz79",
+        "note": "Clear crisp warm authoritative RP"
+      },
+      {
+        "id": "C",
+        "file": "samples/cast-audition/bob_cand_C_barnaby.mp3",
+        "voice": "Barnaby Finch - Charismatic British Man",
+        "voice_id": "whDz1N3rMLec3YLzIcW5",
+        "note": "Natural British charm, conversational"
+      }
+    ],
+    "pick": "A Timothy \u2014 suave spy presence; B if A is too stiff/aristocratic"
+  },
+  "credits_est": {
+    "dad_A": 90,
+    "dad_B": 90,
+    "dad_design": "(one Voice Design call \u2192 3 previews)",
+    "bob_each": 37,
+    "bob_total": 111,
+    "speech_known_sum": 391,
+    "note": "No full cast re-render yet"
+  }
+}
