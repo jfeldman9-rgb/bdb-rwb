@@ -234,10 +234,13 @@ test('mercy before Dad arrives drops a shake trio instead of a charge', () => {
   assert.match(w.message, /CATCH YOUR BREATH/);
 });
 
-test('nightmare snowballs clear at 58; adventure and story stay at 65', () => {
+test('nightmare snowballs clear at 58, and at 50 on a 60 Hz step; adventure and story stay at 65', () => {
   assert.equal(snowClearZ('nightmare'), 58);
-  assert.equal(snowClearZ('adventure'), 65);
-  assert.equal(snowClearZ('story'), 65);
+  assert.equal(snowClearZ('nightmare', 1 / 30), 58);
+  assert.equal(snowClearZ('nightmare', 1 / 60), 50);
+  assert.equal(snowClearZ('nightmare', 1 / 120), 58);
+  assert.equal(snowClearZ('adventure', 1 / 60), 65);
+  assert.equal(snowClearZ('story', 1 / 60), 65);
 });
 
 test('wingHp of 0 stays dead when wingDead is omitted, and one floored survivor can be finished', () => {

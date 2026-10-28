@@ -18,13 +18,16 @@ import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPa
 export const PACE_CAP = 1.25;
 
 /**
- * Snowball clear height. Adventure (and Story) stay at 65.
- * Nightmare's 60 Hz step lands in the 58–64 lip often enough that stage 3
- * picks up extra deaths the 30 Hz and 120 Hz arcs step over or have already
- * cleared. 58 lines that one rate up without touching the other difficulties.
+ * Snowball clear height. Adventure and Story stay at 65.
+ * Nightmare at 30 Hz and 120 Hz clears at 58: that closes the old 58–64 lip.
+ * A 60 Hz step still samples the jump on the way down at z≈53 while the
+ * snowball overlaps, and stage 3 dies there again. 50 misses that one sample.
+ * 30 Hz and 120 Hz stay at 58 so the other rates are not opened up.
  */
-export function snowClearZ(difficultyKey) {
-  return difficultyKey === 'nightmare' ? 58 : 65;
+export function snowClearZ(difficultyKey, dt) {
+  if (difficultyKey !== 'nightmare') return 65;
+  if (dt && Math.round(1 / dt) === 60) return 50;
+  return 58;
 }
 
 /** Drop dead entries without allocating a replacement array. */
@@ -388,7 +391,7 @@ export class Campaign {
     for(let i=0;i<this.enemies.length;i++)stepping.push(this.enemies[i]);
     for(let i=0;i<stepping.length;i++)stepping[i].update(dt,this);
     for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
-      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey)){this.hurtBob(false, null, p.dir);p.alive=false;}
+      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
     keep(this.hostile, p => p.alive);

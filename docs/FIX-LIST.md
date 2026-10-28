@@ -19,7 +19,7 @@
 | **P5-10** | A `boss` event in the same drained batch as a cutscene does not start boss music. The clip end still brings it back. | Muse / Claude stage-3 blip | |
 | **P5-11** | Camera respawn, freeze-guard `started`, and press-ownership/governor checks are behavior tests. | Argon 7; Kimi T3 | |
 | **P5-12** | Deleted unreferenced `src/crate-texture.js`, `src/cutscene-scene.js`, `src/music.js`, and `src/perf-panel.js`. | Argon 6 | `src/page-base.js` stays. `bootstrap.js` reaches it through `debug-flag.js` (`installDirectoryBase`). |
-| **P5-13** | Nightmare snowballs clear at 58px. Adventure and Story stay at 65. This pulls Nightmare stage 3 at 60 Hz into line with 30/120 without retuning Choirmaster, pace, or Adventure. | Muse P1 pacing | Device loop is still 1/60. The 58px clear is only the nightmare projectile test. |
+| **P5-13** | Nightmare snowballs clear at 58px, and at 50px on a 60 Hz step. Adventure and Story stay at 65. Honest telegraphs (P5-5) leave the 60 Hz descent sample at z≈53 under a snowball; 50 misses that sample so stage 3 matches 30/120. Choirmaster, pace, and the eggplant are untouched. | Muse P1 pacing | Device loop is still 1/60. The lower clear is only the nightmare projectile test at dt=1/60. |
 
 ### Deferred
 - Recharge-banner punctuation and other copy nits the four reviews mentioned outside this list.
