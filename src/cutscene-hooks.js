@@ -1,6 +1,15 @@
 import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
 import { KEYS } from './input.js';
 import { consumePress } from './press-ownership.js';
+/**
+ * Pause the Phaser loop behind a full-screen clip (battery/draw on iPhone).
+ * Returns the matching resume; safe when the game is already paused or gone.
+ */
+export function pauseForClip(game) {
+  const owns = !!game && !game.isPaused && typeof game.pause === 'function';
+  if (owns) game.pause();
+  return () => { if (owns && game.isPaused && !game.pendingDestroy) game.resume?.(); };
+}
 export function createStoryPlayer(query, root=globalThis, input=null){
  const player=new CutscenePlayer(root,{maxMs:STORY_MAX_MS});let handle=null;
  const key=e=>{const action=KEYS[e.code];if(handle&&SKIP_ACTIONS.has(action)){if(input)consumePress(input,action);else e.preventDefault();handle.skip('key',action==='start'||action==='pause');}};

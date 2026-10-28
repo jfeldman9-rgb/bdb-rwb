@@ -1,6 +1,7 @@
 // Dad call-in cutscene: pause → play rotating clip → then() runs the swatter wipe.
 // Port of rwb-s8 rand-call-cutscene.js playCall/bag, pointed at assets/cutscenes/dad/.
 import { CutscenePlayer, cutscenesEnabled, SKIP_ACTIONS } from './cutscene.js';
+import { pauseForClip } from './cutscene-hooks.js';
 import { KEYS } from './input.js';
 import { consumePress } from './press-ownership.js';
 import { q } from './config.js';
@@ -93,9 +94,7 @@ export function playDadCall(scene, then) {
     try { then?.(how || 'end'); } catch (e) { root.console?.error?.(e); }
   };
   scene.setPauseReason?.('cutscene', true);
-  const game = scene.game, ownsPause = !!game && !game.isPaused && typeof game.pause === 'function';
-  unpauseGame = () => { if (ownsPause && game.isPaused && !game.pendingDestroy) game.resume?.(); };
-  if (ownsPause) game.pause();
+  unpauseGame = pauseForClip(scene.game);
   scene.cutscene = { dad: true, press(a) { handle?.skip?.(a || 'press', a === 'pause' || a === 'start'); } };
   try {
     if (!player || player.root !== root) {

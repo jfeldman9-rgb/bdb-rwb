@@ -13,6 +13,7 @@ import { stageLines } from './voice-lines.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
 import { playDadCall, abortDadCall } from './dad-call-cutscene.js';
+import { pauseForClip } from './cutscene-hooks.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { syncRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
@@ -146,8 +147,11 @@ export class GameScene extends Phaser.Scene {
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
   this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
+  // Full-screen video: park the Phaser loop too, like the Dad call does.
+  const unpause=pauseForClip(this.game);
   this.game.story.play(key,()=>{
    this.holdingVoice=false;this.setPauseReason('cutscene',false);const held=this.voiceHold||[];this.voiceHold=[];
+   unpause();
    if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
    done?.(held);
   });

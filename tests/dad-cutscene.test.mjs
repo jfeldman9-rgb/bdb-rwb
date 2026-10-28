@@ -89,3 +89,19 @@ test('idle gestures bless the reused element; abort drops the key wiring', () =>
   root.emit('keydown', { code: 'Space', preventDefault() {} });
   assert.ok(typeof installDadKeys === 'function');
 });
+
+test('pauseForClip owns the pause only when the game is running', async () => {
+  const { pauseForClip } = await import('../src/cutscene-hooks.js');
+  const game = { isPaused: false, pause() { this.isPaused = true; }, resume() { this.isPaused = false; } };
+  const unpause = pauseForClip(game);
+  assert.equal(game.isPaused, true);
+  unpause();
+  assert.equal(game.isPaused, false);
+  // Already paused: leave it alone and resume nothing.
+  game.isPaused = true;
+  const noop = pauseForClip(game);
+  noop();
+  assert.equal(game.isPaused, true);
+  // Gone game: never throws.
+  assert.doesNotThrow(() => pauseForClip(null)());
+});
