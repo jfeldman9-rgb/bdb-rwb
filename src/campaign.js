@@ -8,7 +8,7 @@ import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
 import { normalizeSave, clearStage } from './save.js';
-import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W } from './config.js';
+import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W, HITSTOP } from './config.js';
 import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
@@ -16,6 +16,14 @@ import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPa
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
+
+/** Chip, bonk, KO, boss-gate. Math.max with the current freeze so tiers never stack. */
+export function hitTier({ phase = false, killed = false, bonk = false, shieldBroke = false } = {}) {
+  if (phase) return 'finisher';
+  if (killed) return 'heavy';
+  if (bonk || shieldBroke) return 'medium';
+  return 'light';
+}
 
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
 export class Campaign {
@@ -39,6 +47,7 @@ export class Campaign {
     this.stageStart = this.elapsed;
     this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
     this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
+    this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
     if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
@@ -120,11 +129,20 @@ export class Campaign {
     const result=e.takeHit(damage,dir,bonk);
     if (result.blocked) {
       this.emit('shield',{x:e.x,y:e.y});
-      if (result.shieldBroke) this.banner(STORY.shield);
+      if (result.shieldBroke) {
+        this.banner(STORY.shield);
+        const kind = hitTier({ shieldBroke: true });
+        this.hitStop = Math.max(this.hitStop, HITSTOP[kind] / 60);
+        this.emit('hit', { x: e.x, y: e.y, bonk: false, kind, dir });
+      }
       else if (this.stageNo===1 && !this.shieldHintShown) { this.shieldHintShown=true; this.banner('BLOCKED! DASH THROUGH THE GOLD SHIELD.'); }
       return;
     }
-    if (result.accepted) { this.hitStop=4/60; this.emit('hit',{x:e.x,y:e.y,bonk}); }
+    if (result.accepted) {
+      const kind = hitTier({ phase: !!result.phase, killed: !e.alive, bonk });
+      this.hitStop = Math.max(this.hitStop, HITSTOP[kind] / 60);
+      this.emit('hit', { x: e.x, y: e.y, bonk, kind, dir });
+    }
     if (result.phase) {
       this.checkpoint.phase=result.phase; this.stats.phases.push(`${this.stageNo}:${result.phase}`);
       const II=result.phase===2;
@@ -176,6 +194,7 @@ export class Campaign {
       if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall);
     }
     this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.shieldHintShown=false;
+    this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.zoneIndex=cp.zone;this.waveIndex=cp.wave??0;this.locked=false;this.bossActive=false;
     this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=Math.max(this.camMax||0,this.camX);
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
@@ -183,6 +202,22 @@ export class Campaign {
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
     if (mercy === 'dad') this.banner("MERCY. DAD'S BACK ON THE LINE.");
     else if (mercy === 'breath') { this.dropTrio(this.bob.x + 40); this.banner('MERCY. CATCH YOUR BREATH.'); }
+  }
+  latchInput(input) {
+    if (!input) return;
+    if (input.jump) this.bob.jumpBuffer = Math.max(this.bob.jumpBuffer || 0, this.difficulty.grace || 0);
+    if (input.dash) this.latchedDash = true;
+    if (input.fire) this.latchedFire = true;
+    if (input.papi) this.latchedPapi = true;
+    if (input.dad) this.latchedDad = true;
+  }
+  takeLatch(input = {}) {
+    const out = { ...input };
+    if (this.latchedDash) { out.dash = true; this.latchedDash = false; }
+    if (this.latchedFire) { out.fire = true; this.latchedFire = false; }
+    if (this.latchedPapi) { out.papi = true; this.latchedPapi = false; }
+    if (this.latchedDad) { out.dad = true; this.latchedDad = false; }
+    return out;
   }
   finishStage() {
     if(this.clearTimer)return;
@@ -196,7 +231,8 @@ export class Campaign {
     if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');}}return;}
     if(this.papiTime>0){this.papiTime=Math.max(0,this.papiTime-dt);return;}
     if(this.dad){this.dad.update(dt,()=>{this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;}return;}
-    if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);return;}
+    if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);this.latchInput(input);return;}
+    input=this.takeLatch(input);
     tickDadCall(this.dadCall,dt);
     if(this.bob.state==='grabbed' && input.presses){if(this.bob.mash(input.presses))this.banner(STORY.mash); input={};}
     this.bob.update(dt,input,moveBounds(this,this.bob.x));
@@ -215,7 +251,11 @@ export class Campaign {
     if(this.bob.dashTime>0)for(const e of this.enemies)if(e.alive&&Math.abs(e.x-this.bob.x)<85&&Math.abs(e.y-this.bob.y)<GUN.band&&e.breakShield?.())this.banner(STORY.shield);
     const auto=this.save.autoFire && this.enemies.some(e=>e.alive&&(e.x-this.bob.x)*this.bob.facing>0&&Math.abs(e.y-this.bob.y)<GUN.band);
     const fired=fireGun(this.gun,dt,input.fire||auto,this.bob,this.enemies,this.difficulty.damage);
-    if(fired){this.stats.shots++;this.emit('fire');if(fired.bonk)this.hit(fired.bonk,fired.damage,this.bob.facing,true);else this.projectiles.push(fired.shot);}
+    if(fired){
+      this.stats.shots++;
+      this.emit('fire',{x:this.bob.x+this.bob.facing*58,y:this.bob.y-this.bob.z-150,dir:this.bob.facing||1});
+      if(fired.bonk)this.hit(fired.bonk,fired.damage,this.bob.facing,true);else this.projectiles.push(fired.shot);
+    }
     for(const p of this.projectiles)stepShot(p,dt,this.enemies,(...args)=>this.hit(...args),this.camX);
     this.projectiles=this.projectiles.filter(p=>p.alive);
     this.tickPending(dt);

@@ -12,7 +12,7 @@
 | **P0-1** | **Done.** Story player uses `STORY_MAX_MS` (90s), above every `STAGE_CLIPS` file. `tests/cutscene-cap.test.mjs` checks each clip. |
 | **P0-2** | **Done.** Nightmare: third death in a zone restores Dad (or a shake trio before he arrives). At most two ranged Yettis share a lane. Bot clears S2 zone 5 (~56s, 2 deaths) and S3 zone 5 (~91s, 5 deaths). `vy` stays 0. |
 | **P0-3** | **Done.** Dead enemies keep their view for 0.5s, play knockdown, then fade. `tests/corpses.test.mjs`. |
-| **P0-4** | Pending |
+| **P0-4** | **Done.** `GameScene` owns `FX`: muzzle flash, visual recoil, eggplant splat, lane-step dust. Hit-stop uses `HITSTOP` tiers (light stays 4 frames). Presses during the freeze are latched. `setBloom`, `setBackdropLit`, and `runId` exist so a later governor install does not throw. `tests/feel.test.mjs`. |
 | **P0-5** | Pending |
 | **K1** | Pending |
 | **P1-3** | Pending |
