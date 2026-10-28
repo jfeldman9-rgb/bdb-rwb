@@ -8,7 +8,7 @@ import { Dad } from './dad.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
 import { normalizeSave, clearStage } from './save.js';
-import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W, HITSTOP } from './config.js';
+import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W, HITSTOP, CAM_LEAD } from './config.js';
 import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
@@ -266,7 +266,7 @@ export class Campaign {
     this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.papiPending=null;this.shieldHintShown=false;
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.zoneIndex=cp.zone;this.waveIndex=cp.wave??0;this.locked=false;this.bossActive=false;
-    this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=this.camX;
+    this.camX=clamp(cp.x-VW*CAM_LEAD,0,WORLD_W-VW);this.camMax=this.camX;
     updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false,snap:true});
     if(cp.zone===this.bossZone)this.startBoss(cp.phase);
     this.banner(STORY.checkpoint);this.emit('voice','bob_respawn_01');
