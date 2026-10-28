@@ -1,17 +1,61 @@
 {
   "project": "bdb-rwb",
-  "model": "eleven_multilingual_v2",
+  "model": "eleven_v3",
   "cast": {
-    "Bob": {"voice_id": "QZ1okeFI43NQd6lXAzQ5", "name": "Michael Dalton - Modern Male Lead", "reason": "Cool charismatic all-American lead; fits comic Big Dick Bob"},
-    "Dad": {"voice_id": "UZvBfqEdvCFLqsBOo9Zr", "name": "Jerry B. - Conversational Boston Accent", "reason": "Born-and-raised Boston; natural New England for older dad + catchphrase"},
-    "Claudia": {"voice_id": "5GR0JTHRVmv00OeaRI9u", "name": "Maria - Playful Colombian Woman", "reason": "Fluent English with smooth Colombian accent; playful sorta-girlfriend"},
-    "Papi1": {"voice_id": "Nggzl2QAXh3OijoXD116", "name": "Candy - Girly and Sweet", "reason": "Bubbly excited young woman for Papi yell layer 1"},
-    "Papi2": {"voice_id": "bshPAWYM9E3kueiqa6gJ", "name": "Kate - Surprised & Excited", "reason": "Bright surprised energy for Papi yell layer 2"},
-    "Papi3": {"voice_id": "wrxvN1LZJIfL3HHvffqe", "name": "Bella - Bubbly Best Friend", "reason": "Lively energetic layer 3 for chorus"},
-    "Wingman": {"voice_id": "6sFKzaJr574YWVu4UuJF", "name": "Cornelius - Wise Sage", "reason": "Comic angelic council authority"},
-    "Interventionist": {"voice_id": "L1aJrPa7pLJEyYlh3Ilq", "name": "Oliver Haddington", "reason": "Warm kind British with whimsical humor for therapy-lecturer mini-boss"},
-    "Choirmaster": {"voice_id": "JBFqnCBsd6RMkjVDRZzb", "name": "George - Warm Captivating Storyteller", "reason": "Warm resonant conductor/choir feel"},
-    "Yetti": {"voice_id": "onwK4e9ZLuTAKqWW03F9", "name": "Daniel - Steady Broadcaster", "reason": "Authoritative comic angel grunt / alert lines"},
-    "Narrator": {"voice_id": null, "name": "Jason IndexTTS clone", "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav — not quick this pass"}
+    "Bob": {
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "name": "Benedict - Premium British (RP) Male",
+      "reason": "Jason pick Bob B: British RP; punchy blunt dumb-fun lines, not Bond wordplay"
+    },
+    "Dad": {
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "name": "BDB Dad - Southie Boston",
+      "reason": "Jason pick Dad C: designed thick Southie/Dorchester 60s; dropped R's, loud warm"
+    },
+    "Claudia": {
+      "voice_id": "5GR0JTHRVmv00OeaRI9u",
+      "name": "Maria - Playful Colombian Woman",
+      "reason": "Fluent English with smooth Colombian accent; playful sorta-girlfriend"
+    },
+    "Papi1": {
+      "voice_id": "Nggzl2QAXh3OijoXD116",
+      "name": "Candy - Girly and Sweet",
+      "reason": "Bubbly excited young woman for Papi yell layer 1"
+    },
+    "Papi2": {
+      "voice_id": "bshPAWYM9E3kueiqa6gJ",
+      "name": "Kate - Surprised & Excited",
+      "reason": "Bright surprised energy for Papi yell layer 2"
+    },
+    "Papi3": {
+      "voice_id": "wrxvN1LZJIfL3HHvffqe",
+      "name": "Bella - Bubbly Best Friend",
+      "reason": "Lively energetic layer 3 for chorus"
+    },
+    "Wingman": {
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "name": "Cornelius - Wise Sage",
+      "reason": "Comic angelic council authority"
+    },
+    "Interventionist": {
+      "voice_id": "L1aJrPa7pLJEyYlh3Ilq",
+      "name": "Oliver Haddington",
+      "reason": "Warm kind British with whimsical humor for therapy-lecturer mini-boss"
+    },
+    "Choirmaster": {
+      "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+      "name": "George - Warm Captivating Storyteller",
+      "reason": "Warm resonant conductor/choir feel"
+    },
+    "Yetti": {
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "name": "Daniel - Steady Broadcaster",
+      "reason": "Authoritative comic angel grunt / alert lines"
+    },
+    "Narrator": {
+      "voice_id": null,
+      "name": "Jason IndexTTS clone",
+      "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav \u2014 not quick this pass"
+    }
   }
 }

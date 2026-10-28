@@ -1,18 +1,18 @@
 {
   "project": "bdb-rwb",
   "generated": "2026-10-27 America/Phoenix",
-  "model": "eleven_multilingual_v2",
+  "model": "eleven_v3",
   "format": "mono 24kHz 64kbps mp3 + loudnorm",
   "cast": {
     "Bob": {
-      "voice_id": "QZ1okeFI43NQd6lXAzQ5",
-      "name": "Michael Dalton - Modern Male Lead",
-      "reason": "Cool charismatic all-American lead; fits comic Big Dick Bob"
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "name": "Benedict - Premium British (RP) Male",
+      "reason": "Jason pick Bob B: British RP; punchy blunt dumb-fun lines, not Bond wordplay"
     },
     "Dad": {
-      "voice_id": "UZvBfqEdvCFLqsBOo9Zr",
-      "name": "Jerry B. - Conversational Boston Accent",
-      "reason": "Born-and-raised Boston; natural New England for older dad + catchphrase"
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "name": "BDB Dad - Southie Boston",
+      "reason": "Jason pick Dad C: designed thick Southie/Dorchester 60s; dropped R's, loud warm"
     },
     "Claudia": {
       "voice_id": "5GR0JTHRVmv00OeaRI9u",
@@ -57,14 +57,15 @@
     "Narrator": {
       "voice_id": null,
       "name": "Jason IndexTTS clone",
-      "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav \u2014 not quick this pass"
+      "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav — not quick this pass"
     }
   },
   "credits": {
     "jobs_batch_est": 560,
     "samples_pass_est": 280,
     "total_est": 840,
-    "note": "Creative TTS ~1 credit/char; samples double as first prod for 8 lines; no re-render of those"
+    "note": "Dad+Bob re-render ~572 credits (count=1, eleven_v3); prior cast pass separate",
+    "dad_bob_rerender_est": 572
   },
   "line_count": {
     "rendered_prod": 32,
@@ -126,82 +127,112 @@
     {
       "id": "bdb_laugh",
       "path": "assets/audio/voice/bdb_laugh.mp3",
-      "bytes": 15596,
+      "bytes": 12140,
       "speaker": "Bob",
-      "text": "Ha! Ha ha ha! Ha ha!",
-      "source": "job"
+      "text": "Ha! Dead!",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bdb_open",
       "path": "assets/audio/voice/bdb_open.mp3",
-      "bytes": 11948,
+      "bytes": 13484,
       "speaker": "Bob",
-      "text": "I brought options.",
-      "source": "sample\u2192prod"
+      "text": "I brought the eggplant.",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bdb_produce",
       "path": "assets/audio/voice/bdb_produce.mp3",
-      "bytes": 10412,
+      "bytes": 14828,
       "speaker": "Bob",
-      "text": "Legally, it's produce.",
-      "source": "job"
+      "text": "Die, Yetti, die!",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_dadwait_01",
       "path": "assets/audio/voice/bob_dadwait_01.mp3",
-      "bytes": 11948,
+      "bytes": 16748,
       "speaker": "Bob",
-      "text": "Dad's on his coffee break.",
-      "source": "job"
+      "text": "Dad! Now!",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_hurt_01",
       "path": "assets/audio/voice/bob_hurt_01.mp3",
-      "bytes": 5228,
+      "bytes": 10220,
       "speaker": "Bob",
       "text": "Oof!",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_hurt_02",
       "path": "assets/audio/voice/bob_hurt_02.mp3",
-      "bytes": 5612,
+      "bytes": 9644,
       "speaker": "Bob",
       "text": "Ow!",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_hurt_03",
       "path": "assets/audio/voice/bob_hurt_03.mp3",
-      "bytes": 5228,
+      "bytes": 17324,
       "speaker": "Bob",
       "text": "Ugh!",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_papi_01",
       "path": "assets/audio/voice/bob_papi_01.mp3",
-      "bytes": 18860,
+      "bytes": 10220,
       "speaker": "Bob",
-      "text": "Ladies, please. One at a time.",
-      "source": "job"
+      "text": "Not now, ladies!",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_papiwait_01",
       "path": "assets/audio/voice/bob_papiwait_01.mp3",
-      "bytes": 10412,
+      "bytes": 14060,
       "speaker": "Bob",
-      "text": "Need more protein.",
-      "source": "job"
+      "text": "Need the ladies!",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "bob_respawn_01",
       "path": "assets/audio/voice/bob_respawn_01.mp3",
-      "bytes": 20780,
+      "bytes": 10220,
       "speaker": "Bob",
-      "text": "I'm fine. I'm great. That was on purpose.",
-      "source": "job"
+      "text": "I'm back, baby!",
+      "source": "rerender",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
     },
     {
       "id": "choir_serious",
@@ -216,8 +247,8 @@
       "path": "assets/audio/voice/choirmaster_intro.mp3",
       "bytes": 16748,
       "speaker": "Choirmaster",
-      "text": "From the top! And-a-one, and-a\u2014",
-      "source": "sample\u2192prod"
+      "text": "From the top! And-a-one, and-a—",
+      "source": "sample→prod"
     },
     {
       "id": "claudia_leave",
@@ -233,7 +264,7 @@
       "bytes": 31148,
       "speaker": "Claudia",
       "text": "Bob. Winged Yettis locked me in Moonlit Keep.",
-      "source": "sample\u2192prod"
+      "source": "sample→prod"
     },
     {
       "id": "claudia_question",
@@ -246,50 +277,68 @@
     {
       "id": "dad_call_01",
       "path": "assets/audio/voice/dad_call_01.mp3",
-      "bytes": 13292,
+      "bytes": 15980,
       "speaker": "Dad",
       "text": "Bobby! Get behind me, kid!",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
     },
     {
       "id": "dad_call_02",
       "path": "assets/audio/voice/dad_call_02.mp3",
-      "bytes": 23660,
+      "bytes": 29420,
       "speaker": "Dad",
       "text": "Yettis? In this economy? Get outta heah!",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
     },
     {
       "id": "dad_call_03",
       "path": "assets/audio/voice/dad_call_03.mp3",
-      "bytes": 20780,
+      "bytes": 29420,
       "speaker": "Dad",
       "text": "Wicked big swattah, wicked small bird-bums.",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
     },
     {
       "id": "dad_catchphrase",
       "path": "assets/audio/voice/dad_catchphrase.mp3",
-      "bytes": 36716,
+      "bytes": 37100,
       "speaker": "Dad",
       "text": "Son, sometimes you just need to use the fly swatter to keep the women away!",
-      "source": "sample\u2192prod"
+      "source": "rerender",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
     },
     {
       "id": "dad_done_01",
       "path": "assets/audio/voice/dad_done_01.mp3",
-      "bytes": 11180,
+      "bytes": 14060,
       "speaker": "Dad",
       "text": "Call ya mothah.",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
     },
     {
       "id": "dad_done_02",
       "path": "assets/audio/voice/dad_done_02.mp3",
-      "bytes": 17516,
+      "bytes": 23660,
       "speaker": "Dad",
       "text": "BDB, baby. It's on the swattah.",
-      "source": "job"
+      "source": "rerender",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
     },
     {
       "id": "interventionist_intro",
@@ -297,7 +346,7 @@
       "bytes": 37100,
       "speaker": "Interventionist",
       "text": "Bob. We all love you. That's why we're here.",
-      "source": "sample\u2192prod"
+      "source": "sample→prod"
     },
     {
       "id": "lecturer_intervention",
@@ -313,7 +362,7 @@
       "bytes": 14444,
       "speaker": "Papi1/Candy",
       "text": "Papi! Papi! PAPI!",
-      "source": "sample\u2192prod"
+      "source": "sample→prod"
     },
     {
       "id": "papi_chorus_01",
@@ -345,14 +394,14 @@
       "bytes": 18476,
       "speaker": "Wingman",
       "text": "The council denies this rescue.",
-      "source": "sample\u2192prod"
+      "source": "sample→prod"
     },
     {
       "id": "wingman_defeat",
       "path": "assets/audio/voice/wingman_defeat.mp3",
       "bytes": 18092,
       "speaker": "Wingman",
-      "text": "We'll\u2026 reform.",
+      "text": "We'll… reform.",
       "source": "job"
     },
     {
@@ -377,7 +426,32 @@
       "bytes": 11180,
       "speaker": "Yetti",
       "text": "Turn back Papi!",
-      "source": "sample\u2192prod"
+      "source": "sample→prod"
     }
-  ]
+  ],
+  "rerender": {
+    "when": "2026-10-27 America/Phoenix",
+    "dad_voice": "1S9vaAuPfgP7iQzynh4n BDB Dad - Southie Boston (Jason pick C)",
+    "bob_voice": "6q6UVsvekS0UjrUXFz79 Benedict RP (Jason pick B)",
+    "bob_style": "punchy blunt dumb-fun 2-6 words; not Bond wordplay",
+    "lines": [
+      "dad_catchphrase",
+      "dad_call_01",
+      "dad_call_02",
+      "dad_call_03",
+      "dad_done_01",
+      "dad_done_02",
+      "bdb_open",
+      "bdb_produce",
+      "bdb_laugh",
+      "bob_papi_01",
+      "bob_hurt_01",
+      "bob_hurt_02",
+      "bob_hurt_03",
+      "bob_respawn_01",
+      "bob_dadwait_01",
+      "bob_papiwait_01"
+    ],
+    "credits_est": 572
+  }
 }

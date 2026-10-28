@@ -25,14 +25,14 @@
         "note": "Custom thick Southie/Dorchester 60s; catchphrase spoken twice (design min length). Alts: dad_design_alt1/2. Must creative_save_designed_voice before full Dad re-render."
       }
     ],
-    "pick": "C (designed Southie) \u2014 thickest Boston; if too cartoon, fall back to A Rory",
+    "pick": "C saved as 1S9vaAuPfgP7iQzynh4n BDB Dad - Southie Boston \u2014 full Dad re-render done",
     "alts_design": [
       "samples/cast-audition/dad_design_alt1.mp3",
       "samples/cast-audition/dad_design_alt2.mp3"
     ]
   },
   "bob": {
-    "line": "I brought options.",
+    "line": "I brought the eggplant.",
     "model": "eleven_v3",
     "candidates": [
       {
@@ -57,7 +57,7 @@
         "note": "Natural British charm, conversational"
       }
     ],
-    "pick": "A Timothy \u2014 suave spy presence; B if A is too stiff/aristocratic"
+    "pick": "B Benedict 6q6UVsvekS0UjrUXFz79 \u2014 punchy blunt lines (not Bond wordplay); examples verbatim"
   },
   "credits_est": {
     "dad_A": 90,
