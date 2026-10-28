@@ -79,7 +79,7 @@
     "note": "Dad+Bob re-render ~572 credits (count=1, eleven_v3); prior cast pass separate",
     "dad_bob_rerender_est": 572
   },
-  "line_count": 52,
+  "line_count": 51,
   "present": [
     "bdb_laugh",
     "bdb_open",
@@ -119,6 +119,8 @@
     "nar_kidnap",
     "nar_victory",
     "papi_chorus",
+    "papi_crowd_01",
+    "papi_crowd_02",
     "wingman_council",
     "wingman_defeat",
     "wingman_phase2",
@@ -692,6 +694,44 @@
       "speaker": "Yetti",
       "text": "Turn back Papi!",
       "source": "sample\u2192prod"
+    },
+    {
+      "id": "papi_crowd_01",
+      "path": "assets/audio/voice/papi_crowd_01.mp3",
+      "bytes": 58975,
+      "speaker": "Crowd",
+      "text": "We love you Papacito! Pick me!",
+      "source": "elevenlabs_creative_v3_layered",
+      "voice_ids": [
+        "Nggzl2QAXh3OijoXD116",
+        "bshPAWYM9E3kueiqa6gJ",
+        "wrxvN1LZJIfL3HHvffqe"
+      ],
+      "voices": [
+        "Candy",
+        "Kate",
+        "Bella"
+      ],
+      "note": "3 overlapping female layers; offsets ~0-80ms; loudnorm -16 LUFS; <=2.4s"
+    },
+    {
+      "id": "papi_crowd_02",
+      "path": "assets/audio/voice/papi_crowd_02.mp3",
+      "bytes": 58975,
+      "speaker": "Crowd",
+      "text": "We love you Papacito! Pick me!",
+      "source": "elevenlabs_creative_v3_layered",
+      "voice_ids": [
+        "Nggzl2QAXh3OijoXD116",
+        "bshPAWYM9E3kueiqa6gJ",
+        "wrxvN1LZJIfL3HHvffqe"
+      ],
+      "voices": [
+        "Candy",
+        "Kate",
+        "Bella"
+      ],
+      "note": "3 overlapping female layers; offsets ~0-80ms; loudnorm -16 LUFS; <=2.4s"
     }
   ],
   "rerender": {
