@@ -14,6 +14,9 @@ import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack } from './barks.js';
 
+/** Seconds from Papi's shout until the runner front lands the wipe. */
+export const PAPI_WIPE_DELAY = 0.45;
+
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
 
@@ -46,7 +49,7 @@ export class Campaign {
     this.zoneIndex = 0; this.waveIndex = 0; this.locked = false; this.enemies = []; this.pending = []; this.projectiles = []; this.hostile = []; this.pickups = [];
     this.stageStart = this.elapsed;
     this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
-    this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
+    this.hitStop = 0; this.papiTime = 0; this.papiPending = null; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
@@ -173,15 +176,16 @@ export class Campaign {
   }
   usePapi() {
     const result=papacitoEffect(this.papi,this.enemies,{phase:this.wingmen?.phase||0,camX:this.camX,paused:this.paused,
-      dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0});
+      dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,delay:PAPI_WIPE_DELAY});
     if (!result.allowed) {
       this.banner(result.reason==='weaken'?'WEAKEN BOTH WINGMEN FIRST':result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
       if (result.reason==='protein') this.speak('bob_papiwait_01', 2.5);
       else if (result.reason==='empty' || result.reason==='weaken') this.speak('bob_papi_01', 2.5);
       return false;
     }
-    this.papiTime=2.5; this.stats.papi++; this.score+=result.score;
-    for(const e of result.killed)this.recordKo(e,'papi');
+    this.papiTime=2.5; this.stats.papi++;
+    // The wipe lands with the runners, not on the activation frame.
+    this.papiPending={t:PAPI_WIPE_DELAY,killed:result.killed,score:result.score};
     this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice', barkPapacito(this.barks)); this.armVoice('papi_chorus', 1.4); return true;
   }
   useDad() {
@@ -218,7 +222,7 @@ export class Campaign {
       const n = this.zoneDeaths[cp.zone] = (this.zoneDeaths[cp.zone] || 0) + 1;
       if (n === ZONE_MERCY_DEATHS) mercy = grantZoneMercy(this.dadCall);
     }
-    this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.shieldHintShown=false;
+    this.enemies=[];this.pending=[];this.projectiles=[];this.hostile=[];this.pickups=[];this.gun={};this.dad=null;this.dadCall.on=false;this.papiTime=0;this.papiPending=null;this.shieldHintShown=false;
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.zoneIndex=cp.zone;this.waveIndex=cp.wave??0;this.locked=false;this.bossActive=false;
     this.camX=clamp(cp.x-VW*0.28,0,WORLD_W-VW);this.camMax=Math.max(this.camMax||0,this.camX);
@@ -279,7 +283,17 @@ export class Campaign {
     if(this.paused||this.victory||!Number.isFinite(dt)||dt<=0)return;
     this.elapsed+=dt;this.messageTime=Math.max(0,this.messageTime-dt);this.flushVoice();
     if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
-    if(this.papiTime>0){this.papiTime=Math.max(0,this.papiTime-dt);return;}
+    if(this.papiTime>0){
+      this.papiTime=Math.max(0,this.papiTime-dt);
+      if(this.papiPending){
+        this.papiPending.t-=dt;
+        if(this.papiPending.t<=0){
+          const {killed,score}=this.papiPending; this.papiPending=null; this.score+=score;
+          for(const e of killed){ if(e.alive){ e.hp=0; e.alive=false; e.state='dead'; } this.recordKo(e,'papi'); }
+        }
+      }
+      return;
+    }
     if(this.dad){this.dad.update(dt,()=>{this.emit('dadhit',{x:this.dad.x,y:this.dad.y});for(const e of this.enemies)if(e.x>=this.camX&&e.x<=this.camX+1280){const r=callEffect(e);if(r?.killed)this.recordKo(e,'dad');}});if(this.dad.gone){this.dad=null;this.dadCall.on=false;this.speakRot('dad_done',['dad_done_01','dad_done_02'],0);}return;}
     if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);this.latchInput(input);return;}
     input=this.takeLatch(input);
