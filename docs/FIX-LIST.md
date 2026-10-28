@@ -18,11 +18,14 @@
 | **P1-3** | **Done.** `narrationYields`: a line landing on narration waits 2.5s, anything else yields. Installed before `handleEvents`. Cory and Yetti taunts roll once a second. |
 | **P1-4** | **Done.** Registered lines now have an emit path (intros, open, produce, laugh, hurts, Dad call/done, Papi wait/chorus, choir, turn-back, Claudia, wingman defeat, victory). Wording unchanged. |
 | **P1-6** | **Done.** Story and victory clips duck music and hold later voice events until the clip's done callback. A synchronous skip releases the hold before the next event. |
-| **P1-7** | **Done.** `installGovernor` runs from boot. A software-renderer downgrade sets `fx.quality` through the scene hooks without throwing. |
+| **P1-1** | **Done** with P0-4. Hit-stop uses the `HITSTOP` tiers. Presses during the freeze are latched. |
+| **P1-2** | **Done** with P0-4. Fire carries a muzzle point. The view flashes, recoils, and splats. `vy` stays 0. |
+| **P1-7** | **Done** for the governor. `installGovernor` runs from boot and a software-renderer downgrade uses the scene fx hooks. `recovery.js` is still unwired. |
+| **P1-9** | **Done** with P0-4. Lane changes, dashes, lands, and jumps kick dust and the existing step/land/jump sounds. |
 | **P1-14** | **Done.** Victory destroys the cage and plays `claudia_freed`. The retired produce line is gone from `#victory`. |
 | **P1-20** | **Done.** Private origin only. A token user and a missing `.git` suffix still count as `jfeldman9-rgb/bdb-rwb`. |
 | **K2** | **Done.** `installPressOwnership` is on the game input. A story skip consumes the pause press Input already recorded. |
-| Other P1/P2 | Deferred this pass unless noted above. |
+| **P1-5, P1-8, P1-10–P1-13, P1-15–P1-19, P2** | Deferred. |
 
 ## Locked rules (do not put conflicting items on this list)
 - Eggplant fires straight (`vy=0`); **no aiming**.

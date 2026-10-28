@@ -34,3 +34,11 @@
 - Branch: `bdb-scroll` (this status + reviews + FIX-LIST committed here).
 - Remote: private `origin` → `https://github.com/jfeldman9-rgb/bdb-rwb.git`
 - **No merge to `main`.** No new public Pages projects.
+
+## Pass 1: Grok 4.7 (Cursor)
+
+Pass 1: Grok 4.7 (Cursor) did it, on `bdb-pass1-grok` (draft PR into `bdb-scroll`, not `main`).
+
+Done: P0-1 through P0-5, K1, K2, P1-1, P1-2, P1-3, P1-4, P1-6, P1-7 (governor only), P1-9, P1-14, P1-20.
+
+Deferred: P1-5, P1-8, P1-10 through P1-13, P1-15 through P1-19, the `recovery.js` card, and P2. No deploy.
