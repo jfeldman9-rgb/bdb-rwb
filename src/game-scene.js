@@ -122,7 +122,7 @@ export class GameScene extends Phaser.Scene {
   for(const [m,v] of this.views){
    if(live.has(m))continue;
    if(m===w.bob){v.destroy();this.views.delete(m);continue;}
-   if(!v.corpse)v.corpse=beginCorpse();
+   if(!v.corpse)v.corpse=beginCorpse(!!m.boss);
    v.corpse=stepCorpse(v.corpse,dt);
    v.state='dead';
    if(!v.corpsePlayed){const key=v.def.key;v.play(this.anims.exists(key+'_knockdown')?'knockdown':'hurt',1,false);v.corpsePlayed=true;}
