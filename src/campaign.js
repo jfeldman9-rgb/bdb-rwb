@@ -17,6 +17,13 @@ import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPa
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
 
+/** Drop dead entries without allocating a replacement array. */
+function keep(list, pred) {
+  let n = 0;
+  for (let i = 0; i < list.length; i++) if (pred(list[i])) list[n++] = list[i];
+  list.length = n;
+}
+
 /** Chip, bonk, KO, boss-gate. Math.max with the current freeze so tiers never stack. */
 export function hitTier({ phase = false, killed = false, bonk = false, shieldBroke = false } = {}) {
   if (phase) return 'finisher';
@@ -122,7 +129,7 @@ export class Campaign {
     // An empty arena pulls the next straggler in quickly instead of leaving dead air.
     if(!this.enemies.some(e=>e.alive))this.pending[0].t=Math.min(this.pending[0].t,.5);
     for(const p of this.pending)if((p.t-=dt)<=0)this.spawnYetti(p.type,p.x,p.y);
-    this.pending=this.pending.filter(p=>p.t>0);
+    keep(this.pending, p => p.t > 0);
   }
   startBoss(phase = 1) {
     const z=this.def.boss; this.bossActive=true; this.locked=true; this.pending=[];
@@ -363,21 +370,24 @@ export class Campaign {
       if(fired.bonk)this.hit(fired.bonk,fired.damage,this.bob.facing,true);else this.projectiles.push(fired.shot);
     }
     for(const p of this.projectiles)stepShot(p,dt,this.enemies,(...args)=>this.hit(...args),this.camX);
-    this.projectiles=this.projectiles.filter(p=>p.alive);
+    keep(this.projectiles, p => p.alive);
     this.tickPending(dt);
-    for(const e of [...this.enemies])e.update(dt,this);
+    const stepping=this._stepEnemies||(this._stepEnemies=[]);
+    stepping.length=0;
+    for(let i=0;i<this.enemies.length;i++)stepping.push(this.enemies[i]);
+    for(let i=0;i<stepping.length;i++)stepping[i].update(dt,this);
     for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
       if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<65){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
-    this.hostile=this.hostile.filter(p=>p.alive);
+    keep(this.hostile, p => p.alive);
     for(const p of this.pickups)if(Math.abs(p.x-this.bob.x)<55&&Math.abs(p.y-this.bob.y)<48){
       const before=this.papi.charges;
       const collected=collectShake(this.papi.shakeRemainder,this.papi.charges,this.bob.hp,false);
       this.papi.charges=collected.charges;this.papi.shakeRemainder=collected.shakeRemainder;p.gone=true;this.emit('pickup');
       if(this.stageNo===1&&this.papi.charges>before&&!this.papiHintShown){this.papiHintShown=true;this.banner('PAPI READY! 3 SHAKES = 1 CHARGE. SAVE IT FOR A CROWD.');}
     }
-    this.pickups=this.pickups.filter(p=>!p.gone);
+    keep(this.pickups, p => !p.gone);
     if(this.wingmen){const before=this.wingmen.phase;this.wingmen.update(dt,this);if(before!==this.wingmen.phase)this.stats.phases.push(`3:${this.wingmen.phase}`);}
     if(this.bossActive){
       if(this.wingmen?.complete || (!this.wingmen&&!this.enemies.some(e=>e.boss&&e.alive)))this.finishStage();
