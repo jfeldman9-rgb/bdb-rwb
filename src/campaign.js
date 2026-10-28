@@ -95,7 +95,10 @@ export class Campaign {
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.voiceAt = [];
     this.produceSpokeOnce = false;
-    if (this.barks) { this.barks.held = Object.create(null); this.barks.offers = []; this.barks.attackN = 0; }
+    if (this.barks) {
+      this.clearAmbient();
+      this.barks.attackN = 0; this.barks.porkDue = false; this.barks.tauntId = null; this.barks.lastYetti = null;
+    }
     this.banner(this.def.title); this.emit('stage',stage);
     // The kidnap clip stops scene audio. Chapter 2's narration has to be emitted
     // after that event so the new scene holds it instead of starting it and cutting it off.
@@ -273,6 +276,7 @@ export class Campaign {
       return false;
     }
     this.papiTime=2.5; this.stats.papi++;
+    this.clearAmbient();
     // Each body falls when the front runner reaches it. Score lands with the last one.
     this.papiPending={elapsed:0,schedule:result.schedule,score:result.score};
     this.papiCrowdN++;
@@ -294,6 +298,7 @@ export class Campaign {
       return false;
     }
     this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
+    this.clearAmbient();
     // The call-in clip carries Dad's VO. Emit it first so the scene can skip the dub.
     this.emit('dad_callin');
     this.speakRot('dad_call', ['dad_call_01','dad_call_02','dad_call_03'], 0);
@@ -374,6 +379,10 @@ export class Campaign {
     if (group === 'produce') this.produceSpokeOnce = true;
     this.emit('voice', id);
   }
+  clearAmbient() {
+    this.barks.held = Object.create(null);
+    this.barks.offers = [];
+  }
   flushAmbient() {
     const picked = takeAmbient(this.barks, this.elapsed);
     if (picked) this.noteAmbient(picked.group, picked.id);
@@ -414,6 +423,7 @@ export class Campaign {
     if(this.paused||this.victory||!Number.isFinite(dt)||dt<=0)return;
     this.elapsed+=dt;this.messageTime=Math.max(0,this.messageTime-dt);this.flushVoice();
     this.barks.open = true;
+    const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
     try {
     if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
@@ -492,7 +502,10 @@ export class Campaign {
     }
     } finally {
       this.barks.open = false;
-      if (!(this.papiTime > 0 || this.dad)) this.flushAmbient();
+      // takeCall sets dadCall.on before dad_callin, ahead of finishDadCallin.
+      // Also discard offers created by KOs during either set-piece, including its final tick.
+      if (ambientSuppressed || this.papiTime > 0 || this.dadCall.on || this.dad) this.clearAmbient();
+      else this.flushAmbient();
     }
   }
 }

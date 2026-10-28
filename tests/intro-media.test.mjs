@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { clipMedia, INTRO_REV } from '../src/cutscene.js';
+import { createHash } from 'node:crypto';
+import { clipMedia, CutscenePlayer, INTRO_REV } from '../src/cutscene.js';
 import { createStoryPlayer } from '../src/cutscene-hooks.js';
 
 function boxes(b, start, end) {
@@ -69,6 +70,7 @@ function videoSampleDeltas(b) {
 
 test('intro_v3 has no frozen Dad gap and the player cache-busts that file', () => {
   const b = readFileSync('assets/cutscenes/intro_v3.mp4');
+  assert.equal(createHash('md5').update(b).digest('hex').slice(0, 8), INTRO_REV, 'INTRO_REV must match the intro media md5 prefix');
   const seconds = mvhdSeconds(b);
   assert.ok(seconds >= 61.4 && seconds <= 61.7, `duration ${seconds}`);
   const deltas = videoSampleDeltas(b);
@@ -90,4 +92,26 @@ test('intro_v3 has no frozen Dad gap and the player cache-busts that file', () =
   const story = createStoryPlayer(new URLSearchParams(''), root);
   assert.equal(story.player.srcOf, null);
   story.destroy();
+});
+
+test('intro revision survives srcOf and srcFor overrides, query strings, and fragments', () => {
+  for (const hook of ['srcOf', 'srcFor']) {
+    for (const suffix of ['', '?quality=hd#t=38', '?quality=hd&v=stale#t=38']) {
+      const override = (id) => ({ src: `custom/${id}.mp4${suffix}`, poster: `custom/${id}.jpg${suffix}` });
+      const player = new CutscenePlayer({ document: {}, performance: { now: () => 0 } }, hook === 'srcOf' ? { src: override } : {});
+      if (hook === 'srcFor') player.srcFor = override;
+      player.video = { play() {} };
+      player.next({ ids: ['intro_v3'], i: -1 }, 'begin');
+      for (const key of ['src', 'poster']) {
+        const url = new URL(player.video[key], 'https://example.test/');
+        assert.match(url.pathname, /^\/custom\/intro_v3\.(mp4|jpg)$/);
+        assert.deepEqual(url.searchParams.getAll('v'), [INTRO_REV]);
+        assert.equal(url.searchParams.get('quality'), suffix ? 'hd' : null);
+        assert.equal(url.hash, suffix ? '#t=38' : '');
+      }
+      player.next({ ids: ['intro_v2'], i: -1 }, 'begin');
+      assert.equal(player.video.src, override('intro_v2').src);
+      assert.equal(player.video.poster, override('intro_v2').poster);
+    }
+  }
 });

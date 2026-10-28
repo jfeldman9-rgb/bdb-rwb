@@ -36,9 +36,12 @@ test('stampede runners stay screen-space and the front matches the kill clock', 
   const scene = fakeScene();
   const fx = new PapacitoFX(scene);
   fx.start();
-  assert.ok(scene.sprites.length >= 14);
-  assert.equal(scene.sprites.length, 16);
+  assert.ok(scene.sprites.length >= 30, 'stampede must be a wall of at least 30 runners');
+  assert.equal(scene.sprites.length, 36);
+  for (const y of [575, 630, 690]) assert.equal(scene.sprites.filter((s) => s.y === y).length, 12);
   for (const s of scene.sprites) {
+    assert.ok(s.scaleX >= 0.8, `runner scale ${s.scaleX} must be roughly Bob's height`);
+    assert.ok(s.depth >= 18000 && s.depth < 19000, `depth ${s.depth}`);
     assert.equal(s.scrollFactorX, 0);
     assert.equal(s.scrollFactorY, 0);
     assert.match(s.played.key, /^papi_stampede_run[1-6]$/);
@@ -49,7 +52,11 @@ test('stampede runners stay screen-space and the front matches the kill clock', 
   assert.ok(Math.abs(papiHitTime(front) - 0.4) < 1e-9);
   for (let i = 1; i < fx.runners.length; i++) {
     const behind = front - fx.runners[i].x;
-    assert.ok(behind >= 40 && behind <= 900, `lag ${behind}`);
+    assert.ok(behind > 0 && behind <= 620, `lag ${behind}`);
+    if (i >= 3) {
+      const spacing = fx.runners[i - 3].x - fx.runners[i].x;
+      assert.ok(spacing >= 30 && spacing <= 80, `lane spacing ${spacing}`);
+    }
   }
   fx.update(2.09);
   for (const s of scene.sprites) assert.ok(s.x > 1370, `x ${s.x}`);

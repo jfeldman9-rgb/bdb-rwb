@@ -9,9 +9,19 @@ import { isMuted, onMuteChange } from './audio.js';
 export const CLIP_BASE = 'assets/cutscenes/';
 /** GitHub Pages caches intro_v3 by URL. This is the file's md5 prefix so the yell + Dad cut replaces the old one. */
 export const INTRO_REV = 'b67d6176';
-export function clipMedia(id, base = CLIP_BASE) {
-  const bust = id === 'intro_v3' ? `?v=${INTRO_REV}` : '';
-  return { src: `${base}${id}.mp4${bust}`, poster: `${base}${id}.jpg${bust}` };
+function introRevision(id, url) {
+  if (id !== 'intro_v3') return url;
+  const [path, hash] = url.split('#');
+  const [file, query] = path.split('?');
+  const params = new URLSearchParams(query);
+  params.set('v', INTRO_REV);
+  return `${file}?${params}${hash === undefined ? '' : `#${hash}`}`;
+}
+export function clipMedia(id, base = CLIP_BASE, override = {}) {
+  return {
+    src: introRevision(id, override?.src || `${base}${id}.mp4`),
+    poster: introRevision(id, override?.poster || `${base}${id}.jpg`),
+  };
 }
 export const INTRO_V2 = Object.freeze({
   // Legacy alternate intro. Enable with ?intro=v2. Default opening is intro_v3.
@@ -172,9 +182,9 @@ export class CutscenePlayer {
     const v = this.video, id = r.ids[r.i], over = (this.srcOf || this.srcFor)?.(id);
     r.clipT0 = r.lastT = r.visT = this.now(); r.hiddenAt = this.root.document?.hidden ? this.now() : null; r.lastTime = 0; r.started = false; r.visMs = 0;
     try {
-      const media = clipMedia(id, this.base);
-      v.poster = over?.poster || media.poster;
-      v.src = over?.src || media.src;
+      const media = clipMedia(id, this.base, over);
+      v.poster = media.poster;
+      v.src = media.src;
       v.muted = isMuted() || r.muted; v.volume = this.volume;
       this.start(r, v, id);
     } catch (e) { this.next(r, 'error'); }
