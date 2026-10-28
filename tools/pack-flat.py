@@ -2,14 +2,16 @@
 """Pack BDB sprites (v2 higher-fps) + clothed silhouette stand-ins.
 
 - Reads /workspace/bdb-art/sprites MAIN folder (ignores _v1/ and _old/).
-- Spec: FPS.md — bob idle12@12 walk12@18 shoot7@16 hurt5@14 knockdown7@14 getup7@14;
-  yetti1/2 idle12@12 walk16@18 attack7@16 hurt5@14 knockdown7@14.
+- Spec: FPS.md — bob idle12@12 walk12@18 shoot8@16 hurt5@14 knockdown7@14 getup7@14;
+  yetti1/2 idle12@12 walk16@18 attack 8@16 (yetti1, hand-drawn v3) / 7@16 (yetti2) hurt5@14 knockdown7@14.
+  Hand-drawn v3 sheets are numbered 00..07; everything else starts at 01 (third spec field).
 - Dedupes identical pixel frames in the atlas; anim defs re-reference shared frames.
 - Trims alpha, packs webp, downscales by DRAW_SCALE (~0.58) for iPhone GPU.
 - canvas/baseline stay logical 720×600 / 570; anims.scale = DRAW_SCALE so
   fighter.js `def.scale / m.scale` keeps on-screen size.
 
 Run from repo root: node tools/make-placeholders.mjs
+Repack only some atlases (no wipe, no media copy): python3 tools/pack-flat.py --only bob,yetti_walker
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
@@ -19,8 +21,14 @@ DRAW_SCALE = 0.38  # PACK_SCALE_NOTE: 0.58 draw intent overshoots ~42MiB stage1 
 MAXW = 2048
 PAD = 2
 
-art = Path(sys.argv[1] if len(sys.argv) > 1 else '/workspace/bdb-art/sprites')
-packet = Path(sys.argv[2] if len(sys.argv) > 2 else '/workspace/bdb-packet/src/Claudia_Handoff/game/public/game')
+args, only = [], None
+argv = iter(sys.argv[1:])
+for a in argv:
+  if a == '--only': only = set(next(argv).split(','))
+  elif a.startswith('--only='): only = set(a[len('--only='):].split(','))
+  else: args.append(a)
+art = Path(args[0] if len(args) > 0 else '/workspace/bdb-art/sprites')
+packet = Path(args[1] if len(args) > 1 else '/workspace/bdb-packet/src/Claudia_Handoff/game/public/game')
 out = Path('assets/chars')
 out.mkdir(parents=True, exist_ok=True)
 
@@ -29,11 +37,11 @@ fps_ms = lambda fps: max(1, int(1000 / fps + 0.5))  # half-up; matches JS Math.r
 
 REAL = {
   'bob': ('bob', {
-    'idle': (12, 12), 'walk': (12, 18), 'shoot': (7, 16),
+    'idle': (12, 12), 'walk': (12, 18), 'shoot': (8, 16, 0),
     'hurt': (5, 14), 'knockdown': (7, 14), 'getup': (7, 14),
   }),
   'yetti_walker': ('yetti1', {
-    'idle': (12, 12), 'walk': (16, 18), 'attack': (7, 16),
+    'idle': (12, 12), 'walk': (16, 18), 'attack': (8, 16, 0),
     'hurt': (5, 14), 'knockdown': (7, 14),
   }),
   'yetti_guard': ('yetti2', {
@@ -141,7 +149,8 @@ def pack(key, anims_spec, source=None):
     entries = {}
     x = y = rowh = W = H = 0
 
-  for anim, (count, fps) in anims_spec.items():
+  for anim, (count, fps, *first) in anims_spec.items():
+    first = first[0] if first else 1
     hold = fps_ms(fps) if fps > 0 else 1000
     a = {
       'name': f'{key}_{anim}',
@@ -149,7 +158,7 @@ def pack(key, anims_spec, source=None):
       'loop': anim in LOOP or anim.startswith('run'),
       'fps': fps,
     }
-    for i in range(1, count + 1):
+    for i in range(first, first + count):
       logical += 1
       logical_name = f'{key}_{anim}_{i:02d}'
       im = load_frame(source, anim, i) if source else silhouette(key, anim, i)
@@ -200,17 +209,24 @@ def pack(key, anims_spec, source=None):
   print(f'{key}: logical={logical} unique={unique} reused={reused} pages={len(pages)}')
 
 
-# clean old char atlases for keys we own (keep nothing stale)
-for p in list(out.glob('*')):
-  if p.suffix in {'.webp', '.json'}:
-    p.unlink()
+if only:
+  unknown = only - set(REAL) - set(STANDINS)
+  if unknown:
+    sys.exit(f'unknown atlas keys: {sorted(unknown)}')
+else:
+  # clean old char atlases for keys we own (keep nothing stale)
+  for p in list(out.glob('*')):
+    if p.suffix in {'.webp', '.json'}:
+      p.unlink()
 
 for key, (source, counts) in REAL.items():
-  pack(key, counts, source)
+  if not only or key in only:
+    pack(key, counts, source)
 for key, counts in STANDINS.items():
-  pack(key, counts)
+  if not only or key in only:
+    pack(key, counts)
 
-for path in ['assets/bg', 'assets/audio/voice', 'assets/cutscenes', 'docs/shots']:
+for path in ([] if only else ['assets/bg', 'assets/audio/voice', 'assets/cutscenes', 'docs/shots']):
   Path(path).mkdir(parents=True, exist_ok=True)
 voices = {
   'bdb-open': 'bdb_open', 'bdb-produce': 'bdb_produce', 'papacito-laugh': 'bdb_laugh',
@@ -218,10 +234,11 @@ voices = {
   'turn-back-papi': 'yetti_turnback', 'papi-serious': 'choir_serious',
   'intervention': 'lecturer_intervention', 'council-denies': 'wingman_council',
 }
-for src, dst in voices.items():
+for src, dst in ({} if only else voices).items():
   shutil.copyfile(packet / 'voices' / f'{src}.mp3', Path('assets/audio/voice') / f'{dst}.mp3')
-shutil.copyfile(packet / 'bdb-rise.mp3', 'assets/audio/bdb-rise.mp3')
-for clip in ['opening', 'victory']:
+if not only:
+  shutil.copyfile(packet / 'bdb-rise.mp3', 'assets/audio/bdb-rise.mp3')
+for clip in ([] if only else ['opening', 'victory']):
   shutil.copyfile(packet / 'cutscenes' / f'{clip}.mp4', Path('assets/cutscenes') / f'{clip}.mp4')
   if shutil.which('ffmpeg'):
     subprocess.run([
@@ -231,7 +248,7 @@ for clip in ['opening', 'victory']:
     ], check=True)
   else:
     Image.open(packet / 'console' / 'chapter1-boulevard.webp').convert('RGB').save(f'assets/cutscenes/{clip}.jpg')
-for bg in ['chapter1-boulevard', 'chapter2-clouds', 'chapter3-castle', 'astra-keep']:
+for bg in ([] if only else ['chapter1-boulevard', 'chapter2-clouds', 'chapter3-castle', 'astra-keep']):
   Image.open(packet / 'console' / f'{bg}.webp').resize((1280, 720), Image.Resampling.LANCZOS).save(
     f'assets/bg/{bg}.webp', quality=90)
 

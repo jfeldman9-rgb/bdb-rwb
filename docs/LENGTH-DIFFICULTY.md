@@ -66,3 +66,9 @@ Measured **2026-10-28** on `bdb-scroll` (length/difficulty pass, Claude Opus 5.5
 - **Nightmare** is not bot-clearable (S2/S3 zone 5 wave 2 snowball wall). It already wasn't at `ab4cc15` (S2 boss: 81 bot deaths), so this is not a regression, but Nightmare has not been tuned for the longer stages.
 - **Story** clears in ~415 s with 0 bot deaths (S1 125 s), below the RWB band by design (5 hearts, 1.6× damage).
 - New plates are mirrored/zoomed/regraded derivatives, not new paintings; `s1-mid5` keeps the readable (unmirrored) MOTEL sign.
+
+## In-progress steer (same pass)
+
+Game Art dropped hand-drawn **8-frame** `bob_shoot_00..07` and `yetti1_attack_00..07` at **16 fps** under `/workspace/bdb-art/sprites` (see `FPS.md`; 146 frames total). **Repack and ship** those into `assets/chars` before closing this pass. Fist clip on `yetti1_attack_05` is known — leave it. Details: `docs/ART-UPDATE-STEER.md` and `/tmp/bdb-length-claude-addendum.md`.
+
+**Status: done** (art repack commit on `bdb-scroll`). `bob_shoot` and `yetti_walker_attack` are now the 8 hand-drawn v3 frames (`00..07`) at 16 fps, packed by `python3 tools/pack-flat.py --only bob,yetti_walker`, which rebuilds just those two atlases. Other Bob/walker anims are unchanged apart from WebP re-encode noise. `yetti_guard` keeps its 7-frame `yetti2_attack` (not redrawn). The `attack_05` fist clip is left as delivered.

@@ -118,12 +118,13 @@
     {
       "name": "yetti_walker_attack",
       "frames": [
+        "yetti_walker_attack_00",
         "yetti_walker_attack_01",
-        "yetti_walker_attack_01",
+        "yetti_walker_attack_02",
         "yetti_walker_attack_03",
-        "yetti_walker_attack_03",
+        "yetti_walker_attack_04",
         "yetti_walker_attack_05",
-        "yetti_walker_attack_05",
+        "yetti_walker_attack_06",
         "yetti_walker_attack_07"
       ],
       "pages": [
@@ -133,9 +134,11 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "holds": [
+        63,
         63,
         63,
         63,
@@ -209,8 +212,8 @@
   "placeholder": false,
   "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 47,
-    "unique": 40,
-    "reused": 7
+    "logical": 48,
+    "unique": 44,
+    "reused": 4
   }
 }

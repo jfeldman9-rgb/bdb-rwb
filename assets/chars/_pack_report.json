@@ -1,8 +1,8 @@
 {
   "draw_scale": 0.38,
-  "disk_webp_bytes": 1678060,
-  "disk_webp_MiB": 1.6,
-  "all_chars_gpu_RGBA_MiB": 20.289,
-  "stage1_resident_gpu_RGBA_MiB": 18.879,
+  "disk_webp_bytes": 1741376,
+  "disk_webp_MiB": 1.661,
+  "all_chars_gpu_RGBA_MiB": 20.143,
+  "stage1_resident_gpu_RGBA_MiB": 18.733,
   "pages": 13
 }
