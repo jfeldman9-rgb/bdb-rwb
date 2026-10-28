@@ -1,9 +1,9 @@
 {
   "draw_scale": 0.38,
-  "disk_webp_bytes": 3114710,
-  "disk_webp_MiB": 2.97,
-  "all_chars_gpu_RGBA_MiB": 33.188,
-  "stage1_resident_gpu_RGBA_MiB": 31.771,
+  "disk_webp_bytes": 3099920,
+  "disk_webp_MiB": 2.956,
+  "all_chars_gpu_RGBA_MiB": 33.248,
+  "stage1_resident_gpu_RGBA_MiB": 31.831,
   "pages": 13,
   "compressed": {
     "formats": {
@@ -25,21 +25,21 @@
       "papi_runners"
     ],
     "stage1_gpu_MiB": {
-      "rgba_webp": 31.771,
-      "astc": 7.943,
-      "etc2": 7.943
+      "rgba_webp": 31.831,
+      "astc": 7.958,
+      "etc2": 7.958
     },
     "all_chars_gpu_MiB": {
-      "rgba_webp": 33.188,
-      "astc": 8.297,
-      "etc2": 8.297
+      "rgba_webp": 33.248,
+      "astc": 8.312,
+      "etc2": 8.312
     },
     "disk_MiB": {
-      "webp": 2.97,
-      "astc_ktx": 8.298,
-      "etc2_ktx": 8.298,
-      "astc_ktx_gzip": 4.672,
-      "etc2_ktx_gzip": 2.794
+      "webp": 2.956,
+      "astc_ktx": 8.313,
+      "etc2_ktx": 8.313,
+      "astc_ktx_gzip": 4.657,
+      "etc2_ktx_gzip": 2.783
     },
     "pages": {
       "bob-0": {
@@ -79,16 +79,16 @@
         "etc2_gzip": 9606
       },
       "dad-0": {
-        "w": 1268,
-        "h": 376,
-        "rgba": 1907072,
-        "webp_disk": 189148,
-        "astc_gpu": 476768,
-        "astc_disk": 476864,
-        "astc_gzip": 247698,
-        "etc2_gpu": 476768,
-        "etc2_disk": 476864,
-        "etc2_gzip": 161032
+        "w": 1256,
+        "h": 392,
+        "rgba": 1969408,
+        "webp_disk": 174358,
+        "astc_gpu": 492352,
+        "astc_disk": 492448,
+        "astc_gzip": 231972,
+        "etc2_gpu": 492352,
+        "etc2_disk": 492448,
+        "etc2_gzip": 149172
       },
       "interventionist-0": {
         "w": 860,
