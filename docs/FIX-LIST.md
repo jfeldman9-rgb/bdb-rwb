@@ -15,7 +15,7 @@
 | **P0-4** | **Done.** `GameScene` owns `FX`: muzzle flash, visual recoil, eggplant splat, lane-step dust. Hit-stop uses `HITSTOP` tiers (light stays 4 frames). Presses during the freeze are latched. `setBloom`, `setBackdropLit`, and `runId` exist so a later governor install does not throw. `tests/feel.test.mjs`. |
 | **P0-5** | **Done.** Portrait phones (`orientation:portrait`, `hover:none`, `pointer:coarse`) keep `#rotate` up during play, same as RWB. Gameplay pauses on `rotate` only when that block flips. The letterbox escape hint is gone. `#rotate-start` stays for the title and hides once `.playing`. |
 | **K1** | **Done.** A stage change does not drain events on the dying scene. `create` handles them after `syncViews`, so the kidnap clip pauses stage 2. `tests/stage-cutscene.test.mjs`. |
-| **P1-3** | Pending |
+| **P1-3** | **Done.** `narrationYields`: a line landing on narration waits 2.5s, anything else yields. Installed before `handleEvents`. Cory and Yetti taunts roll once a second. |
 | **P1-4** | Pending |
 | **P1-6** | Pending |
 | **P1-7** | Pending |

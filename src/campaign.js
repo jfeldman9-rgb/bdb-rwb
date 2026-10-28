@@ -48,6 +48,7 @@ export class Campaign {
     this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
     this.hitStop = 0; this.papiTime = 0; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
+    this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
     if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
@@ -239,8 +240,12 @@ export class Campaign {
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
-    const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
-    const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
+    this.barkAcc += dt;
+    if (this.barkAcc >= 1) {
+      this.barkAcc -= 1;
+      const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
+      const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
+    }
     const fightZone=this.zoneIndex<this.bossZone?this.def.zones[this.zoneIndex]:null;
     const boss=this.bossActive?this.def.boss:null;
     updateCamera(this,dt,{bobX:this.bob.x,facing:this.bob.facing,locked:this.locked,zone:this.locked&&!this.bossActive?fightZone:null,boss});

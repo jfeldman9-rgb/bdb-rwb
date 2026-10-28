@@ -416,6 +416,8 @@ export function residentClipIds() { return Object.keys(clips); }
  * 'interrupt', or the seconds the new line may wait for its turn (0 or 'skip' drops it). null restores the default.
  */
 export function setVoicePolicy(fn) { voicePolicy = typeof fn === 'function' ? fn : null; voiceQueue.length = 0; }
+/** A bark on the same frame as narration waits. Anything else yields so the line already playing finishes. */
+export function narrationYields(id, cur) { return /^nar_/.test(cur || '') ? 2.5 : 0; }
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';
 const pendingStale = () => voicePending && audioNow() - voicePendingAt > 3;
 // Only opted-in speech gets a deadline; the audio clock pauses in background tabs.
