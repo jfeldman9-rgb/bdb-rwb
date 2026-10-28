@@ -19,6 +19,12 @@ import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
 import { RECOIL_KICK, stepRecoil, hostileShape } from './shot-feel.js';
 
+/** Opening bed. A cutscene already queued on this load fades the track the same frame, so leave it silent until the clip ends. */
+export function trackForStageStart(stageNo, events) {
+  if (events?.some(e => e.type === 'cutscene')) return null;
+  return `stage${stageNo}`;
+}
+
 /** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
 function roleAnim(m) {
   const t = m.type, s = m.state;
@@ -65,7 +71,9 @@ export class GameScene extends Phaser.Scene {
   if(this.stageNo===3){const bl=this.world.def.boss.l,m=this.metas.claudia,a=m.anims[0];this.claudia=this.add.sprite(bl+970,490,m.pages[0],a.frames[0]).setOrigin(.5,.95).setScale(.27).setTint(0xffb4d7).play(a.name);
    const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);this.claudiaCage=cage;}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
-  this.game.inp.clear();preloadClips(stageLines(this.stageNo));playTrack(`stage${this.stageNo}`);
+  this.game.inp.clear();preloadClips(stageLines(this.stageNo));
+  const opening=trackForStageStart(this.stageNo,this.world.events);
+  if(opening)playTrack(opening);
   this.offDadBless=installDadGestureBless(globalThis);
   this.offRotate=bindRotatePause(this);
   this.events.once('shutdown',()=>{this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});

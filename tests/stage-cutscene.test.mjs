@@ -16,7 +16,7 @@ globalThis.matchMedia = () => ({ matches: false, addEventListener: noop, removeE
 globalThis.addEventListener = noop;
 globalThis.removeEventListener = noop;
 
-const { GameScene } = await import('../src/game-scene.js');
+const { GameScene, trackForStageStart } = await import('../src/game-scene.js');
 const { pauseForClip } = await import('../src/cutscene-hooks.js');
 
 test('a stage change leaves the kidnap cutscene for the new scene to pause', () => {
@@ -85,4 +85,10 @@ test('a held clip lets the story player own the Phaser pause', () => {
   assert.equal(scene.released, true);
   assert.equal(scene.game.isPaused, false, 'the story player resumes the pause it took');
   assert.equal(scene.pauseReasons.has('cutscene'), false);
+});
+
+test('stage music waits when a cutscene is already queued', () => {
+  assert.equal(trackForStageStart(2, [{ type: 'cutscene', data: 'kidnap' }]), null);
+  assert.equal(trackForStageStart(2, [{ type: 'voice', data: 'nar_ch2' }]), 'stage2');
+  assert.equal(trackForStageStart(1, []), 'stage1');
 });
