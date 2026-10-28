@@ -7,6 +7,8 @@ import { Campaign } from '../src/campaign.js';
 test('narration keeps the next line for 2.5s and any other line yields', () => {
   assert.equal(narrationYields('bob_where_claudia_01', 'nar_ch1'), 2.5);
   assert.equal(narrationYields('bob_cory_joke_01', 'nar_kidnap'), 2.5);
+  assert.equal(narrationYields('bdb_open', 'bob_where_claudia_01'), 2.5);
+  assert.equal(narrationYields('claudia_open', 'bob_where_claudia_01'), 2.5);
   assert.equal(narrationYields('yetti_purple_car_01', 'bob_where_claudia_01'), 0);
   assert.equal(narrationYields('bob_hurt_01', ''), 0);
 });

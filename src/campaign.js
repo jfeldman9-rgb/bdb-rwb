@@ -54,7 +54,12 @@ export class Campaign {
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.voiceAt = [];
-    this.banner(this.def.title); this.emit('stage',stage); this.emit('voice',`nar_ch${stage}`);
+    this.banner(this.def.title); this.emit('stage',stage);
+    // The kidnap clip stops scene audio. Chapter 2's narration has to be emitted
+    // after that event so the new scene holds it instead of starting it and cutting it off.
+    const openingKidnap = stage === 2 && !this.kidnapPlayed;
+    if (openingKidnap) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
+    this.emit('voice',`nar_ch${stage}`);
     if (stage === 1) {
       this.armVoice('bdb_open', 4);
       this.armVoice('nar_intro_01', 8);
@@ -62,7 +67,7 @@ export class Campaign {
       this.armVoice('nar_intro_03', 18);
     }
     if (stage === 3) this.armVoice('claudia_open', 2);
-    if (stage === 2 && !this.kidnapPlayed) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); this.emit('voice', 'nar_kidnap'); }
+    if (openingKidnap) this.emit('voice', 'nar_kidnap');
     const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
