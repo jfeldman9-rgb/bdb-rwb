@@ -142,8 +142,27 @@ export class GameScene extends Phaser.Scene {
   for(const p of this.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);}
   this.particles=this.particles.filter(p=>p.life>0);
  }
+ playHeld(ids){for(const id of ids||[]){say(id,(who,line)=>this.hud?.say(who,line));if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);}}
+ /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
+ startHeldClip(key,done){
+  this.voiceHold=[];this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
+  this.game.story.play(key,()=>{
+   this.holdingVoice=false;this.setPauseReason('cutscene',false);const held=this.voiceHold||[];this.voiceHold=[];
+   if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
+   done?.(held);
+  });
+ }
+ presentVictory(){
+  if(this.finished)return;this.finished=true;this.freeClaudia?.();
+  this.startHeldClip('victory',held=>{
+   this.playHeld(held);
+   const panel=document.getElementById('victory'),score=document.getElementById('victory-score');
+   if(score)score.textContent=`${Math.floor(this.world.score)} points · Nightmare unlocked`;
+   if(panel)panel.hidden=false;document.body.classList.remove('playing');
+  });
+ }
  handleEvents(){for(const {type,data}of this.world.events.splice(0)){
-  if(type==='voice'){say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}
+  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else{say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=12;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
@@ -152,7 +171,8 @@ export class GameScene extends Phaser.Scene {
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.papi();}
   if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}
-  if(type==='cutscene'){this.setPauseReason('cutscene',true); this.game.story.play(data,()=>{this.setPauseReason('cutscene',false);});}
+  if(type==='cutscene')this.startHeldClip(data,held=>this.playHeld(held));
+  if(type==='victory')this.presentVictory();
   if(type==='dad')sfx.dadHorn();
   if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);this.fx?.impact('finisher',data.x,data.y-40,-1);sfx.hit(true);
    for(let i=0;i<18;i++)this.particles.push({x:data.x-85+Math.random()*60-30,y:data.y-12,vx:Math.random()*360-180,vy:-80-Math.random()*240,life:.35+Math.random()*.35,color:i%3?0xfff3b0:0xffffff});}
@@ -168,6 +188,6 @@ export class GameScene extends Phaser.Scene {
   this.syncViews(dt);this.fx?.update(dt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(dt);this.stepDust(dt);}if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);
   perf.tick(performance.now(),{active:!w.paused&&!w.victory,inFight:w.locked&&!w.papiTime&&!w.dad,context:{stage:this.stageNo,mode:w.bossActive?'boss':'stage'}});
   this.game.governor?.();
-  if(w.victory&&!this.finished){this.finished=true;playTrack(null,{fade:.5});stopSceneAudio();this.game.story.play('victory',()=>{document.getElementById('victory').hidden=false;document.getElementById('victory-score').textContent=`${Math.floor(w.score)} points · Nightmare unlocked`;document.body.classList.remove('playing');});}
+  if(w.victory&&!this.finished)this.presentVictory();
  }
 }
