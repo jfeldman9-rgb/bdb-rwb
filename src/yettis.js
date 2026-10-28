@@ -83,6 +83,11 @@ const HEAVY = ['guard', 'charger', 'lecturer'];
 export function choirMultiplier(e, enemies) {
   return enemies.some(a => a !== e && a.alive && ['choir','choirmaster'].includes(a.type) && Math.hypot(a.x-e.x,a.y-e.y) <= 300) ? 1.28 : 1;
 }
+/** Dashed ring and note marks for a living choir. Radius matches the buff. The multiplier stays 1.28. */
+export function choirAura(e) {
+  if (!e?.alive || (e.type !== 'choir' && e.type !== 'choirmaster')) return null;
+  return { r: 300, notes: 3 };
+}
 export class Yetti {
   constructor(type, x, y, hpScale = 1) {
     const t = TYPES[type]; if (!t) throw new Error(`Unknown Yetti: ${type}`);

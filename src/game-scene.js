@@ -1,7 +1,7 @@
 import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
 import { Fighter } from './fighter.js';
-import { TYPES, laneOf, laneY, LANE_H } from './yettis.js';
+import { TYPES, laneOf, laneY, LANE_H, choirAura, choirMultiplier } from './yettis.js';
 import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
@@ -142,6 +142,13 @@ export class GameScene extends Phaser.Scene {
   const paddle=!!w.dad&&!this.anims.exists('dad_swat');this.dadLabel.setVisible(paddle);
   if(paddle){const d=w.dad,swing=d.state==='swat'?Math.sin(d.age*12)*65:0,x=d.x+135+swing,y=d.y-230;g.lineStyle(12,0xd5bc82);g.lineBetween(d.x+45,d.y-100,x,y);g.lineStyle(6,0xffe3a5);g.strokeRoundedRect(x-44,y-70,88,90,12);for(let i=-25;i<=25;i+=12){g.lineStyle(1,0xffe3a5);g.lineBetween(x+i,y-64,x+i,y+14);}this.dadLabel.setPosition(x-22,y-42);}
   for(const e of w.enemies){if(!e.alive)continue;
+   const aura=choirAura(e);
+   if(aura){
+    const spin=w.elapsed||0;g.lineStyle(2,0xffd56a,.45+.2*Math.sin(spin*2));
+    const steps=24;
+    for(let i=0;i<steps;i+=2){g.beginPath();g.arc(e.x,e.y,aura.r,(i/steps)*Math.PI*2,((i+1)/steps)*Math.PI*2,false);g.strokePath();}
+    for(let n=0;n<aura.notes;n++){const ang=spin*1.4+n*2.0943951023931953,nx=e.x+Math.cos(ang)*72,ny=e.y-168+Math.sin(ang)*16;g.fillStyle(0xfff1a8,.9);g.fillEllipse(nx,ny,8,6);g.fillRect(nx+4,ny-14,2,14);}
+   }else if(choirMultiplier(e,w.enemies)>1){g.lineStyle(3,0xffd56a,.35+.35*Math.sin((w.elapsed||0)*6));g.strokeEllipse(e.x,e.y-90,78,160);}
    if(e.type==='hover'){g.lineStyle(3,0x9de1ff,.9);g.strokeEllipse(e.x,e.y,90,20);}
    if(e.shield){g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(e.x+e.facing*48,e.y-82,34,110);}
    if(e.state==='telegraph'){
