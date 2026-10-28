@@ -158,9 +158,9 @@ export class Campaign {
   }
   summonWalkers() { this.summonAdds(['walker','walker']); }
   snowball(x,y,dir,kind='snowball') { this.hostile.push({x,y,dir,kind,speed:kind==='halo'?260:320,alive:true}); }
-  hurtBob(charger=false, srcX=null) {
-    const dir = srcX == null ? 0 : (Math.sign(this.bob.x - srcX) || 1);
-    if (this.bob.takeHit({charger, dir})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); this.speakRot('hurt',['bob_hurt_01','bob_hurt_02','bob_hurt_03'],1.4); }
+  hurtBob(charger=false, srcX=null, dir=null) {
+    const knock = dir ? Math.sign(dir) : (srcX == null ? 0 : (Math.sign(this.bob.x - srcX) || 1));
+    if (this.bob.takeHit({charger, dir: knock})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); this.speakRot('hurt',['bob_hurt_01','bob_hurt_02','bob_hurt_03'],1.4); }
   }
   yellYettiAttack() { const id = barkYettiAttack(this.barks, this.elapsed); if (id) this.emit('voice', id); }
   recordKo(e, source = 'bob') {
@@ -361,7 +361,7 @@ export class Campaign {
     this.tickPending(dt);
     for(const e of [...this.enemies])e.update(dt,this);
     for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
-      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<65){this.hurtBob(false, p.x);p.alive=false;}
+      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<65){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
     this.hostile=this.hostile.filter(p=>p.alive);

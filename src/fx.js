@@ -2,7 +2,7 @@
 import { HITSTOP, SHAKE, VW } from './config.js';
 export class FX {
   constructor(scene) {
-    this.s = scene; this.hitstop = 0; this.trauma = 0; this.slowmo = 0; this.lightsOn = true; this.quality = 0;
+    this.s = scene; this.trauma = 0; this.lightsOn = true; this.quality = 0;
     this._sx = 0; this._sy = 0; this._dt = 1 / 60; this._out = [0, 0];
     this.makeTextures();
     const add = scene.add;
@@ -48,13 +48,12 @@ export class FX {
   /** a landed hit: freeze, shake, sparks, light. dir = +1 if the hit travels right */
   impact(kind, x, y, dir = 1) {
     if (!HITSTOP[kind]) kind = 'medium';
-    this.hitstop = Math.max(this.hitstop, HITSTOP[kind] / 60);
+    // Hit-stop lives on the campaign step. A second freeze here never reached the sim.
     this.trauma = Math.min(1, this.trauma + SHAKE[kind]);
     const n = { light: 9, medium: 14, heavy: 24, finisher: 34 }[kind] >> (this.quality >= 2 ? 1 : 0);
     (dir > 0 ? this.sparksR : this.sparksL).emitParticleAt(x, y, n); this.dots.emitParticleAt(x, y, n >> 1);
     this.flash.setPosition(x, y).setVisible(true).setScale(kind === 'light' ? 0.55 : kind === 'medium' ? 0.8 : 1.15).setAlpha(0.7);
     this.flashT = 0.06 + HITSTOP[kind] / 120;
-    if (kind === 'finisher') this.slowmo = 0.26; else if (kind === 'heavy') this.slowmo = Math.max(this.slowmo, 0.1);
     const L = this.hitLight; L.x = x; L.y = y; L.intensity = kind === 'light' ? 1.2 : kind === 'medium' ? 1.6 : 2.1; L.radius = kind === 'light' ? 200 : 330;
   }
   thump(x, y, big) { this.dust.emitParticleAt(x, y, big ? 14 : 8); this.snowPuff.emitParticleAt(x, y, big ? 12 : 6); this.trauma = Math.min(1, this.trauma + (big ? 0.35 : 0.2)); }

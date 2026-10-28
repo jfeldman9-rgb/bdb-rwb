@@ -71,3 +71,7 @@ Done: P3-1 through P3-13.
 - P3-13 The pause, recovery, title/Enter, HUD-band, and voice-policy checks call the code. The heal test name matches Nightmare-only half heal.
 
 Deferred: Choirmaster fight balance (Claude C3; Jason signs off). Kimi F8 (stage-2 music blip, mercy banner replacing the checkpoint banner, double splat on kill). Claude C10 refusal-banner nits. Claude C12 Escape/P start the title. Claude C13 second-swat docs. Muse choir aura, shield cracks, enemy separation, boss corpse hold. Kimi G5 browser rotate. Muse Adventure zone-5 spike (no further heal cut).
+
+## Pass 3 boot follow-up
+
+`1eb6f3a` did not boot. `src/game-scene.js` imported `./shot-feel.js`, which was never committed, and `bindRotatePause` (`src/rotate-block.js`) and `noteRenderer` (`src/perf.js`) were imported without exports (the behaviour-test commit called them, the exports stayed in the working tree). A clean checkout of that SHA was 179/184. The 192/192 figure above was that dirty tree, not the pushed commit. `FX.slowmo` / `FX.hitstop` were still written and never read, and hostile knockback still used the projectile's x. This follow-up commits `src/shot-feel.js`, `tests/presentation.test.mjs`, those two exports, and a zero-dependency `package-lock.json` so `npm ci` can run. FX no longer stores slow-mo or hit-stop. A hostile hit calls `hurtBob(false, null, p.dir)`. Choirmaster numbers and `assets/cutscenes/intro_v3.mp4` are unchanged.

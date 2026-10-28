@@ -16,3 +16,14 @@ export function syncRotatePause(scene, matchMedia = globalThis.matchMedia) {
   if (block === scene.pauseReasons.has('rotate')) return;
   scene.setPauseReason('rotate', block);
 }
+
+/** One MediaQueryList for the life of the scene. The change event replaces a per-frame query. */
+export function bindRotatePause(scene, matchMedia = globalThis.matchMedia) {
+  let query = null;
+  try { query = matchMedia?.(PORTRAIT_BLOCK) ?? null; } catch (e) { query = null; }
+  const cached = () => query;
+  const apply = () => syncRotatePause(scene, cached);
+  apply();
+  query?.addEventListener?.('change', apply);
+  return () => query?.removeEventListener?.('change', apply);
+}
