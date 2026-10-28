@@ -428,7 +428,7 @@ export function presentStage(scene) {
 }
 /** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
-const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_)/;
+const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
   return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
 }
