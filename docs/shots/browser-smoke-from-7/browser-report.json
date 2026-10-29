@@ -51,8 +51,8 @@
     {
       "stage": 7,
       "key": "s7-mid2",
-      "alpha": 0.9912506404183545,
-      "camX": 2555.80030740081,
+      "alpha": 0.9904552440927508,
+      "camX": 2555.4185171645204,
       "zone": 2
     },
     {
@@ -156,6 +156,11 @@
     "/workspace/docs/shots/browser-smoke-from-7/touch-stage1.png",
     "/workspace/docs/shots/browser-smoke-from-7/chapter4-title-opener.png",
     "/workspace/docs/shots/browser-smoke-from-7/intro-dad.png",
-    "/workspace/docs/shots/browser-smoke-from-7/stage1-intro.png"
+    "/workspace/docs/shots/browser-smoke-from-7/stage1-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-7/stage5-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-7/stage6-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-7/stage7-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-7/final-victory.png",
+    "/workspace/docs/shots/browser-smoke-from-7/final-victory-panel.png"
   ]
 }
