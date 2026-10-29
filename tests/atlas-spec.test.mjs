@@ -49,7 +49,7 @@ test('§5.1 keys present; Yetti originals use v2 walk=16 and are not placeholder
  }
 });
 test('character atlas GPU residency stays under 60 MiB RGBA for a Stage 1 kit',async()=>{
- const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_runners'];
+ const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_stampede'];
  let gpu=0;
  for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);
   for(const p of m.pages){const meta=(await json(`assets/chars/${p}.json`)).meta;gpu+=meta.size.w*meta.size.h*4;}
@@ -84,7 +84,7 @@ test('queueCharPages asks Phaser for ASTC, then ETC2, then the webp atlas',async
  calls.length=0;queueCharPages({...scene,cache:{json:{get:()=>plain}}},['dad']);assert.deepEqual(calls[0],['atlas','dad-0','assets/chars/dad-0.webp','assets/chars/dad-0.json']);
 });
 test('Stage 1 kit on-device estimate with ASTC/ETC2 is a quarter of the RGBA webp path',async()=>{
- const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_runners'];let rgba=0,astc=0;
+ const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_stampede'];let rgba=0,astc=0;
  for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}}
  assert.equal(astc*4,rgba);assert.ok(astc/2**20<60,`stage1 ASTC MiB ${astc/2**20}`);
  const r=await json('assets/chars/_pack_report.json');assert.ok(Math.abs(r.compressed.stage1_gpu_MiB.astc-astc/2**20)<.01);
@@ -106,4 +106,19 @@ test('painted role Yettis ship FPS.md anims and are not placeholders',async()=>{
       assert.equal(a.frames.length,n);assert.equal(a.holds[0],hold(fps));
     }
   }
+});
+
+test('papi_stampede is six looping 8-frame runs and the loader uses the keyed webp', async () => {
+  const m = await json('assets/chars/papi_stampede.anims.json');
+  assert.equal(m.placeholder, false);
+  for (let i = 1; i <= 6; i++) {
+    const a = m.anims.find((x) => x.name === `papi_stampede_run${i}`);
+    assert.ok(a, `run${i}`);
+    assert.equal(a.frames.length, 8);
+    assert.equal(a.fps, 16);
+    assert.equal(a.loop, true);
+    assert.equal(a.holds[0], hold(16));
+  }
+  const { charPageSources } = await import('../src/assets.js');
+  assert.deepEqual(Object.keys(charPageSources(m, 'papi_stampede-0')), ['IMG']);
 });

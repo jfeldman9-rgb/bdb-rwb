@@ -216,7 +216,7 @@ export class Yetti {
     }
     if (this.state === 'recover' || this.state === 'slam') { this.timer -= dt; if (this.timer <= 0) this.state = 'approach'; return; }
     const dx = b.x-this.x, dy=b.y-this.y; const face = Math.sign(dx) || this.facing;
-    if (face !== this.facing) world.speak?.('yetti_turnback', 8);
+    if (face !== this.facing) world.speak?.('yetti_turnback', 30);
     this.facing = face;
     const ranged = ['guard','hover','choir','choirmaster'].includes(this.type), reach = ranged ? 580 : this.type === 'charger' ? 430 : 85;
     const boss = this.type === 'interventionist' ? this.phase : 0;

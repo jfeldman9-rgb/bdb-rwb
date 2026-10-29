@@ -2,7 +2,8 @@
 // node tools/browser-smoke.mjs
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { stat, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize } from 'node:path';
 import assert from 'node:assert/strict';
 
@@ -24,9 +25,23 @@ function startServer() {
       if (pathname.endsWith('/')) pathname += 'index.html';
       const file = normalize(join(root, pathname));
       if (!file.startsWith(root)) { res.writeHead(403); res.end(); return; }
-      const data = await readFile(file);
-      res.writeHead(200, { 'content-type': MIME[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
-      res.end(data);
+      const info = await stat(file);
+      const type = MIME[extname(file)] || 'application/octet-stream';
+      const range = req.headers.range;
+      const common = { 'content-type': type, 'cache-control': 'no-store', 'accept-ranges': 'bytes' };
+      // Chrome will not seek a clip (the Dad frame sits at 38 s) unless the host answers Range.
+      if (range && info.isFile()) {
+        const m = /^bytes=(\d*)-(\d*)$/.exec(range);
+        if (!m) { res.writeHead(416, common); res.end(); return; }
+        const start = m[1] === '' ? Math.max(0, info.size - Number(m[2] || 0)) : Number(m[1]);
+        const end = m[2] === '' || m[1] === '' ? info.size - 1 : Math.min(info.size - 1, Number(m[2]));
+        if (start > end || start >= info.size) { res.writeHead(416, { ...common, 'content-range': `bytes */${info.size}` }); res.end(); return; }
+        res.writeHead(206, { ...common, 'content-range': `bytes ${start}-${end}/${info.size}`, 'content-length': end - start + 1 });
+        createReadStream(file, { start, end }).pipe(res);
+        return;
+      }
+      res.writeHead(200, { ...common, 'content-length': info.size });
+      createReadStream(file).pipe(res);
     } catch {
       res.writeHead(404); res.end('missing');
     }
@@ -103,9 +118,14 @@ try {
   const gameplayShot = process.env.BDB_SMOKE_GAMEPLAY || join(shotDir, 'gameplay.png');
   await mkdir(dirname(gameplayShot), { recursive: true });
   await copyFile(`${shotDir}/stage1.png`, gameplayShot);
-  let bossShot = false, splitShot = false, status;
+  let bossShot = false, splitShot = false, stampedeShot = false, status;
   for (let i = 0; i < 600; i++) {
-    status = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};for(let i=0;i<90&&!s.switching&&!s.world.victory;i++)s.update(0,1000/60);const card=document.getElementById('startup-error');return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.wingmen?.phase,victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats};})()`);
+    status = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};let stampede=null;for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){s.update(0,1000/60);const fx=s.papiFX;if(!window.__stampedeShot&&fx&&fx.runners.length>=14&&fx.age>0.8&&fx.age<1.35){window.__stampedeShot=true;stampede={age:+fx.age.toFixed(3),n:fx.runners.length,x:Math.round(fx.runners[0].x)};break;}}const card=document.getElementById('startup-error');return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.wingmen?.phase,victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede};})()`);
+    if (status.stampede && !stampedeShot) {
+      await shot('stampede');
+      stampedeShot = true;
+      console.log('Stampede mid-sweep', JSON.stringify(status.stampede));
+    }
     if (status.cardHidden === false || status.started === false) throw new Error('gameplay dropped: ' + JSON.stringify(status));
     if (status.boss && !bossShot) { await shot('boss'); bossShot = true; }
     if (status.stage === 3 && status.phase === 3 && !splitShot) { await shot('wingmen'); splitShot = true; }
@@ -113,6 +133,7 @@ try {
     await sleep(30);
   }
   if (!status?.victory) throw new Error('Browser demo failed to clear: ' + JSON.stringify(status));
+  if (!stampedeShot) throw new Error('Papacito stampede was not on screen mid-sweep');
   await waitFor('!document.getElementById("victory").hidden');
   await shot('victory');
   console.log('Campaign complete', JSON.stringify(status));
@@ -159,11 +180,26 @@ try {
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
   await evaluate('document.getElementById("start").click()');
   await waitFor('!!document.querySelector("#bdb-cutscene video")');
-  await sleep(600);
-  const video = await evaluate('({inline:document.querySelector("video").playsInline,src:document.querySelector("video").src})');
+  const sought = await evaluate(`(() => new Promise((resolve) => {
+    const v = document.querySelector('#bdb-cutscene video');
+    const end = performance.now() + 8000;
+    const step = () => {
+      if (v.readyState >= 1 && v.duration > 50 && Math.abs(v.currentTime - 38) > 0.4) {
+        try { v.pause(); v.currentTime = 38; } catch (e) { /* retry */ }
+      }
+      if (v.currentTime > 30) { try { v.pause(); } catch (e) { /* shot is the still */ } resolve(v.currentTime); return; }
+      if (performance.now() > end) { resolve(v.currentTime); return; }
+      setTimeout(step, 100);
+    };
+    step();
+  }))()`);
+  await shot('intro-dad');
+  console.log('Intro Dad frame at', sought);
+  const video = await evaluate('({inline:document.querySelector("video").playsInline,src:document.querySelector("video").src,time:document.querySelector("video").currentTime})');
   assert.equal(video.inline, true);
-  assert.match(video.src, /intro_v3\.mp4/);
+  assert.match(video.src, /intro_v3\.mp4\?v=b67d6176/);
   assert.doesNotMatch(video.src, /opening\.mp4/);
+  assert.ok(video.time > 30, `intro did not seek to Dad (${video.time})`);
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
   await waitFor('window.__game?.scene.isActive("gameplay") && !document.querySelector("#bdb-cutscene")');
@@ -177,7 +213,7 @@ try {
     campaign: status, touch,
     checks: { started: true, framesAdvanced: true, noErrorCard: true, stage1: true, introV3: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
     errors,
-    screenshots: ['title', 'stage1', 'boss', 'wingmen', 'victory', 'touch-stage1'].map((x) => `${shotDir}/${x}.png`),
+    screenshots: ['title', 'stage1', 'boss', 'wingmen', 'victory', 'touch-stage1', 'stampede', 'intro-dad'].map((x) => `${shotDir}/${x}.png`),
   };
   await writeFile(`${shotDir}/browser-report.json`, JSON.stringify(report, null, 2));
   if (errors.length) throw new Error(errors.join('\n'));

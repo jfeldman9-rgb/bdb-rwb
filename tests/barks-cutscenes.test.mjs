@@ -28,6 +28,8 @@ test('bark cooldowns gate Where/Cory/Yetti lines', () => {
   assert.equal(barkWhere(st, BARK.whereCd - 1), null);
   assert.ok(barkWhere(st, BARK.whereCd));
   assert.ok(barkPapacito(st).startsWith('bob_papacito_'));
+  assert.equal(barkYettiAttack(st, 100), null);
+  assert.equal(barkYettiAttack(st, 100), null);
   assert.ok(barkYettiAttack(st, 100));
   assert.equal(barkYettiAttack(st, 100 + BARK.yettiCd - 1), null);
   const c = createBarks(() => 0);

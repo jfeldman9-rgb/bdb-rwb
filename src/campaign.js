@@ -12,7 +12,7 @@ import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W, HITSTOP, CAM_LEAD } from './con
 import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
-import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack } from './barks.js';
+import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -46,6 +46,11 @@ export const NIGHTMARE_S3_TRIMS = Object.freeze([
 /** Adventure stage 3 only. Honest hold/telegraph skips added deaths at 60 Hz. */
 export const ADVENTURE_S3_DAMAGE = 1;
 
+const AMBIENT_VOICE = Object.freeze({
+  bdb_produce: 'produce', bdb_laugh: 'laugh', choir_serious: 'choir', yetti_turnback: 'turnback',
+  bob_hurt_01: 'hurt', bob_hurt_02: 'hurt', bob_hurt_03: 'hurt',
+});
+
 /** Drop dead entries without allocating a replacement array. */
 function keep(list, pred) {
   let n = 0;
@@ -63,12 +68,12 @@ export function hitTier({ phase = false, killed = false, bonk = false, shieldBro
 
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
 export class Campaign {
-  constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {} } = {}) {
+  constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {}, rng } = {}) {
     this.difficultyKey = difficulty; this.difficulty = DIFFICULTIES[difficulty]; this.onSave = onSave;
     this.save = normalizeSave(save); this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
-    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(); this.kidnapPlayed = false; this.rescuePreBossPlayed = false; this.loadStage(stage);
+    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage);
   }
   emit(type, data) { this.events.push({ type, data }); }
   banner(text) { this.message = text; this.messageTime = 3; this.emit('banner', text); }
@@ -89,21 +94,20 @@ export class Campaign {
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.voiceAt = [];
+    this.produceSpokeOnce = false;
+    if (this.barks) {
+      this.clearAmbient();
+      this.barks.attackN = 0; this.barks.porkDue = false; this.barks.tauntId = null; this.barks.lastYetti = null;
+    }
     this.banner(this.def.title); this.emit('stage',stage);
     // The kidnap clip stops scene audio. Chapter 2's narration has to be emitted
     // after that event so the new scene holds it instead of starting it and cutting it off.
     const openingKidnap = stage === 2 && !this.kidnapPlayed;
     if (openingKidnap) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
     this.emit('voice',`nar_ch${stage}`);
-    if (stage === 1) {
-      this.armVoice('bdb_open', 4);
-      this.armVoice('nar_intro_01', 8);
-      this.armVoice('nar_intro_02', 13);
-      this.armVoice('nar_intro_03', 18);
-    }
+    // Stage 1 already played these lines in the intro. Do not re-narrate them.
+    if (stage === 1) this.armVoice('bdb_open', 4);
     if (stage === 3) this.armVoice('claudia_open', 2);
-    if (openingKidnap) this.emit('voice', 'nar_kidnap');
-    const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -141,8 +145,11 @@ export class Campaign {
     const tutorial = this.stageNo===1 && this.save.bestScore===0 && teachText && !this.seenTutorials.has(teachKey);
     this.banner(tutorial ? teachText : `ZONE ${this.zoneIndex+1} · WAVE ${this.waveIndex+1}`);
     if(tutorial)this.seenTutorials.add(teachKey);
-    const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
-    const yw = barkYettiWave(this.barks, this.elapsed); if (yw) this.emit('voice', yw);
+    // Wave 1 only. The Yetti line outranks Where; a lost Where waits on the gate.
+    if (this.waveIndex === 0) {
+      const yw = barkYettiWave(this.barks, this.elapsed); if (yw) this.emit('voice', yw);
+      const where = barkWhere(this.barks, this.elapsed); if (where) this.emit('voice', where);
+    }
   }
   enterZone() {
     const zone=this.def.zones[this.zoneIndex]; this.locked=true;
@@ -159,7 +166,7 @@ export class Campaign {
     // A third ranged body in one lane is how Nightmare zone 5 walls. Park the extra on a freer lane.
     if (RANGED_TYPES.has(type) && rangedInLane(this.enemies, laneOf(e.y), e) >= MAX_RANGED_PER_LANE) e.y = laneY(freestLane(this.enemies, e));
     this.enemies.push(e);
-    if (type === 'choir') this.speak('choir_serious', 10);
+    if (type === 'choir') this.speak('choir_serious', 45);
     return e;
   }
   tickPending(dt) {
@@ -211,12 +218,21 @@ export class Campaign {
   }
   hurtBob(charger=false, srcX=null, dir=null) {
     const knock = dir ? Math.sign(dir) : (srcX == null ? 0 : (Math.sign(this.bob.x - srcX) || 1));
-    if (this.bob.takeHit({charger, dir: knock})) { this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y}); this.speakRot('hurt',['bob_hurt_01','bob_hurt_02','bob_hurt_03'],1.4); }
+    if (this.bob.takeHit({charger, dir: knock})) {
+      this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y});
+      this.hurtN++;
+      if (this.hurtN % 2 === 0) {
+        const ids = ['bob_hurt_01','bob_hurt_02','bob_hurt_03'];
+        this.rot ||= Object.create(null);
+        const i = this.rot.hurt || 0; this.rot.hurt = i + 1;
+        this.ambient('hurt', ids[i % ids.length], 6);
+      }
+    }
   }
   yellYettiAttack() { const id = barkYettiAttack(this.barks, this.elapsed); if (id) this.emit('voice', id); }
   recordKo(e, source = 'bob') {
     if (e.recorded) return; e.recorded=true; this.stats.kos++;
-    if (source==='bob') { this.score += e.boss?2500:300; noteBobKo(this.dadCall); this.speakRot('laugh',['bdb_laugh'],3); }
+    if (source==='bob') { this.score += e.boss?2500:300; noteBobKo(this.dadCall); this.laughN++; if (this.laughN % 4 === 0) this.ambient('laugh', 'bdb_laugh', 20); }
     if (e.type==='guard') this.pickups.push({x:e.x,y:e.y,kind:'shake'});
     this.emit('ko',{x:e.x,y:e.y,source});
   }
@@ -237,7 +253,7 @@ export class Campaign {
       const kind = hitTier({ phase: !!result.phase, killed: !e.alive, bonk });
       this.hitStop = Math.max(this.hitStop, HITSTOP[kind] / 60);
       this.emit('hit', { x: e.x, y: e.y, bonk, kind, dir });
-      if (bonk) this.speakRot('produce', ['bdb_produce'], 2.5);
+      if (bonk) this.ambient('produce', 'bdb_produce', 12);
     }
     if (result.phase) {
       this.checkpoint.phase=result.phase; this.stats.phases.push(`${this.stageNo}:${result.phase}`);
@@ -260,9 +276,15 @@ export class Campaign {
       return false;
     }
     this.papiTime=2.5; this.stats.papi++;
+    this.clearAmbient();
     // Each body falls when the front runner reaches it. Score lands with the last one.
     this.papiPending={elapsed:0,schedule:result.schedule,score:result.score};
-    this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPI! PAPI!'); this.emit('papi',result.finisher); this.emit('voice', barkPapacito(this.barks)); this.armVoice('papi_chorus', 1.4); return true;
+    this.papiCrowdN++;
+    this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPACITO STAMPEDE!');
+    this.emit('papi',result.finisher);
+    this.emit('voice', this.papiCrowdN % 2 ? 'papi_crowd_01' : 'papi_crowd_02');
+    if (result.finisher) this.emit('voice', barkPapacito(this.barks));
+    return true;
   }
   useDad() {
     if(this.stageNo===1 && !this.dadCall.unlocked){this.banner(refusalBanner(this.dadCall,'locked'));return false;}
@@ -276,8 +298,11 @@ export class Campaign {
       return false;
     }
     this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
+    this.clearAmbient();
+    // The call-in clip carries Dad's VO. Emit it first so the scene can skip the dub.
+    this.emit('dad_callin');
     this.speakRot('dad_call', ['dad_call_01','dad_call_02','dad_call_03'], 0);
-    this.emit('dad_callin'); return true;
+    return true;
   }
   /** After the call-in cutscene (or immediately if cutscenes are off). */
   finishDadCallin() {
@@ -326,13 +351,41 @@ export class Campaign {
     keep(list, (v) => { if (v.at > this.elapsed) return true; ready.push(v); return false; });
     for (let i = 0; i < ready.length; i++) this.emit('voice', ready[i].id);
   }
+  /** Ambient ids share the bark gate. Scripted ids still speak on their own cooldown. */
   speak(id, cd = 0) {
     if (!id) return false;
+    const group = AMBIENT_VOICE[id];
+    if (group) return this.ambient(group, id, cd);
     this.spoke ||= Object.create(null);
     if (cd > 0 && this.elapsed - (this.spoke[id] ?? -1e9) < cd) return false;
     this.spoke[id] = this.elapsed;
     this.emit('voice', id);
     return true;
+  }
+  ambient(group, id, cd = 0) {
+    if (!id) return false;
+    this.spoke ||= Object.create(null);
+    const firstProduce = group === 'produce' && !this.produceSpokeOnce;
+    const wait = firstProduce ? 0 : cd;
+    if (wait > 0 && this.elapsed - (this.spoke[group] ?? -1e9) < wait) return false;
+    const said = requestAmbient(this.barks, this.elapsed, group, id);
+    if (!said) return false;
+    this.noteAmbient(group, said);
+    return true;
+  }
+  noteAmbient(group, id) {
+    this.spoke ||= Object.create(null);
+    this.spoke[group] = this.elapsed;
+    if (group === 'produce') this.produceSpokeOnce = true;
+    this.emit('voice', id);
+  }
+  clearAmbient() {
+    this.barks.held = Object.create(null);
+    this.barks.offers = [];
+  }
+  flushAmbient() {
+    const picked = takeAmbient(this.barks, this.elapsed);
+    if (picked) this.noteAmbient(picked.group, picked.id);
   }
   speakRot(key, ids, cd = 0) {
     this.spoke ||= Object.create(null);
@@ -369,6 +422,9 @@ export class Campaign {
   update(dt,input={}) {
     if(this.paused||this.victory||!Number.isFinite(dt)||dt<=0)return;
     this.elapsed+=dt;this.messageTime=Math.max(0,this.messageTime-dt);this.flushVoice();
+    this.barks.open = true;
+    const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
+    try {
     if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
@@ -394,12 +450,6 @@ export class Campaign {
     if(!this.bob.alive){if(this.bob.stateTime<=0)this.respawn();return;}
     if(input.papi&&this.usePapi())return;
     if(input.dad&&this.useDad())return;
-    this.barkAcc += dt;
-    if (this.barkAcc >= 1) {
-      this.barkAcc -= 1;
-      const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
-      const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
-    }
     const fightZone=this.zoneIndex<this.bossZone?this.def.zones[this.zoneIndex]:null;
     const boss=this.bossActive?this.def.boss:null;
     updateCamera(this,dt,{bobX:this.bob.x,facing:this.bob.facing,locked:this.locked,zone:this.locked&&!this.bossActive?fightZone:null,boss});
@@ -422,6 +472,13 @@ export class Campaign {
     stepping.length=0;
     for(let i=0;i<this.enemies.length;i++)stepping.push(this.enemies[i]);
     for(let i=0;i<stepping.length;i++)stepping[i].update(dt,this);
+    // After attack telegraphs, so Porkchop can take the Yetti slot before the taunt roll.
+    this.barkAcc += dt;
+    if (this.barkAcc >= 1) {
+      this.barkAcc -= 1;
+      const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
+      const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
+    }
     for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
       if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
@@ -442,6 +499,13 @@ export class Campaign {
       const zone=this.def.zones[this.zoneIndex];this.waveIndex++;
       if(this.waveIndex<zone.waves.length)this.spawnWave();
       else{this.locked=false;this.zoneIndex++;this.waveIndex=0;this.checkpoint={zone:this.zoneIndex,x:zone.r-150,phase:1};this.healZoneClear();this.banner(STORY.checkpoint);this.emit('go',{plate:plateKeyForCam(this.def.zones[this.zoneIndex]?.l??this.def.boss.l,this.def)});updateCamera(this,0,{bobX:this.bob.x,facing:this.bob.facing,locked:false});}
+    }
+    } finally {
+      this.barks.open = false;
+      // takeCall sets dadCall.on before dad_callin, ahead of finishDadCallin.
+      // Also discard offers created by KOs during either set-piece, including its final tick.
+      if (ambientSuppressed || this.papiTime > 0 || this.dadCall.on || this.dad) this.clearAmbient();
+      else this.flushAmbient();
     }
   }
 }

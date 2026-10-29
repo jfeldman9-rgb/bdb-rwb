@@ -111,6 +111,11 @@ export function installDadKeys(root, input) {
   return () => { root.removeEventListener?.('keydown', key); };
 }
 
+/** D1–D3 already speak Dad's line. Skip the WebAudio dub while that clip is up. */
+export function dadCallDubbed(id, cutscene) {
+  return /^dad_call_0/.test(id || '') && !!cutscene?.dad;
+}
+
 /** false when cutscenes off — caller runs the wipe immediately. */
 export function playDadCall(scene, then) {
   const root = scene?.cutRoot || globalThis;

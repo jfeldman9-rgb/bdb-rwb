@@ -149,3 +149,37 @@ Done: P6-1 through P6-13.
 - P6-13 Story eggplant damage is 1.15. Pace 0.72, recovery 2.3, grace 0.19, and 5 hearts stay. The bot takes one death on stage 2 at every rate, plus one on stage 1 at 120 Hz, and still clears.
 
 Deferred: painted Interventionist and Wingman bodies. A timed human playthrough. Real-device mobile frame time. Recharge-banner punctuation. Choirmaster fight numbers, still waiting on Jason. Node engine warning (`>=24` vs the suite on 22).
+
+## Pass 7: Grok 4.7 (Cursor)
+
+Branch `cursor/bdb-feedback-oct28`, on the assets commit `26555cb`. Draft PR into `main`. No merge. GitHub Pages stays on `main` (`https://jfeldman9-rgb.github.io/bdb-rwb/`). `bdb-scroll` was not touched. `intro_v3.mp4` was not re-encoded. md5 `b67d6176ed4ac8a3227457c273fe0cee`. The player loads `assets/cutscenes/intro_v3.mp4?v=b67d6176`. Nothing else sets the intro src.
+
+`npm test` is 234/234 (pass 6 was 227/227). Node v22.23.4 still warns `EBADENGINE` against `>=24`. Browser smoke reached victory with zero runtime or HTTP errors. The in-browser Adventure campaign matched the 60 Hz bot: 165.1 / 187.5 / 213.3 s, 4 deaths. Shots: stampede mid-sweep (`/opt/cursor/artifacts/stampede-mid.png`, banner `PAPACITO STAMPEDE!`, caption `CROWD / We love you Papacito! Pick me!`, 16 runners, no pink matte) and the intro at 38 s (`/opt/cursor/artifacts/intro-dad.png`, Dad, the BDB swatter, and the locked catchphrase subtitle).
+
+Voice rate is ambient lines per combat minute. Papacito and Dad frames are left out of the denominator. Before is this branch before the diet (assets already at `26555cb`). After is seed `0xbd28`.
+
+| | 30 Hz before | 60 Hz before | 120 Hz before | 30 Hz after | 60 Hz after | 120 Hz after |
+|---|---|---|---|---|---|---|
+| Ambient / min | 36.48 | 36.05 | 35.78 | 3.01 | 3.36 | 3.15 |
+| Total / min | 40.16 | 39.41 | 39.26 | 6.25 | 6.27 | 6.19 |
+| Min ambient gap | 0 s | 0 s | 0 s | 8 s | 8 s | 8 s |
+
+The rolling cap is 3 in 60 s, not 4. A saturated 4-per-60s clock printed about 4.0–4.4 ambient lines per combat minute once Papacito and Dad time left the denominator. Cap 3 stays under the ≤4 and ≤7 bars. The 8 s gap still holds. Locked lines still fire at all three rates: `bdb_open`, `bdb_produce`, a porkchop, a Colombians-room line, the purple car, and `dad_catchphrase`. `nar_intro_01/02/03` and `nar_kidnap` stay at 0.
+
+Fresh Adventure bot-sim is unchanged from pass 6 and inside 140–240 s:
+
+| | 30 Hz | 60 Hz | 120 Hz |
+|---|---|---|---|
+| Adventure S1 / S2 / S3 | 163.8/0, 186.2/2, 196.9/2 | 165.1/0, 189.2/2, 209.0/3 | 161.2/0, 193.6/3, 205.7/3 |
+| Adventure campaign | 577.8 s / 6 (163.8 / 184.9 / 221.6) | 573.4 s / 4 (165.1 / 187.5 / 213.3) | 573.1 s / 5 (161.2 / 197.8 / 206.6) |
+| Nightmare 60 fresh | | 229.8/5, 304.0/9, 285.6/9 | |
+| Nightmare 60 campaign | | 856.7 s / 25 (229.8 / 319.9 / 299.5) | |
+
+Done:
+- Dialogue diet. One ambient gate, 8 s apart. Longer per-line cooldowns. Stage 1 opens with `nar_ch1` and `bdb_open` at 4 s. The stage-1 re-narration and the stage-2 kidnap bark are gone. Dad's call line is not said over a D clip.
+- Intro cache-bust. `clipMedia('intro_v3')` is the only intro URL. Story `srcOf` stays null.
+- Papacito uses `papi_stampede` (run1–run6). Sixteen screen-space runners. `PAPI_RUNNER_X0`, speed, and `papiTime` 2.5 are unchanged. KOs get dust and stars. `papi_crowd_01/02` say `We love you Papacito! Pick me!`. The hot-pink matte was keyed out of `papi_stampede-0.webp`. That page loads the webp only, because `ktx` was not available to recompress the ASTC/ETC2 pages (those files still hold the pink matte and stay on disk for the container tests).
+
+Locked and untouched: eggplant `vy` 0, `CAM_LEAD` 0.28 and the scroll code, no shop, Choirmaster hp 1140, `choirMultiplier` 1.28, `NIGHTMARE_S3` / `NIGHTMARE_S3_TRIMS` / `snowClearZ`, Adventure stage band, locked quote text and audio, `STAGE_CLIPS` / `STORY_MAX_MS`, the intro file bytes, Dad D1–D3.
+
+Deferred: recompress `papi_stampede` ASTC/ETC2 from the keyed webp. Intro dialogue diet inside the mp4 (plan Option B). Boss chip damage on Papacito.

@@ -67,6 +67,8 @@ REAL = {
   'yetti_lecturer': ('yetti_lecturer', {
     'walk': (8, 12, 0), 'grab': (4, 16, 0), 'lecture': (6, 16, 0), 'hurt': (3, 14, 0), 'knockdown': (5, 14, 0),
   }),
+  # Papacito stampede (Oct 28 feedback): 6 clothed adult runners, 8 frames @16fps.
+  'papi_stampede': ('papi_stampede', {f'run{i}': (8, 16, 0) for i in range(1, 7)}),
 }
 STANDINS = {
   'claudia': {'idle-caged': (4, 10), 'freed': (4, 12), 'portrait': (1, 1)},
@@ -76,7 +78,7 @@ STANDINS = {
   'choirmaster': {'sing': (6, 10), 'hurt': (2, 14), 'down': (3, 12), 'ring': (4, 14)},
 }
 
-LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture'} | {f'run{i}' for i in range(1, 5)}
+LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture'} | {f'run{i}' for i in range(1, 7)}
 
 
 def silhouette(key, anim, i):
