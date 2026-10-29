@@ -72,3 +72,56 @@ Measured **2026-10-28** on `bdb-scroll` (length/difficulty pass, Claude Opus 5.5
 Game Art dropped hand-drawn **8-frame** `bob_shoot_00..07` and `yetti1_attack_00..07` at **16 fps** under `/workspace/bdb-art/sprites` (see `FPS.md`; 146 frames total). **Repack and ship** those into `assets/chars` before closing this pass. Fist clip on `yetti1_attack_05` is known — leave it. Details: `docs/ART-UPDATE-STEER.md` and `/tmp/bdb-length-claude-addendum.md`.
 
 **Status: done** (art repack commit on `bdb-scroll`). `bob_shoot` and `yetti_walker_attack` are now the 8 hand-drawn v3 frames (`00..07`) at 16 fps, packed by `python3 tools/pack-flat.py --only bob,yetti_walker`, which rebuilds just those two atlases. Other Bob/walker anims are unchanged apart from WebP re-encode noise. `yetti_guard` keeps its 7-frame `yetti2_attack` (not redrawn). The `attack_05` fist clip is left as delivered.
+
+## Stages 4–7
+
+### Pass A — Stage 4 (2026-10-28)
+
+Measured on `cursor/bdb-level4`, starting at `5beda6f` (docs-only over `8c06396`). Baseline `npm test`: **239 passed, 0 failed**. Baseline and final bot JSON cover Adventure, Story, and Nightmare at all three rates: `logs/baseline-8c06396-<difficulty>-<hz>.json` and `logs/pass-a-final-<difficulty>-<hz>.json`. Fresh stages have an 1800-second cap; full campaigns have a 3000-second cap. No bot controls, shared combat values, camera, Dad, or Papacito rules were retuned.
+
+| Difficulty | Hz | S4 fresh (s) | Hits | Deaths | Papi / Dad | S4 continuation (s) | Full campaign (s) | Clear |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Adventure | 30 | 175.0 | 8 | 1 | 3 / 3 | 185.2 | 765.5 | Both |
+| Adventure | 60 | 176.8 | 7 | 0 | 3 / 3 | 177.8 | 753.8 | Both |
+| Adventure | 120 | 175.2 | 7 | 1 | 3 / 3 | 171.5 | 747.0 | Both |
+| Story | 30 | 152.7 | 3 | 0 | 2 / 3 | 158.9 | 660.5 | Both |
+| Story | 60 | 162.3 | 8 | 1 | 3 / 3 | 161.2 | 675.9 | Both |
+| Story | 120 | 157.6 | 6 | 1 | 3 / 3 | 157.4 | 660.1 | Both |
+| Nightmare | 30 | 247.8 | 22 | 5 | 3 / 3 | 285.6 | 1103.4 | Both |
+| Nightmare | 60 | 259.6 | 25 | 7 | 3 / 3 | 302.1 | 1161.3 | Both |
+| Nightmare | 120 | 238.8 | 21 | 5 | 3 / 3 | 243.3 | 1102.3 | Both |
+
+All three fresh Adventure runs meet the **175–205 s** target; all continuation stages are inside the **140–240 s** hard band. Story clears at every rate but is above the proposed 120–150 s target. Nightmare clears in this configuration; its higher hit/death counts are reported without adding Nightmare-specific trims. Full campaign totals include chapter-clear delays.
+
+### Golden comparison
+
+The complete fresh-stage result objects for S1–S3 are identical to baseline in **all nine difficulty/rate combinations**, including seconds, hurts, deaths, Papi, Dad, KOs, shots, phases, and stage times. The campaign's first three stage times also match exactly (`logs/pass-a-final-golden.json`). Adventure stage times, fresh and continuation:
+
+| Hz | S1 fresh | S2 fresh | S3 fresh | Campaign S1 / S2 / S3 |
+|---|---:|---:|---:|---|
+| 30 | 163.8 | 186.2 | 196.9 | 163.8 / 184.9 / 221.6 |
+| 60 | 165.1 | 189.2 | 209.0 | 165.1 / 187.5 / 213.3 |
+| 120 | 161.2 | 193.6 | 205.7 | 161.2 / 197.8 / 206.6 |
+
+### Stage 4 balance and content
+
+The first implementation of the paste-ready waves cleared fresh in about 173–176 s, but the 30 Hz continuation repeatedly died in zone 5 wave 3. The permitted ladder was tested in order: trailing straggler, variant/core substitution, Salsero HP ±6, boss HP within 1200–1320, cooldown ±0.1, then pace ±0.02. No free shake zone was added: resource starvation was not the remaining issue. Several candidates cleared combat but exceeded the total voice-rate ceiling after boss retries. Rejected candidates were discarded; `hpScale` remains 2.2.
+
+Final tuning against the brief:
+
+- Zone 5 wave 3: replace its salsero at +1.6 s with a walker, and add a trailing walker from the right at +5 s. The stage has **56 wave Yettis**, **41 staggered**, **18 left flanks**, and base HP **1920** (4224 before per-enemy rounding at ×2.2). Mix: walker 12, salsero 15, guard 7, hover 6, lecturer 6, charger 6, choir 4.
+- Salsero base HP **24** (−6); speed, hop cadence and lunge remain as specified.
+- Bouncer HP **1240** (within the 1200–1320 band). Adds and cooldowns remain exactly as proposed.
+- Stage pace **1.17** (+0.02), below the shared 1.25 cap.
+
+Review also fixed a new-boss interaction: dashing into a clipboard during a gate roar must not cancel the invulnerable roar or skip its adds. Guard behavior remains identical. The Bouncer now plays its `down` corpse animation. New combat regressions cover both gates, shield timing, lunge counters, lane hops, legacy flags, and once-only gate/KO voice events.
+
+### Voice and assets
+
+`runVoiceRate({stage:4,hz:60})`: **3.28 ambient/min**, **6.56 total/min**, **8.000 s** minimum ambient gap. `BARK` remains byte-identical, including its 8 s gap and 3-per-60 s cap. S4's seven new script IDs are caption-only and absent from `PRESENT`. No paid voice or music service was called. `stage4` and `boss4` use `assets/audio/bdb-rise.mp3` because the supplied music files are still absent.
+
+All eight plates are newly painted with the built-in image tool; all six zone/boss scenes differ. They total **787,122 bytes**, below S3's 808,688 bytes. Salsero and Bouncer are **still placeholder** sprites, with all required WebP/ASTC/ETC2/JSON files. S4 residency is **8.988 MiB ASTC / 35.952 MiB RGBA**, below 12/48 MiB. See [GPU-MEMORY.md](GPU-MEMORY.md). Existing background, character, voice, and cutscene bytes remain unchanged.
+
+### Final verification
+
+Final `npm test` on Node 24 after narrow allowlist fixes for stage-finale assumptions: see operator follow-up on `tests/boot.test.mjs` (allow `stage4-def`) and `tests/voice-cues.test.mjs` (S3 continues to S4; final victory after S4). Evidence logs under `logs/pass-a-final-*`.

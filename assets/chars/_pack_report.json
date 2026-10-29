@@ -1,10 +1,10 @@
 {
   "draw_scale": 0.38,
-  "disk_webp_bytes": 3220488,
-  "disk_webp_MiB": 3.071,
-  "all_chars_gpu_RGBA_MiB": 35.312,
+  "disk_webp_bytes": 3361468,
+  "disk_webp_MiB": 3.206,
+  "all_chars_gpu_RGBA_MiB": 38.372,
   "stage1_resident_gpu_RGBA_MiB": 33.482,
-  "pages": 14,
+  "pages": 16,
   "compressed": {
     "formats": {
       "ASTC": "ASTC 4x4 UNORM (KTX1, 8 bpp)",
@@ -26,20 +26,38 @@
     ],
     "stage1_gpu_MiB": {
       "rgba_webp": 33.482,
-      "astc": 8.370,
-      "etc2": 8.370
+      "astc": 8.37,
+      "etc2": 8.37
+    },
+    "stage4_keys": [
+      "bob",
+      "yetti_walker",
+      "yetti_guard",
+      "yetti_hover",
+      "yetti_charger",
+      "yetti_choir",
+      "yetti_lecturer",
+      "dad",
+      "papi_stampede",
+      "yetti_salsero",
+      "bouncer"
+    ],
+    "stage4_gpu_MiB": {
+      "rgba_webp": 35.952,
+      "astc": 8.988,
+      "etc2": 8.988
     },
     "all_chars_gpu_MiB": {
-      "rgba_webp": 35.312,
-      "astc": 8.828,
-      "etc2": 8.828
+      "rgba_webp": 38.372,
+      "astc": 9.593,
+      "etc2": 9.593
     },
     "disk_MiB": {
-      "webp": 3.071,
-      "astc_ktx": 8.829,
-      "etc2_ktx": 8.829,
-      "astc_ktx_gzip": 4.904,
-      "etc2_ktx_gzip": 2.899
+      "webp": 3.206,
+      "astc_ktx": 9.594,
+      "etc2_ktx": 9.594,
+      "astc_ktx_gzip": 5.131,
+      "etc2_ktx_gzip": 2.992
     },
     "pages": {
       "bob-0": {
@@ -53,6 +71,18 @@
         "etc2_gpu": 890112,
         "etc2_disk": 890208,
         "etc2_gzip": 284143
+      },
+      "bouncer-0": {
+        "w": 1436,
+        "h": 368,
+        "rgba": 2113792,
+        "webp_disk": 85116,
+        "astc_gpu": 528448,
+        "astc_disk": 528544,
+        "astc_gzip": 156823,
+        "etc2_gpu": 528448,
+        "etc2_disk": 528544,
+        "etc2_gzip": 67640
       },
       "choirmaster-0": {
         "w": 860,
@@ -118,7 +148,7 @@
         "w": 1276,
         "h": 424,
         "rgba": 2164096,
-        "webp_disk": 120568,
+        "webp_disk": 126374,
         "astc_gpu": 541024,
         "astc_disk": 541120,
         "astc_gzip": 259465,
@@ -197,6 +227,18 @@
         "etc2_gpu": 1125344,
         "etc2_disk": 1125440,
         "etc2_gzip": 371804
+      },
+      "yetti_salsero-0": {
+        "w": 1488,
+        "h": 184,
+        "rgba": 1095168,
+        "webp_disk": 50058,
+        "astc_gpu": 273792,
+        "astc_disk": 273888,
+        "astc_gzip": 81080,
+        "etc2_gpu": 273792,
+        "etc2_disk": 273888,
+        "etc2_gzip": 29776
       },
       "yetti_walker-0": {
         "w": 2016,

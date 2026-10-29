@@ -3,7 +3,7 @@ import { BOSS_GATES } from './yettis.js';
 export { MASH_NEED } from './bob.js';
 export const speakerColor = who => who==='Dad'?'#ffe3a3':who==='Narrator'?'#c8d4ee':'#ffc6df';
 export const HUD_BAND = Object.freeze({ color: 0x101421, alpha: 0.55, w: 1280, h: 116 });
-export const bossLabel = w => w.bossActive ? `${w.def.boss.name} · PHASE ${w.wingmen?.phase||w.enemies.find(e=>e.boss)?.phase||1}` : '';
+export const bossLabel = w => w.bossActive ? `${w.def.boss.name} · PHASE ${w.finisher?.phase||w.enemies.find(e=>e.boss)?.phase||1}` : '';
 /** Boss HP bars: one per Wingman when the pair is out, else the shared bar. `out` is reused by the HUD. */
 export function bossBars(w, out = []){
   let wings = 0;
@@ -55,7 +55,7 @@ export function bossBarLayout(bars, out = []){
 export const mashRing = b => ({visible:b.state==='grabbed',progress:Math.min(1,b.grabMash/MASH_NEED)});
 export function stagePrompt(w){
   if(w.bob.state==='grabbed')return `MASH ANY BUTTON  ${Math.min(6,Math.floor(w.bob.grabMash))}/6`;
-  if(w.wingmen?.ready)return 'PRESS PAPI TO FINISH THE RESCUE';
+  if(w.finisher?.ready)return 'PRESS PAPI TO FINISH THE RESCUE';
   if(w.stageNo===1&&w.locked){
     let n=0, shield=false, rush=false, choir=false;
     const foes=w.enemies;

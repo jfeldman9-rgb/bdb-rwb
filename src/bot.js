@@ -7,9 +7,9 @@ export class Bot {
     if(b.state==='grabbed'){if(this.time>=this.nextMash){out.presses=1;this.nextMash=this.time+.09;}return out;}
     const foes=w.enemies.filter(e=>e.alive&&!(e.type==='wingman'&&e.phase===3&&e.hp<=1));
     const all=w.enemies.filter(e=>e.alive);
-    if(isBossFinisherReady(w.wingmen?.phase,all.filter(e=>e.boss))&&w.papi.charges){out.papi=true;return out;}
+    if(isBossFinisherReady(w.finisher?.phase,all.filter(e=>e.boss))&&w.papi.charges){out.papi=true;return out;}
     if(w.dadCall.charges&&all.length>=2){out.dad=true;return out;}
-    if(w.papi.charges&&all.filter(e=>!e.boss).length>=2&&w.wingmen?.phase!==3){out.papi=true;return out;}
+    if(w.papi.charges&&all.filter(e=>!e.boss).length>=2&&w.finisher?.phase!==3){out.papi=true;return out;}
     const pickup=w.pickups.filter(p=>p.x>w.bounds.l+50&&p.x<w.bounds.r-50).sort((a,c)=>Math.abs(a.x-b.x)-Math.abs(c.x-b.x))[0];
     if(pickup && (w.papi.charges<1 || !foes.length)){
       out.x=Math.abs(pickup.x-b.x)>15?Math.sign(pickup.x-b.x):0;out.y=Math.abs(pickup.y-b.y)>12?Math.sign(pickup.y-b.y):0;return out;

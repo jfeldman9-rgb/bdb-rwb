@@ -1,0 +1,38 @@
+{
+  "adventure-30": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "adventure-60": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "adventure-120": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "story-30": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "story-60": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "story-120": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "nightmare-30": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "nightmare-60": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  },
+  "nightmare-120": {
+    "freshStages1to3Identical": true,
+    "campaignFirst3Identical": true
+  }
+}

@@ -49,6 +49,17 @@ export const STREAMS = Object.freeze({
       Object.freeze({ plate: 's3-mid2' }),
     ]),
   }),
+  4: Object.freeze({
+    far: 's4-far', floor: 's4-floor',
+    zones: Object.freeze([
+      Object.freeze({ plate: 's4-mid0' }),
+      Object.freeze({ plate: 's4-mid1' }),
+      Object.freeze({ plate: 's4-mid2' }),
+      Object.freeze({ plate: 's4-mid3' }),
+      Object.freeze({ plate: 's4-mid4' }),
+      Object.freeze({ plate: 's4-mid5' }),
+    ]),
+  }),
 });
 
 /** Zone list including the boss arena as the final plate slot. */

@@ -71,6 +71,9 @@ REAL = {
   'papi_stampede': ('papi_stampede', {f'run{i}': (8, 16, 0) for i in range(1, 7)}),
 }
 STANDINS = {
+  # Pass A previews until painted 720x600 frames arrive in /workspace/bdb-art/sprites.
+  'yetti_salsero': {'idle': (6, 12), 'walk': (8, 12), 'spin': (4, 16), 'lunge': (4, 16), 'hurt': (3, 14), 'knockdown': (5, 14)},
+  'bouncer': {'walk': (8, 12), 'block': (2, 10), 'grab': (4, 16), 'hold': (2, 8), 'rush': (6, 16), 'stomp': (4, 14), 'roar': (4, 12), 'hurt': (3, 14), 'down': (5, 14)},
   'claudia': {'idle-caged': (4, 10), 'freed': (4, 12), 'portrait': (1, 1)},
   'wingman': {'hover': (6, 12), 'ring': (4, 14), 'telegraph': (2, 10), 'dive': (3, 14), 'land': (3, 12), 'hurt': (2, 14), 'split': (4, 12)},
   'papi_runners': {f'run{i}': (8, 16) for i in range(1, 5)},
@@ -81,7 +84,52 @@ STANDINS = {
 LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture'} | {f'run{i}' for i in range(1, 7)}
 
 
+def stage4_standin(key, anim, i):
+  """Readable clothed preview silhouettes; never alter the legacy stand-ins."""
+  im = Image.new('RGBA', (720, 600)); d = ImageDraw.Draw(im)
+  bob = round(math.sin(i * 1.3) * 9)
+  x = 360 + bob
+  wide = 92 if key == 'bouncer' else 62
+  coat = '#253452' if key == 'bouncer' else '#e24e9a'
+  fur = '#b5dce7'
+  d.ellipse((x - 160, 202, x - 42, 385), fill='#d9e7f2')
+  d.ellipse((x + 42, 202, x + 160, 385), fill='#d9e7f2')
+  d.ellipse((x - 55, 80, x + 55, 104), outline='#f7d985', width=8)
+  d.ellipse((x - 55, 125, x + 55, 236), fill=fur)
+  d.rounded_rectangle((x - wide, 225, x + wide, 446), radius=30, fill=coat)
+  # Eyes, shirt, trousers, and shoes remain clear at gameplay scale.
+  d.ellipse((x + 8, 164, x + 17, 174), fill='#24324b')
+  d.ellipse((x + 31, 164, x + 40, 174), fill='#24324b')
+  d.polygon([(x - 30, 229), (x + 30, 229), (x, 302)], fill='#f7e2ca')
+  stride = round(math.sin(i * 1.2) * 18)
+  d.line((x - 35, 421, x - 45 + stride, 540), fill='#24324b', width=43)
+  d.line((x + 35, 421, x + 45 - stride, 540), fill='#24324b', width=43)
+  d.rounded_rectangle((x - 80 + stride, 534, x - 10 + stride, 560), radius=9, fill='#e9cd95')
+  d.rounded_rectangle((x + 10 - stride, 534, x + 80 - stride, 560), radius=9, fill='#e9cd95')
+  arm_y = 245 if anim in ('roar', 'spin') else 337 + bob
+  d.line((x - wide + 8, 260, x - wide - 39, arm_y), fill=fur, width=32)
+  d.line((x + wide - 8, 260, x + wide + 39, arm_y), fill=fur, width=32)
+  if key == 'bouncer':
+    # Clipboard shield, pink-gold lanyard, and velvet rope are readable props.
+    d.line((x - 23, 236, x, 307, x + 23, 236), fill='#f4a4c9', width=7)
+    d.rounded_rectangle((x - 15, 299, x + 15, 328), radius=4, fill='#f3ca72')
+    cx = x + 87 if anim != 'block' else x + 15
+    d.rounded_rectangle((cx, 265, cx + 86, 392), radius=7, fill='#a66b42', outline='#f0ca82', width=8)
+    d.rectangle((cx + 26, 257, cx + 59, 275), fill='#d9dee8')
+    d.line((cx + 22, 300, cx + 67, 300), fill='#f7e5bd', width=5)
+    d.line((cx + 22, 320, cx + 67, 320), fill='#f7e5bd', width=5)
+    reach = 80 if anim in ('grab', 'hold') else 0
+    d.arc((x - 206 - reach, 295, x - 60, 457), 5, 170, fill='#d5457d', width=18)
+  else:
+    d.line((x - wide, 333, x + wide, 333), fill='#ffce79', width=10)
+    if anim == 'spin':
+      d.arc((x - 142, 204, x + 142, 432), 200 + i * 30, 335 + i * 30, fill='#ff8ece', width=13)
+  return im
+
+
 def silhouette(key, anim, i):
+  if key in ('yetti_salsero', 'bouncer'):
+    return stage4_standin(key, anim, i)
   im = Image.new('RGBA', (720, 600)); d = ImageDraw.Draw(im)
   color = {'dad': '#e7b65c', 'claudia': '#ed91bd', 'papi_runners': '#f3a75e', 'wingman': '#b3a1ed'}.get(key, '#a9cfdf')
   dx = round(math.sin(i * 1.3) * 14); x = 360 + dx
@@ -284,7 +332,7 @@ for j in out.glob('*-*.json'):
   gpu += m['w'] * m['h'] * 4
 # active-stage estimate: bob + 6 roles + interventionist + dad + papi
 active_keys = {'bob', 'yetti_walker', 'yetti_guard', 'yetti_hover', 'yetti_charger',
-               'yetti_choir', 'yetti_lecturer', 'interventionist', 'dad', 'papi_runners'}
+               'yetti_choir', 'yetti_lecturer', 'interventionist', 'dad', 'papi_stampede'}
 active_gpu = 0
 for key in active_keys:
   m = json.loads((out / f'{key}.anims.json').read_text())

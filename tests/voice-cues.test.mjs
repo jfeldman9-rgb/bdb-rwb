@@ -200,10 +200,21 @@ test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered i
   s3.finishStage();
   s3.events = [];
   s3.update(3, {});
-  assert.equal(s3.victory, true);
-  assert.ok(voices(s3).includes('claudia_open'));
-  assert.ok(voices(s3).includes('nar_victory'));
-  assert.ok(voices(s3).includes('claudia_leave'));
+  // Pass A: Stage 3 clears into Stage 4; final victory only after Stage 4 (next null).
+  assert.equal(s3.victory, false);
+  assert.equal(s3.stageNo, 4);
+  assert.ok(s3.events.some(ev => ev.type === 'cutscene' && ev.data === 'kidnap'));
+  assert.ok(voices(s3).includes('nar_ch4'));
+  assert.ok(s3.voiceAt.some(v => v.id === 'claudia_s4'));
+  assert.ok(s3.voiceAt.some(v => v.id === 'bob_s4'));
+  const s4 = new Campaign({ stage: 4 });
+  s4.events = [];
+  s4.finishStage();
+  s4.events = [];
+  s4.update(3, {});
+  assert.equal(s4.victory, true);
+  assert.ok(voices(s4).includes('nar_victory'));
+  assert.ok(voices(s4).includes('claudia_leave'));
 
   const said = [];
   const men = new Wingmen();

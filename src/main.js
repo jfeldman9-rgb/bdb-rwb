@@ -8,6 +8,7 @@ import { resolveDifficulty } from './difficulty.js';
 import { createStoryPlayer } from './cutscene-hooks.js';
 import { beginChapter } from './title-flow.js';
 import { registerVoiceLines } from './voice-lines.js';
+import { maxStage } from './stages.js';
 import { installAudioLifecycle,unlock,toggleMute,isMuted } from './audio.js';
 import { installGraphicsLifecycle } from './graphics-lifecycle.js';
 import { perf, noteRenderer } from './perf.js';
@@ -45,7 +46,7 @@ class Title extends Phaser.Scene {
   this.events.once('shutdown',()=>this.disposeTitleStart?.());
   if(q.get('demo')==='1'||q.get('autostart')==='1'){
    // Demo can exercise any chapter without changing saved unlocks.
-   if(q.get('demo')==='1'){chapter.value=String(Math.max(1,Math.min(3,Number(q.get('stage'))||1)));difficulty.value='adventure';}
+   if(q.get('demo')==='1'){chapter.value=String(Math.max(1,Math.min(maxStage,Number(q.get('stage'))||1)));difficulty.value='adventure';}
    this.begin();
   }
  }

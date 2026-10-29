@@ -1,6 +1,6 @@
 import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
-import { Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane, separateEnemies } from './yettis.js';
+import { TYPES, Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane, separateEnemies } from './yettis.js';
 import { Wingmen, isBossBragging } from './wingman.js';
 import { collectShake, papacitoEffect, papiHitTime } from './papacito.js';
 import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
@@ -73,9 +73,10 @@ export class Campaign {
     this.save = normalizeSave(save); this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
-    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage);
+    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage);
   }
   emit(type, data) { this.events.push({ type, data }); }
+  get finisher() { return this.wingmen || this.court || null; }
   banner(text) { this.message = text; this.messageTime = 3; this.emit('banner', text); }
   loadStage(stage) {
     this.stageNo = stage; this.def = resolveStage(stage);
@@ -88,7 +89,7 @@ export class Campaign {
     this.bob = new Bob({ difficulty: this.difficultyKey });
     this.zoneIndex = 0; this.waveIndex = 0; this.locked = false; this.enemies = []; this.pending = []; this.projectiles = []; this.hostile = []; this.pickups = [];
     this.stageStart = this.elapsed;
-    this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.clearTimer = 0;
+    this.camX = 0; this.camMax = 0; this.bounds = { l: 0, r: VW }; this.bossActive = false; this.wingmen = null; this.court = null; this.clearTimer = 0;
     this.hitStop = 0; this.papiTime = 0; this.papiPending = null; this.dad = null; this.gun = {}; this.checkpoint = { zone: 0, x: 180, phase: 1 };
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.barkAcc = 0;
@@ -104,10 +105,12 @@ export class Campaign {
     // after that event so the new scene holds it instead of starting it and cutting it off.
     const openingKidnap = stage === 2 && !this.kidnapPlayed;
     if (openingKidnap) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
+    if (stage === 4 && !this.rekidnapPlayed) { this.rekidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
     this.emit('voice',`nar_ch${stage}`);
     // Stage 1 already played these lines in the intro. Do not re-narrate them.
     if (stage === 1) this.armVoice('bdb_open', 4);
     if (stage === 3) this.armVoice('claudia_open', 2);
+    if (stage === 4) { this.armVoice('claudia_s4', 2); this.armVoice('bob_s4', 4.5); }
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -234,6 +237,7 @@ export class Campaign {
     if (e.recorded) return; e.recorded=true; this.stats.kos++;
     if (source==='bob') { this.score += e.boss?2500:300; noteBobKo(this.dadCall); this.laughN++; if (this.laughN % 4 === 0) this.ambient('laugh', 'bdb_laugh', 20); }
     if (e.type==='guard') this.pickups.push({x:e.x,y:e.y,kind:'shake'});
+    if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_defeat`);
     this.emit('ko',{x:e.x,y:e.y,source});
   }
   hit(e,damage,dir,bonk) {
@@ -260,14 +264,16 @@ export class Campaign {
       const II=result.phase===2;
       if (e.type==='interventionist') { this.banner(II?'THE INTERVENTIONIST · PHASE II: HE MEANS IT NOW':'THE INTERVENTIONIST · PHASE III: FULL INTERVENTION'); this.emit('voice','lecturer_intervention'); }
       else if (e.type==='choirmaster') this.banner(II?'THE CHOIRMASTER · PHASE II: THE CHOIR SWELLS':'THE CHOIRMASTER · PHASE III: HALLELUJAH, HARD MODE');
+      else if (e.type==='bouncer') this.banner(II?'PHASE II: THE ROPE COMES OUT':'PHASE III: LAST CALL');
       else this.banner(`${this.def.boss.name} · PHASE ${II?'II':'III'}`);
+      if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_phase${result.phase}`);
       this.hostile=[];
       if (II) this.dropTrio(this.bob.x+40);
     }
     if (!e.alive) this.recordKo(e);
   }
   usePapi() {
-    const result=papacitoEffect(this.papi,this.enemies,{phase:this.wingmen?.phase||0,camX:this.camX,paused:this.paused,
+    const result=papacitoEffect(this.papi,this.enemies,{phase:this.finisher?.phase||0,camX:this.camX,paused:this.paused,
       dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,hitTime:e=>papiHitTime(e.x-this.camX)});
     if (!result.allowed) {
       this.banner(result.reason==='weaken'?'WEAKEN BOTH WINGMEN FIRST':result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
@@ -289,7 +295,7 @@ export class Campaign {
   useDad() {
     if(this.stageNo===1 && !this.dadCall.unlocked){this.banner(refusalBanner(this.dadCall,'locked'));return false;}
     const visible=this.enemies.filter(e=>e.alive&&e.x>=this.camX&&e.x<=this.camX+1280);
-    const phase=this.wingmen?.phase||visible.find(e=>e.boss)?.phase;
+    const phase=this.finisher?.phase||visible.find(e=>e.boss)?.phase;
     const result=takeCall(this.dadCall,{paused:this.paused,victory:this.victory,dead:!this.bob.alive,papiActive:this.papiTime>0,
       hittable:visible.some(e=>e.canBeHit),bossPhase:phase?`${this.stageNo}:${phase}`:null,bossInvuln:visible.some(isBossBragging)});
     if(!result.ok){
@@ -417,7 +423,7 @@ export class Campaign {
     if(this.clearTimer)return;
     this.stats.stages.push(this.stageNo);this.stats.stageTimes.push(+(this.elapsed-this.stageStart).toFixed(1));this.save=clearStage(this.save,this.stageNo,this.score);this.onSave(this.save);
     this.clearTimer=2.5; this.hostile=[]; this.enemies.forEach(e=>{e.alive=false;});
-    this.banner(this.stageNo===3?STORY.victory:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
+    this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
   }
   update(dt,input={}) {
     if(this.paused||this.victory||!Number.isFinite(dt)||dt<=0)return;
@@ -491,10 +497,10 @@ export class Campaign {
       if(this.stageNo===1&&this.papi.charges>before&&!this.papiHintShown){this.papiHintShown=true;this.banner('PAPI READY! 3 SHAKES = 1 CHARGE. SAVE IT FOR A CROWD.');}
     }
     keep(this.pickups, p => !p.gone);
-    if(this.wingmen){const before=this.wingmen.phase;this.wingmen.update(dt,this);if(before!==this.wingmen.phase)this.stats.phases.push(`3:${this.wingmen.phase}`);}
+    if(this.finisher){const before=this.finisher.phase;this.finisher.update(dt,this);if(before!==this.finisher.phase)this.stats.phases.push(`${this.stageNo}:${this.finisher.phase}`);}
     separateEnemies(this.enemies);
     if(this.bossActive){
-      if(this.wingmen?.complete || (!this.wingmen&&!this.enemies.some(e=>e.boss&&e.alive)))this.finishStage();
+      if(this.finisher?.complete || (!this.finisher&&!this.enemies.some(e=>e.boss&&e.alive)))this.finishStage();
     } else if(this.locked&&!this.enemies.some(e=>e.alive)&&!this.pending.length){
       const zone=this.def.zones[this.zoneIndex];this.waveIndex++;
       if(this.waveIndex<zone.waves.length)this.spawnWave();

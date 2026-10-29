@@ -1,0 +1,66 @@
+[
+ {
+  "hz": 60,
+  "difficulty": "adventure",
+  "stage": 4,
+  "cleared": true,
+  "elapsed": 176.8,
+  "combat": 164.6,
+  "excluded": 12.2,
+  "minutes": 2.744,
+  "ambient": 9,
+  "scripted": 9,
+  "total": 18,
+  "ambientPerMin": 3.28,
+  "scriptedPerMin": 3.28,
+  "totalPerMin": 6.56,
+  "minAmbientGap": 8,
+  "groups": {
+   "yetti": 3,
+   "turnback": 2,
+   "produce": 3,
+   "where": 1
+  },
+  "counts": {
+   "nar_ch4": 1,
+   "yetti_colombian_room_01": 2,
+   "dad_call_01": 1,
+   "bob_s4": 1,
+   "yetti_turnback": 2,
+   "bdb_produce": 3,
+   "dad_call_02": 1,
+   "bob_where_claudia_02": 1,
+   "yetti_porkchop_01": 1,
+   "bouncer_intro": 1,
+   "bouncer_phase2": 1,
+   "dad_call_03": 1,
+   "bouncer_phase3": 1,
+   "bouncer_defeat": 1
+  },
+  "allCounts": {
+   "nar_ch4": 1,
+   "yetti_colombian_room_01": 2,
+   "dad_call_01": 1,
+   "claudia_s4": 1,
+   "dad_catchphrase": 3,
+   "dad_done_01": 2,
+   "bob_s4": 1,
+   "yetti_turnback": 2,
+   "bdb_produce": 3,
+   "papi_crowd_01": 2,
+   "dad_call_02": 1,
+   "dad_done_02": 1,
+   "bob_where_claudia_02": 1,
+   "papi_crowd_02": 1,
+   "yetti_porkchop_01": 1,
+   "bouncer_intro": 1,
+   "bouncer_phase2": 1,
+   "dad_call_03": 1,
+   "bouncer_phase3": 1,
+   "bouncer_defeat": 1
+  },
+  "stageTimes": [
+   176.8
+  ]
+ }
+]

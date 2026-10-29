@@ -1,13 +1,18 @@
 // Headless Chrome smoke. Launches its own static server and Chrome.
-// node tools/browser-smoke.mjs
+// node tools/browser-smoke.mjs [--from=N]
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { stat, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize } from 'node:path';
 import assert from 'node:assert/strict';
+import { maxStage } from '../src/stages.js';
+import { SAVE_KEY } from '../src/save.js';
 
 const root = process.cwd();
+const fromArg = process.argv.slice(2).find(arg => arg.startsWith('--from='));
+const fromStage = fromArg ? Number(fromArg.slice('--from='.length)) : 1;
+assert.ok(Number.isInteger(fromStage) && fromStage >= 1 && fromStage <= maxStage, `--from must be an integer from 1 to ${maxStage}`);
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp',
@@ -15,7 +20,7 @@ const MIME = {
 };
 // BDB_SMOKE_DIR overrides the screenshot directory. The default is repo-local
 // so a laptop without /opt/cursor/artifacts can still run the smoke.
-const shotDir = process.env.BDB_SMOKE_DIR || join(root, 'docs/shots/browser-smoke');
+const shotDir = process.env.BDB_SMOKE_DIR || join(root, 'docs/shots', fromArg ? `browser-smoke-from-${fromStage}` : 'browser-smoke');
 
 function startServer() {
   const server = createServer(async (req, res) => {
@@ -90,10 +95,15 @@ try {
   const evaluate = async (expression) => { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   async function waitFor(expression, ms = 30000) { const end = Date.now() + ms; while (Date.now() < end) { if (await evaluate(expression)) return; await sleep(100); } throw Error(`Timed out: ${expression}\n${errors.join('\n')}`); }
+  const screenshots = [];
   async function shot(name) {
     await sleep(150);
+    // The accelerated sim updates views synchronously; give Chrome two frames
+    // to paint and composite those views before reading the canvas pixels.
+    await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
     const { data } = await send('Page.captureScreenshot', { format: 'png' });
     await writeFile(`${shotDir}/${name}.png`, Buffer.from(data, 'base64'));
+    screenshots.push(`${shotDir}/${name}.png`);
   }
   await mkdir(shotDir, { recursive: true });
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
@@ -102,25 +112,58 @@ try {
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
   await shot('title');
   console.log('Title ready', await evaluate('({canvas:!!document.querySelector("canvas"),version:Phaser.VERSION})'));
-  await send('Page.navigate', { url: `${origin}/?demo=1&nocutscenes=1` });
+  await evaluate(`localStorage.setItem(${JSON.stringify(SAVE_KEY)}, JSON.stringify({unlockedStage:${fromStage},difficulty:'adventure'}))`);
+  await send('Page.navigate', { url: `${origin}/?stage=${fromStage}&demo=1&nocutscenes=1` });
   await waitFor('window.__game?.scene.isActive("gameplay") && !!window.__game.scene.getScene("gameplay").hud');
   const boot = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');const card=document.getElementById('startup-error');return {started:!!s.started,stage:s.world.stageNo,elapsed:s.world.elapsed,cardHidden:!card||card.hidden};})()`);
   assert.equal(boot.started, true);
-  assert.equal(boot.stage, 1);
+  assert.equal(boot.stage, fromStage);
   assert.equal(boot.cardHidden, true);
   await sleep(400);
   const advanced = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');const card=document.getElementById('startup-error');return {started:!!s.started,elapsed:s.world.elapsed,cardHidden:!card||card.hidden,stage:s.world.stageNo};})()`);
   assert.equal(advanced.started, true);
   assert.equal(advanced.cardHidden, true);
-  assert.equal(advanced.stage, 1);
+  assert.equal(advanced.stage, fromStage);
   assert.ok(advanced.elapsed > boot.elapsed, `frames did not advance (${boot.elapsed} -> ${advanced.elapsed})`);
-  await shot('stage1');
+  await shot(`stage${fromStage}`);
   const gameplayShot = process.env.BDB_SMOKE_GAMEPLAY || join(shotDir, 'gameplay.png');
   await mkdir(dirname(gameplayShot), { recursive: true });
-  await copyFile(`${shotDir}/stage1.png`, gameplayShot);
+  await copyFile(`${shotDir}/stage${fromStage}.png`, gameplayShot);
+  await evaluate(`import('/src/zone-stream.js').then(m=>{
+    window.__smokePlate=w=>{
+      const run=m.plateRunForCam(w.camX,w.def);
+      return {key:m.plateKeyForCam(w.camX,w.def),alpha:m.plateAlphas(w.camX,w.def)[run]};
+    };
+    window.__smokePlates=new Set();
+  })`);
+  const plates = [];
+  const done = status => fromArg ? status?.stats?.stages.includes(fromStage) : status?.victory;
   let bossShot = false, splitShot = false, stampedeShot = false, status;
-  for (let i = 0; i < 600; i++) {
-    status = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};let stampede=null;for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){s.update(0,1000/60);const fx=s.papiFX;if(!window.__stampedeShot&&fx&&fx.runners.length>=14&&fx.age>0.8&&fx.age<1.35){window.__stampedeShot=true;stampede={age:+fx.age.toFixed(3),n:fx.runners.length,x:Math.round(fx.runners[0].x)};break;}}const card=document.getElementById('startup-error');return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.wingmen?.phase,victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede};})()`);
+  for (let i = 0; i < 2400; i++) {
+    status = await evaluate(`(()=>{
+      const s=window.__game.scene.getScene('gameplay');
+      if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};
+      let stampede=null,plate=null;
+      for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){
+        s.update(0,1000/60);
+        const w=s.world,{key,alpha}=window.__smokePlate(w);
+        if(!window.__smokePlates.has(key)&&w.locked&&alpha>=.99){
+          window.__smokePlates.add(key);plate={stage:w.stageNo,key,alpha,camX:w.camX,zone:w.zoneIndex};break;
+        }
+        const fx=s.papiFX;
+        if(!window.__stampedeShot&&fx&&fx.runners.length>=14&&fx.age>0.8&&fx.age<1.35){
+          window.__stampedeShot=true;stampede={age:+fx.age.toFixed(3),n:fx.runners.length,x:Math.round(fx.runners[0].x)};break;
+        }
+        if(${!!fromArg}&&w.stats.stages.includes(${fromStage}))break;
+      }
+      const card=document.getElementById('startup-error');
+      return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.finisher?.phase,
+        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate};
+    })()`);
+    if (status.plate) {
+      await shot(status.plate.key);
+      plates.push(status.plate);
+    }
     if (status.stampede && !stampedeShot) {
       await shot('stampede');
       stampedeShot = true;
@@ -129,14 +172,19 @@ try {
     if (status.cardHidden === false || status.started === false) throw new Error('gameplay dropped: ' + JSON.stringify(status));
     if (status.boss && !bossShot) { await shot('boss'); bossShot = true; }
     if (status.stage === 3 && status.phase === 3 && !splitShot) { await shot('wingmen'); splitShot = true; }
-    if (status.victory) break;
+    if (done(status)) break;
     await sleep(30);
   }
-  if (!status?.victory) throw new Error('Browser demo failed to clear: ' + JSON.stringify(status));
+  if (!done(status)) throw new Error('Browser demo failed to clear: ' + JSON.stringify(status));
+  for (const stage of fromArg ? [fromStage] : status.stats.stages) {
+    assert.equal(plates.filter(plate => plate.stage === stage).length, 6, `stage ${stage} must show all six plate runs`);
+  }
   if (!stampedeShot) throw new Error('Papacito stampede was not on screen mid-sweep');
-  await waitFor('!document.getElementById("victory").hidden');
-  await shot('victory');
-  console.log('Campaign complete', JSON.stringify(status));
+  if (status.victory) {
+    await waitFor('!document.getElementById("victory").hidden');
+    await shot('victory');
+  } else await shot(`stage${fromStage}-clear`);
+  console.log(fromArg ? `Stage ${fromStage} complete` : 'Campaign complete', JSON.stringify(status));
   await send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
   await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await send('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
@@ -210,10 +258,10 @@ try {
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,
-    campaign: status, touch,
-    checks: { started: true, framesAdvanced: true, noErrorCard: true, stage1: true, introV3: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
+    fromStage, campaign: status, plates, touch,
+    checks: { started: true, framesAdvanced: true, noErrorCard: true, requestedStage: true, allPlateRuns: true, introV3: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
     errors,
-    screenshots: ['title', 'stage1', 'boss', 'wingmen', 'victory', 'touch-stage1', 'stampede', 'intro-dad'].map((x) => `${shotDir}/${x}.png`),
+    screenshots,
   };
   await writeFile(`${shotDir}/browser-report.json`, JSON.stringify(report, null, 2));
   if (errors.length) throw new Error(errors.join('\n'));

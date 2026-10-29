@@ -23,7 +23,8 @@ import json, os, shutil, struct, subprocess, sys, tempfile, gzip
 out = Path('assets/chars')
 masters = Path('build/ktx2')
 STAGE1 = ['bob', 'yetti_walker', 'yetti_guard', 'yetti_hover', 'yetti_charger', 'yetti_choir',
-          'yetti_lecturer', 'interventionist', 'dad', 'papi_runners']
+          'yetti_lecturer', 'interventionist', 'dad', 'papi_stampede']
+STAGE4 = [key for key in STAGE1 if key != 'interventionist'] + ['yetti_salsero', 'bouncer']
 # vkFormat -> (GL internal format, file suffix, Phaser loader key)
 FORMATS = {
   157: (0x93B0, 'astc', 'ASTC'),  # VK_FORMAT_ASTC_4x4_UNORM_BLOCK  -> COMPRESSED_RGBA_ASTC_4x4_KHR
@@ -140,6 +141,9 @@ def report():
     'stage1_keys': STAGE1,
     'stage1_gpu_MiB': {'rgba_webp': mib(tot(STAGE1, 'rgba')), 'astc': mib(tot(STAGE1, 'astc_gpu')),
                        'etc2': mib(tot(STAGE1, 'etc2_gpu'))},
+    'stage4_keys': STAGE4,
+    'stage4_gpu_MiB': {'rgba_webp': mib(tot(STAGE4, 'rgba')), 'astc': mib(tot(STAGE4, 'astc_gpu')),
+                       'etc2': mib(tot(STAGE4, 'etc2_gpu'))} if set(STAGE4) <= set(rows) else None,
     'all_chars_gpu_MiB': {'rgba_webp': mib(tot(allk, 'rgba')), 'astc': mib(tot(allk, 'astc_gpu')),
                           'etc2': mib(tot(allk, 'etc2_gpu'))},
     'disk_MiB': {'webp': mib(tot(allk, 'webp_disk')), 'astc_ktx': mib(tot(allk, 'astc_disk')),

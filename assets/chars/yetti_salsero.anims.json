@@ -1,0 +1,181 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "yetti_salsero-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_salsero_idle",
+      "frames": [
+        "yetti_salsero_idle_01",
+        "yetti_salsero_idle_02",
+        "yetti_salsero_idle_03",
+        "yetti_salsero_idle_04",
+        "yetti_salsero_idle_05",
+        "yetti_salsero_idle_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_salsero_walk",
+      "frames": [
+        "yetti_salsero_idle_01",
+        "yetti_salsero_idle_02",
+        "yetti_salsero_idle_03",
+        "yetti_salsero_idle_04",
+        "yetti_salsero_idle_05",
+        "yetti_salsero_idle_06",
+        "yetti_salsero_walk_07",
+        "yetti_salsero_walk_08"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_salsero_spin",
+      "frames": [
+        "yetti_salsero_spin_01",
+        "yetti_salsero_spin_02",
+        "yetti_salsero_spin_03",
+        "yetti_salsero_spin_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": false,
+      "fps": 16
+    },
+    {
+      "name": "yetti_salsero_lunge",
+      "frames": [
+        "yetti_salsero_idle_01",
+        "yetti_salsero_idle_02",
+        "yetti_salsero_idle_03",
+        "yetti_salsero_idle_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": false,
+      "fps": 16
+    },
+    {
+      "name": "yetti_salsero_hurt",
+      "frames": [
+        "yetti_salsero_idle_01",
+        "yetti_salsero_idle_02",
+        "yetti_salsero_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "yetti_salsero_knockdown",
+      "frames": [
+        "yetti_salsero_idle_01",
+        "yetti_salsero_idle_02",
+        "yetti_salsero_idle_03",
+        "yetti_salsero_idle_04",
+        "yetti_salsero_idle_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 30,
+    "unique": 12,
+    "reused": 18
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

@@ -22,7 +22,7 @@ test('no excluded engine content or modules in gameplay imports',async()=>{
  for(const file of (await readdir('src')).filter(f=>f.endsWith('.js'))){
   const source=await readFile(`src/${file}`,'utf8');
   for(const [,ref]of source.matchAll(/(?:from\s*|import\s*\()\s*['"]([^'"]+)['"]/g)){
-   assert.doesNotMatch(ref,/(?:loial|rand-call|balefire|riley3|twix|stage[4-8]|stage[23](?!-def))/i,`${file}: ${ref}`);
+   assert.doesNotMatch(ref,/(?:loial|rand-call|balefire|riley3|twix|stage[5-8]|stage[2-4](?!-def))/i,`${file}: ${ref}`);
   }
  }
 });

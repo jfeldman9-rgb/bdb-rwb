@@ -1,5 +1,5 @@
 // Ambient vs scripted voice rates for an Adventure bot run.
-// node tools/voice-rate.mjs [hz]
+// node tools/voice-rate.mjs [hz] [--stage=N]
 // Same loop as tools/bot-sim.mjs. Rates use combat time: frames spent in
 // Papacito, Dad's swat, or a cutscene pause are left out of the denominator.
 import { pathToFileURL } from 'node:url';
@@ -32,9 +32,9 @@ function mulberry32(seed) {
   };
 }
 
-export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28, cap = 1800 } = {}) {
+export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28, cap = 1800, stage } = {}) {
   const rng = mulberry32(seed);
-  const w = new Campaign({ difficulty, rng });
+  const w = new Campaign({ difficulty, rng, ...(stage == null ? {} : { stage }) });
   const bot = new Bot();
   const counts = Object.create(null);
   const allCounts = Object.create(null);
@@ -45,7 +45,7 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
   let excluded = 0;
   const ambientAt = [];
   const step = 1 / hz;
-  const done = () => w.victory;
+  const done = () => stage == null ? w.victory : w.stats.stages.includes(stage);
   for (let i = 0; i < hz * cap && !done(); i++) {
     const inPapi = w.papiTime > 0;
     const inDad = !!w.dad;
@@ -76,7 +76,8 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
   return {
     hz,
     difficulty,
-    cleared: !!w.victory,
+    ...(stage == null ? {} : { stage }),
+    cleared: !!done(),
     elapsed: +w.elapsed.toFixed(1),
     combat: +combat.toFixed(1),
     excluded: +excluded.toFixed(1),
@@ -96,8 +97,10 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const hzArg = process.argv[2];
+  const hzArg = process.argv.slice(2).find(arg => !arg.startsWith('--'));
+  const stageArg = process.argv.slice(2).find(arg => arg.startsWith('--stage='));
+  const stage = stageArg == null ? undefined : +stageArg.slice('--stage='.length);
   const rates = hzArg ? [+hzArg] : [30, 60, 120];
-  const table = rates.map((hz) => runVoiceRate({ hz }));
+  const table = rates.map((hz) => runVoiceRate({ hz, stage }));
   console.log(JSON.stringify(table, null, 1));
 }

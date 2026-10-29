@@ -1,0 +1,238 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "bouncer-0"
+  ],
+  "anims": [
+    {
+      "name": "bouncer_walk",
+      "frames": [
+        "bouncer_walk_01",
+        "bouncer_walk_02",
+        "bouncer_walk_03",
+        "bouncer_walk_04",
+        "bouncer_walk_05",
+        "bouncer_walk_06",
+        "bouncer_walk_07",
+        "bouncer_walk_08"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "bouncer_block",
+      "frames": [
+        "bouncer_block_01",
+        "bouncer_block_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100
+      ],
+      "loop": false,
+      "fps": 10
+    },
+    {
+      "name": "bouncer_grab",
+      "frames": [
+        "bouncer_grab_01",
+        "bouncer_grab_02",
+        "bouncer_grab_03",
+        "bouncer_grab_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": false,
+      "fps": 16
+    },
+    {
+      "name": "bouncer_hold",
+      "frames": [
+        "bouncer_grab_01",
+        "bouncer_grab_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125
+      ],
+      "loop": false,
+      "fps": 8
+    },
+    {
+      "name": "bouncer_rush",
+      "frames": [
+        "bouncer_walk_01",
+        "bouncer_walk_02",
+        "bouncer_walk_03",
+        "bouncer_walk_04",
+        "bouncer_walk_05",
+        "bouncer_walk_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": true,
+      "fps": 16
+    },
+    {
+      "name": "bouncer_stomp",
+      "frames": [
+        "bouncer_walk_01",
+        "bouncer_walk_02",
+        "bouncer_walk_03",
+        "bouncer_walk_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "bouncer_roar",
+      "frames": [
+        "bouncer_roar_01",
+        "bouncer_roar_02",
+        "bouncer_roar_03",
+        "bouncer_roar_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "bouncer_hurt",
+      "frames": [
+        "bouncer_walk_01",
+        "bouncer_walk_02",
+        "bouncer_walk_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "bouncer_down",
+      "frames": [
+        "bouncer_walk_01",
+        "bouncer_walk_02",
+        "bouncer_walk_03",
+        "bouncer_walk_04",
+        "bouncer_walk_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    }
+  ],
+  "placeholder": true,
+  "source": "local coloured silhouettes",
+  "dedupe": {
+    "logical": 38,
+    "unique": 18,
+    "reused": 20
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}
