@@ -20,6 +20,12 @@ export const TYPES = Object.freeze({
   bouncer: { hp: 1240, speed: 80, art: 'bouncer', tint: 0xffffff, boss: true, shield: true, grab: true, grabVoice: 'bouncer_grab',
     scriptedBossVoices: true, rushPhase: 2, stompPhase: 3, reshield: 12,
     anims: { telegraph: 'grab', hold: 'hold', rush: 'rush', slam: 'stomp', roar: 'roar', hurt: 'hurt', dead: 'down', block: 'block', default: 'walk' } },
+  tagger: { hp: 36, speed: 100, art: 'yetti_tagger', tint: 0xffffff, ranged: true, tell: .65,
+    paint: { ttl: 1.4, w: 80 },
+    anims: { telegraph: 'shake', recover: 'throw', hurt: 'hurt', dead: 'knockdown', wait: 'idle', default: 'walk' } },
+  dj: { hp: 1200, speed: 60, art: 'dj', tint: 0xffffff, boss: true, ranged: true, scriptedBossVoices: true,
+    tell: .7, addFromPhase: 1,
+    anims: { telegraph: 'scratch', slam: 'drop', drop: 'drop', roar: 'roar', hurt: 'hurt', dead: 'down', default: 'idle' } },
 });
 /** RWB boss gates: one long bar, phase 2 under 66%, phase 3 under 33%. */
 export const BOSS_GATES = Object.freeze([1, .66, .33]);
@@ -31,8 +37,9 @@ export const BOSS_ADDS = Object.freeze({
   interventionist: Object.freeze([[], ['lecturer', 'walker'], ['charger', 'lecturer', 'walker']]),
   choirmaster: Object.freeze([['walker', 'walker'], ['walker', 'hover', 'walker'], ['charger', 'hover', 'guard']]),
   bouncer: Object.freeze([[], ['salsero', 'walker'], ['guard', 'salsero', 'charger']]),
+  dj: Object.freeze([['walker', 'tagger'], ['hover', 'tagger', 'walker'], ['charger', 'salsero', 'hover']]),
 });
-export const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95], bouncer: [1.3, 1.1, .9] });
+export const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95], bouncer: [1.3, 1.1, .9], dj: [1.5, 1.2, 1.0] });
 /** Ranged roles that stack snowballs when they share a lane. Boss choirmaster counts; melee does not. */
 export const RANGED_TYPES = new Set(Object.keys(TYPES).filter(type => TYPES[type].ranged));
 export const MAX_RANGED_PER_LANE = 2;
@@ -231,12 +238,29 @@ export class Yetti {
     if (this.type === 'hover') this.z = 65 + Math.sin(this.clock * 3) * 10;
     if (this.stun > 0) { this.stun -= dt; if (this.stun <= 0) this.state = 'approach'; return; }
     // Phase II+ mini-bosses keep calling minions in while the arena thins out.
-    if (this.boss && this.phase >= 2 && this.state !== 'roar' && (this.addTimer = (this.addTimer ?? 9) - dt) <= 0) {
+    // New bosses may start their add timer in phase I via addFromPhase; legacy bosses stay at 2.
+    if (this.boss && this.phase >= (t.addFromPhase ?? 2) && this.state !== 'roar' && (this.addTimer = (this.addTimer ?? 9) - dt) <= 0) {
       this.addTimer = 9; world.summonAdds?.(BOSS_ADDS[this.type]?.[this.phase - 1]);
     }
     if (this.state === 'roar') {
       this.timer -= dt;
       if (this.timer <= 0) { this.state = 'approach'; this.cooldown = .5; world.summonAdds?.(BOSS_ADDS[this.type]?.[this.phase - 1]); }
+      return;
+    }
+    if (this.state === 'drop') {
+      this.timer -= dt;
+      if (this.timer <= 0) {
+        for (let i = 0; i < 3; i++) {
+          for (const dir of [-1, 1]) world.snowball(this.x, laneY(i), dir, 'shockwave');
+        }
+        this.dropPulses = (this.dropPulses || 0) + 1;
+        if (this.dropPulses < 3) this.timer = 0.25;
+        else {
+          this.state = 'recover';
+          this.timer = 0.6 * world.difficulty.recovery;
+          this.cooldown = (BOSS_COOL[this.type]?.[this.phase - 1] ?? 1.3) / pace;
+        }
+      }
       return;
     }
     if (this.state === 'hold') { if (b.grabbedBy !== this) { this.state = 'approach'; this.cooldown = 2; } return; }
@@ -250,7 +274,13 @@ export class Yetti {
         }
         else {
           let slammed = false;
-          if (t.ranged && this.type !== 'choir' && this.type !== 'choirmaster') world.snowball(this.x, this.attackY, this.rushDir);
+          if (t.paint) world.snowball(this.attackX ?? this.x, this.attackY ?? this.y, 0, 'splat', t.paint);
+          else if (this.type === 'dj') {
+            const drop = this.resolveDj(world);
+            if (drop === 'drop') return;
+            slammed = !!drop;
+          }
+          else if (t.ranged && this.type !== 'choir' && this.type !== 'choirmaster') world.snowball(this.x, this.attackY, this.rushDir);
           else if (['choir','choirmaster'].includes(this.type)) {
             const skip = this.volley++ % 3;
             const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== skip) : [laneOf(this.attackY)];
@@ -293,7 +323,7 @@ export class Yetti {
       this.planTelegraph(b, world); return;
     }
     if (Math.abs(dx)<reach && Math.abs(dy)< (ranged ? 110 : 30) && this.cooldown<=0) {
-      this.state='telegraph'; this.mode=null; this.timer=(t.lunge?.tell ?? (this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65)) / pace;
+      this.state='telegraph'; this.mode=null; this.timer=(t.tell ?? t.lunge?.tell ?? (this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65)) / pace;
       this.planTelegraph(b, world); world.yellYettiAttack?.(); return;
     }
     const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff*(boss>=3?1.45:boss===2?1.3:1);
@@ -318,5 +348,26 @@ export class Yetti {
     else this.y = clamp(this.y+clamp(dy,-speed*.6*dt,speed*.6*dt),LANE_TOP,LANE_BOT);
     this.x = clamp(this.x,world.bounds.l+55,world.bounds.r-55);
     this.state = Math.abs(this.x-oldX)>.01 ? 'approach' : 'wait';
+  }
+  /** DJ Halo only. Choirmaster halo bands stay in the choir branch above. */
+  resolveDj(world) {
+    if (this.phase >= 3) {
+      this.state = 'drop';
+      this.timer = 1.2 / (world.difficulty.pace || 1);
+      this.dropPulses = 0;
+      world.banner('WAIT FOR IT…');
+      return 'drop';
+    }
+    if (this.phase >= 2) {
+      const lane = laneOf(this.attackY ?? this.y);
+      const step = this.volley++ % 2 === 0 ? 1 : -1;
+      let adj = lane + step;
+      if (adj < 0 || adj > 2) adj = lane - step;
+      world.snowball(this.x, laneY(lane), this.rushDir, 'halo');
+      world.snowball(this.x, laneY(clamp(adj, 0, 2)), this.rushDir, 'halo');
+      return false;
+    }
+    for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, this.attackY, dir, 'shockwave');
+    return true;
   }
 }

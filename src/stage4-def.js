@@ -21,4 +21,5 @@ export const STAGE4 = Object.freeze({ no: 4, key: 'rumba', title: 'THE AFTERPART
     [['salsero','R',0],['salsero','L',.8],['charger','R',1.6],['hover','L',2.4]],
     [['choir','R',0],['lecturer','R',.6],['guard','L',1.4],['salsero','R',2.4]],
     [['guard','R',0],['charger','L',.8],['walker','R',1.6],['hover','R',2.4],['lecturer','L',3.2],['walker','R',4],['walker','R',5]] ] },
-], boss: { at: 6700, l: 6480, r: 7760, type: 'bouncer', name: 'THE BOUNCER' }, next: null });
+], boss: { at: 6700, l: 6480, r: 7760, type: 'bouncer', name: 'THE BOUNCER' }, next: 5 });
+

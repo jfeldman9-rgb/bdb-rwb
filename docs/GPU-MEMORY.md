@@ -7,11 +7,11 @@ Estimates are level-0 texture bytes from page sizes: RGBA = w×h×4, ASTC 4×4 /
 
 ## Stage residency (current tip)
 
-| Path | Stage 1 kit GPU | Stage 4 kit GPU | All chars GPU | Disk (chars) |
-|---|---|---|---|---|
-| **IMG fallback** (webp → RGBA upload) | **33.482 MiB** | **44.520 MiB** | 46.940 MiB | 4.037 MiB webp |
-| **ASTC 4×4 + keyed IMG** | **9.918 MiB** | **12.678 MiB** | 13.283 MiB | 11.737 MiB `.astc.ktx` (6.659 MiB gzip) |
-| **ETC2 RGBA8 + keyed IMG** | **9.918 MiB** | **12.678 MiB** | 13.283 MiB | 11.737 MiB `.etc2.ktx` (3.950 MiB gzip) |
+| Path | Stage 1 kit GPU | Stage 4 kit GPU | Stage 5 kit GPU | All chars GPU | Disk (chars) |
+|---|---|---|---|---|---|
+| **IMG fallback** (webp → RGBA upload) | **33.482 MiB** | **44.520 MiB** | **38.936 MiB** | 48.121 MiB | 4.091 MiB webp |
+| **ASTC 4×4 + keyed IMG** | **9.918 MiB** | **12.678 MiB** | **11.282 MiB** | 13.578 MiB | 12.032 MiB `.astc.ktx` |
+| **ETC2 RGBA8 + keyed IMG** | **9.918 MiB** | **12.678 MiB** | **11.282 MiB** | 13.578 MiB | 12.032 MiB `.etc2.ktx` |
 
 Budget target: **under 60 MiB** GPU residency for a Stage 1 kit. ASTC + IMG Stage 1 is ~9.9 MiB (well under).
 `STAGE_CHARS` loads role atlases for every stage (shared kit); bosses swap per stage.

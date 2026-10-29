@@ -275,9 +275,19 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(0xff5575,.28);
     if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,1280,LANE_H);}
     else if(e.type==='wingman'){g.fillEllipse(e.attackX,e.attackY,180,60);g.lineStyle(3,0xffccad);g.strokeEllipse(e.attackX,e.attackY,180,60);}
+    else if(e.type==='dj'){
+     const r=42+16*Math.abs(Math.sin(spin*8));
+     g.lineStyle(5,0xffdf89,.85);g.strokeCircle(e.x,e.y-90,r);
+     g.lineStyle(3,0xff9a3c,.7);g.strokeCircle(e.x,e.y-90,r+18);
+    }
     else{
      const plan=telegraphPlan(e,w);
      if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(plan.from,plan.y-75,100,145);}
+     if(TYPES[e.type]?.paint){
+      g.fillStyle(0xff3cad,.28);
+      const ax=e.attackX??e.x, ay=e.attackY??e.y;
+      g.lineStyle(4,0xff3cad,.9);g.lineBetween(ax-22,ay-22,ax+22,ay+22);g.lineBetween(ax+22,ay-22,ax-22,ay+22);
+     }
      const strip=warningRect(plan,w.bounds);
      g.fillRect(strip.x,strip.y,strip.w,strip.h);
     }
@@ -285,7 +295,7 @@ export class GameScene extends Phaser.Scene {
    if(!e.boss&&e.hp<e.maxHp){g.fillStyle(0x201b30);g.fillRect(e.x-30,e.y-215,60,5);g.fillStyle(0xb7dce7);g.fillRect(e.x-30,e.y-215,60*e.hp/e.maxHp,5);}
   }
   for(const p of w.projectiles){g.fillStyle(0x491b7d);g.fillEllipse(p.x,p.y,48,19);g.fillStyle(0xba77ed);g.fillEllipse(p.x-5*p.dir,p.y-4,26,6);g.fillStyle(0x9bcc63);g.fillTriangle(p.x+22*p.dir,p.y,p.x+32*p.dir,p.y-9,p.x+33*p.dir,p.y+4);}
-  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else if(s.shape!=='sock'||!this.textures.exists('sock-0')){g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-SOCK_DRAW_Y,28,32);}}
+  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else if(s.shape==='splat'){g.fillStyle(s.color,.55);g.fillEllipse(p.x,p.y-8,Math.max(28,(p.w||80)/2),16);}else if(s.shape!=='sock'||!this.textures.exists('sock-0')){g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-SOCK_DRAW_Y,28,32);}}
   this.syncSocks();
   for(const p of w.pickups){g.fillStyle(0xfff1bb);g.fillRoundedRect(p.x-12,p.y-38,24,32,5);g.fillStyle(0xcc8fde);g.fillRect(p.x-9,p.y-30,18,13);g.fillStyle(0x7bd6c7);g.fillRect(p.x-10,p.y-43,20,6);}
   const parts=this.particles;let kept=0;

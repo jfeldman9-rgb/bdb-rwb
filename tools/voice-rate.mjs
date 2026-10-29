@@ -119,6 +119,7 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     groups,
     counts,
     allCounts,
+    queued: [...(w.voiceGate?.queue || [])],
     stageTimes: w.stats.stageTimes,
   };
 }

@@ -34,10 +34,20 @@ export const STAGE_CLIPS = Object.freeze({
   stage2: ['stage2_intro'],
   stage3: ['stage3_intro'],
   stage4: ['stage4_intro'],
+  stage5: ['stage5_intro'],
+  stage6: ['stage6_intro'],
+  stage7: ['stage7_intro'],
   kidnap: ['kidnap_1', 'kidnap_2'],
   rescue_pre_boss: ['rescue_1'],
   victory: ['rescue_2'],
 });
+/** Game Art will drop these later. Playback skips a missing optional file instead of stalling. */
+export const OPTIONAL_CLIPS = Object.freeze(new Set(['stage5_intro', 'stage6_intro', 'stage7_intro']));
+export function clipIdsFor(keys, exists) {
+  const ids = (Array.isArray(keys) ? keys : [keys]).flatMap(key => STAGE_CLIPS[key] || []);
+  if (typeof exists !== 'function') return ids;
+  return ids.filter(id => !OPTIONAL_CLIPS.has(id) || exists(id));
+}
 export const EVENT_CLIPS = STAGE_CLIPS;
 export const SKIP_ACTIONS = Object.freeze(new Set(['fire', 'jump', 'dash', 'papi', 'dad', 'start', 'pause']));
 export const START_MS = 4000, STALL_MS = 3000, MAX_CLIP_MS = 30000, TICK_MS = 250, GUARD_MS = 450, VOLUME = 0.85;

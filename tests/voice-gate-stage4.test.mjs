@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { STAGE_CLIPS, INTRO_REV } from '../src/cutscene.js';
 import { Campaign } from '../src/campaign.js';
+import { maxStage } from '../src/stages.js';
 import { LINES } from '../src/voice-lines.js';
 import { createVoiceGate, offerVoice, flushVoiceGate, rollingVoiceStats,
   isReservedVoice, isBossMomentVoice, nextVoiceAt, isEndingVoice, expireOptionalVoice } from '../src/voice-gate.js';
@@ -76,7 +77,7 @@ test('chapter changes preserve the global stamps and pending locked lines', () =
 });
 
 test('stage clear transfers locked bark offers before victory stops the combat scheduler', () => {
-  const w = new Campaign({ stage: 4 }); w.elapsed = 17; w.voiceAt = []; w.events = [];
+  const w = new Campaign({ stage: maxStage }); w.elapsed = 17; w.voiceAt = []; w.events = [];
   w.voiceGate.stamps = [0, 8, 16];
   w.barks.held.yetti = { group: 'yetti', id: 'yetti_purple_car_01' };
   w.barks.offers.push({ group: 'produce', id: 'bdb_produce' });
@@ -114,8 +115,8 @@ test('ending lines take the earliest legal slots and optional chatter expires', 
   assert.ok(Math.abs(first - nextVoiceAt({ stamps: [0, 8, 16], queue: [], gap: 8, cap: 3, window: 60 }, 17)) < 1e-6);
 });
 
-for (const hz of [30, 60, 120]) test(`Stage 4 victory opening puts ending lines on the first legal beats at ${hz} Hz`, () => {
-  const w = new Campaign({ stage: 4, rng: () => 1 });
+for (const hz of [30, 60, 120]) test(`final-stage victory opening puts ending lines on the first legal beats at ${hz} Hz`, () => {
+  const w = new Campaign({ stage: maxStage, rng: () => 1 });
   w.elapsed = 141.2; w.voiceAt = [];
   w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = []; w.events = [];
   for (const id of ['bouncer_phase2', 'bouncer_phase3', 'bouncer_defeat', ...locked.flatMap(([, ids]) => ids)]) w.emit('voice', id);

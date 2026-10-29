@@ -129,6 +129,7 @@ export class Campaign {
     if (stage === 1) this.armVoice('bdb_open', 4);
     if (stage === 3) this.armVoice('claudia_open', 2);
     if (stage === 4) { this.armVoice('claudia_s4', 8); this.armVoice('bob_s4', 16); }
+    if (stage === 5) { this.armVoice('claudia_s5', 8); this.armVoice('bob_s5', 16); }
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -233,7 +234,11 @@ export class Campaign {
     for (let i=count;i<types.length;i++) this.spawnYetti(types[i],i%2?this.bounds.l+70:this.bounds.r-70,clamp(600+i*30,LANE_TOP,LANE_BOT));
   }
   summonWalkers() { this.summonAdds(['walker','walker']); }
-  snowball(x,y,dir,kind='snowball') {
+  snowball(x,y,dir,kind='snowball', extra) {
+    if (kind === 'splat') {
+      this.hostile.push({ x, y, dir: 0, kind: 'splat', speed: 0, ttl: extra?.ttl ?? 1.4, w: extra?.w ?? 80, alive: true, hit: false });
+      return;
+    }
     const mul=this.difficultyKey==='nightmare'&&this.stageNo===3?NIGHTMARE_S3.shotMul:1;
     this.hostile.push({x,y,dir,kind,speed:(kind==='halo'?260:320)*mul,alive:true});
   }
@@ -284,6 +289,7 @@ export class Campaign {
       if (e.type==='interventionist') { this.banner(II?'THE INTERVENTIONIST · PHASE II: HE MEANS IT NOW':'THE INTERVENTIONIST · PHASE III: FULL INTERVENTION'); this.emit('voice','lecturer_intervention'); }
       else if (e.type==='choirmaster') this.banner(II?'THE CHOIRMASTER · PHASE II: THE CHOIR SWELLS':'THE CHOIRMASTER · PHASE III: HALLELUJAH, HARD MODE');
       else if (e.type==='bouncer') this.banner(II?'PHASE II: THE ROPE COMES OUT':'PHASE III: LAST CALL');
+      else if (e.type==='dj') this.banner(II?'PHASE II: REQUEST DENIED':'PHASE III: WAIT FOR IT…');
       else this.banner(`${this.def.boss.name} · PHASE ${II?'II':'III'}`);
       if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_phase${result.phase}`);
       this.hostile=[];
@@ -522,7 +528,16 @@ export class Campaign {
       const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
       const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
     }
-    for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
+    for(const p of this.hostile){
+      if(p.kind==='splat'){
+        p.ttl-=dt;
+        if(p.ttl<=0){p.alive=false;continue;}
+        if(!p.hit&&Math.abs(this.bob.x-p.x)<=(p.w||80)/2&&laneOf(this.bob.y)===laneOf(p.y)&&this.bob.z<snowClearZ(this.difficultyKey, dt)){
+          this.hurtBob(false, p.x); p.hit=true;
+        }
+        continue;
+      }
+      const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
       if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }

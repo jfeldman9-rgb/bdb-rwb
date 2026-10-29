@@ -221,7 +221,7 @@ export const sfx = {
   torchIgnite() { if (!gate('torchIgnite', 120)) return; noise({ f0: 280, f1: 1800, dur: 0.45, vol: 0.25, filter: 'bandpass', attack: 0.05 }); tone({ f0: vary(120), f1: 75, dur: 0.3, vol: 0.18, type: 'sine' }); },
 };
 let musicWanted = false, unlocked = false;
-export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3','stage4','boss4'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
+export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3','stage4','boss4','stage5','boss5','stage6','boss6','stage7','boss7'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
 const tracks = Object.create(null), musicBytes = Object.create(null);
 let currentTrack = null, wantedTrack = 'stage1';
 const DEFAULT_DUCK_OWNER = 'default', bedDuckOwners = new Set();

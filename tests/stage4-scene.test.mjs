@@ -88,7 +88,7 @@ test('a Bouncer defeat flushed in the victory update remains visible through the
   const prevGet = document.getElementById;
   document.getElementById = id => els[id] || null;
   try {
-    const w = new Campaign({ stage: 4, rng: () => 1 });
+    const w = new Campaign({ stage: 5, rng: () => 1 });
     w.elapsed = 182.7; w.voiceAt = []; w.events = [];
     w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = ['bouncer_defeat'];
     const scene = Object.create(GameScene.prototype);
@@ -190,6 +190,7 @@ test('Nightmare unlock on Stage 3 clear announces at Stage 3 and carries into St
 
     w.update(3);
     assert.equal(w.stageNo, 4);
+    while (w.def.next) { w.finishStage(); w.update(3); }
     w.finishStage();
     w.update(3);
     assert.equal(w.victory, true);

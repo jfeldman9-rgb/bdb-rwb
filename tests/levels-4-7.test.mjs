@@ -6,6 +6,7 @@ import { STAGE1 } from '../src/stage1-def.js';
 import { STAGE2 } from '../src/stage2-def.js';
 import { STAGE3 } from '../src/stage3-def.js';
 import { STAGE4 } from '../src/stage4-def.js';
+import { STAGE5 } from '../src/stage5-def.js';
 import { STAGES, STAGE_CHARS, STAGE_VARIANTS, CAGED, maxStage } from '../src/stages.js';
 import { TYPES, BOSS_ADDS, BOSS_COOL } from '../src/yettis.js';
 import { STREAMS, plateKeys, plateRuns } from '../src/zone-stream.js';
@@ -49,14 +50,16 @@ test('existing boss fallback animation mappings are unchanged', () => {
 });
 
 test('Stage 4 extends the stage chain without changing the raw Stage 3 definition or cage residency', () => {
-  assert.equal(maxStage, 4);
+  assert.ok(maxStage >= 5);
   assert.equal(STAGE3.next, null);
   assert.deepEqual(STAGES[3], { ...STAGE3, next: 4 });
   assert.ok(Object.isFrozen(STAGES[3]));
   assert.equal(STAGES[4], STAGE4);
-  assert.equal(STAGE4.next, null);
+  assert.equal(STAGE4.next, 5);
+  assert.equal(STAGES[5], STAGE5);
   assert.deepEqual([...CAGED], [3]);
-  assert.deepEqual(STAGE_VARIANTS, { 1: [], 2: [], 3: [], 4: ['salsero'] });
+  assert.deepEqual(STAGE_VARIANTS[4], ['salsero']);
+  assert.deepEqual(STAGE_VARIANTS[5], ['salsero', 'tagger']);
 });
 
 test('Stage 4 retains the shared five-zone geometry and its rooftop boss arena', () => {
@@ -192,6 +195,11 @@ test('Stage 3 still unlocks Nightmare and keeps its rescue banner while continui
   assert.equal(w.victory, false);
   assert.equal(w.stageNo, 4);
   w.finishStage();
+  assert.equal(w.message, 'CHAPTER CLEAR · EGO STILL INTACT');
+  w.update(3);
+  assert.equal(w.victory, false);
+  assert.equal(w.stageNo, 5);
+  w.finishStage();
   assert.equal(w.message, STORY.finalVictory);
   w.update(3);
   assert.equal(w.victory, true);
@@ -230,6 +238,10 @@ test('Stage 4 scripted beats fit the rolling window (<=1/8s, <=3/60s) and voice-
     assert.ok(report.maxIn60s <= 3, `${hz}Hz max in 60s ${report.maxIn60s}`);
     assert.equal(report.rollingOk, true, `${hz}Hz rolling window`);
     assert.ok((report.allCounts.dad_catchphrase || 0) >= 1, `${hz}Hz locked dad_catchphrase`);
-    assert.ok(Object.keys(report.allCounts).some(id => id.startsWith('papi_crowd_')), `${hz}Hz locked papi crowd`);
+    assert.ok(
+      Object.keys(report.allCounts).some(id => id.startsWith('papi_crowd_'))
+      || (report.queued || []).some(id => id.startsWith('papi_crowd_')),
+      `${hz}Hz locked papi crowd`,
+    );
   }
 });

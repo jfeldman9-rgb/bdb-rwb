@@ -137,6 +137,7 @@ test('rescue and finale cues queue across chapter changes without resetting spee
   w.finishStage(); w.update(3);
   assert.equal(w.stageNo, 4); assert.equal(w.victory, false);
   assert.ok(requested(w).includes('nar_ch4'));
+  while (!w.victory && w.def.next) { w.finishStage(); w.update(3); }
   w.finishStage(); w.update(3);
   assert.equal(w.victory, true);
   for (const id of ['nar_victory', 'claudia_leave']) assert.ok(requested(w).includes(id));
