@@ -81,7 +81,7 @@
         63,
         63
       ],
-      "loop": false,
+      "loop": true,
       "fps": 16
     },
     {

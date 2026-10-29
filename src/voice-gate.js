@@ -1,11 +1,65 @@
 import { BARK } from './barks.js';
 
 const EPS = 1e-6;
-/** Story, chapter opens, and boss phase/defeat lines queue behind the rolling window instead of dropping. */
-export const PRIORITY_VOICE = /^(?:nar_|claudia_|bdb_open$|bob_s\d+$|wingman_|(?:bouncer|interventionist|choirmaster)_(?:intro|phase\d+|defeat)$)/;
+/**
+ * Locked quotes and set-piece / scripted lines queue behind the rolling window
+ * instead of dropping. Flavour (hurts, yetti taunts, papacito brags) still drops.
+ * Dubbed dad_call_* is not presented here; Campaign emits it without stamping.
+ */
+export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_open$|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_catchphrase$|dad_done_|papi_crowd_|papi_chorus$|bouncer_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;
+export const PRIORITY_VOICE = RESERVED_VOICE;
+export const BOSS_MOMENT_VOICE = /^(?:bouncer|interventionist|choirmaster|wingman)_(?:intro|phase\d+|defeat)$/;
+export const DUBBED_DAD_CALL = /^dad_call_0/;
 
+export function isReservedVoice(id) {
+  return RESERVED_VOICE.test(id || '');
+}
 export function isPriorityVoice(id) {
-  return PRIORITY_VOICE.test(id || '');
+  return isReservedVoice(id);
+}
+export function isBossMomentVoice(id) {
+  return BOSS_MOMENT_VOICE.test(id || '');
+}
+export function isDubbedDadCall(id) {
+  return DUBBED_DAD_CALL.test(id || '');
+}
+
+function bossMomentType(id) {
+  const m = String(id || '').match(/^(bouncer|interventionist|choirmaster|wingman)_/);
+  return m ? m[1] : '';
+}
+
+function bossMomentRank(id) {
+  const m = String(id || '').match(/^(?:bouncer|interventionist|choirmaster|wingman)_(intro|phase(\d+)|defeat)$/);
+  if (!m) return -1;
+  if (m[1] === 'intro') return 0;
+  if (m[1] === 'defeat') return 99;
+  return +m[2];
+}
+
+/** Keep only the latest same-boss moment; older phase/intro lines would play late. */
+function enqueueReserved(gate, id) {
+  if (isBossMomentVoice(id)) {
+    const type = bossMomentType(id);
+    const rank = bossMomentRank(id);
+    let best = id;
+    let bestRank = rank;
+    const rest = [];
+    for (const q of gate.queue) {
+      if (isBossMomentVoice(q) && bossMomentType(q) === type) {
+        const r = bossMomentRank(q);
+        if (r > bestRank) {
+          best = q;
+          bestRank = r;
+        }
+        continue;
+      }
+      rest.push(q);
+    }
+    gate.queue = [best, ...rest];
+    return;
+  }
+  if (!gate.queue.includes(id)) gate.queue.push(id);
 }
 
 export function createVoiceGate({ gap = BARK.gap, cap = BARK.cap, window = BARK.window } = {}) {
@@ -32,6 +86,16 @@ export function canSpeakVoice(gate, now) {
   return true;
 }
 
+/** Earliest time the rolling window will accept another presented line. */
+export function nextVoiceAt(gate, now) {
+  pruneVoiceGate(gate, now);
+  if (canSpeakVoice(gate, now)) return now;
+  let t = now;
+  if (gate.stamps.length > 0) t = Math.max(t, gate.stamps[gate.stamps.length - 1] + gate.gap);
+  if (gate.stamps.length >= gate.cap) t = Math.max(t, gate.stamps[0] + gate.window);
+  return t;
+}
+
 export function flushVoiceGate(gate, now, onSpeak) {
   while (gate.queue.length > 0 && canSpeakVoice(gate, now)) {
     const id = gate.queue.shift();
@@ -48,10 +112,12 @@ export function offerVoice(gate, id, now, onSpeak, { forceQueue = false } = {}) 
     onSpeak(id);
     return true;
   }
-  if ((forceQueue || isPriorityVoice(id)) && !gate.queue.includes(id)) {
-    gate.queue.push(id);
-  }
+  if (forceQueue || isReservedVoice(id)) enqueueReserved(gate, id);
   return false;
+}
+
+export function hasReservedQueued(gate) {
+  return !!gate?.queue.some(id => isReservedVoice(id));
 }
 
 /** Verify a sorted timestamp array obeys <= 1 per gap and <= cap in any half-open [t, t + window) interval. */

@@ -11,7 +11,6 @@ import { q } from './config.js';
 import { gameplayWantsPause } from './input.js';
 import { say,sfx,playTrack,duckStageBed,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
 import { stageLines, LINES } from './voice-lines.js';
-import { createVoiceGate, offerVoice, flushVoiceGate } from './voice-gate.js';
 import { STORY } from './story.js';
 import { showStuck } from './recovery.js';
 import { persistSave } from './save.js';
@@ -22,11 +21,17 @@ import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
 import { RECOIL_KICK, stepRecoil, hostileShape, killImpact } from './shot-feel.js';
 
-/** Opening bed. A scored clip queued on this load (kidnap, rescue) owns the speakers.
- *  A silent stage opener keeps the bed so the picture is not eleven seconds of dead air. */
+/** Silent picture (stage opener, or Stage 4's mute kidnap) keeps the bed.
+ *  A scored clip still owns the speakers. Stages 1–3 keep their historical bed stop
+ *  when a non-stage clip is queued (Stage 2 kidnap already played that way). */
+export function isSilentOpenerClip(key) {
+  return /^(?:stage\d+|kidnap)$/.test(String(key || ''));
+}
 export function trackForStageStart(stageNo, events) {
   const clips = (events || []).filter(e => e.type === 'cutscene');
-  if (clips.some(e => !/^stage\d+$/.test(String(e.data)))) return null;
+  if (stageNo >= 4) {
+    if (clips.some(e => !isSilentOpenerClip(e.data))) return null;
+  } else if (clips.some(e => !/^stage\d+$/.test(String(e.data)))) return null;
   return `stage${stageNo}`;
 }
 
@@ -89,7 +94,7 @@ export class GameScene extends Phaser.Scene {
  init(data){
   this._sceneToken=(this._sceneToken||0)+1;
   if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}
-  this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.loadFailed=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.rescueBeat=false;this.holdingVoice=false;this.voiceHold=[];this._carryVoice=null;this.voiceClock=0;this.voiceGate=createVoiceGate();this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;
+  this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.loadFailed=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.rescueBeat=false;this.holdingVoice=false;this.voiceHold=[];this._carryVoice=null;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;
  }
  failChapterLoad(error){
   this.loadFailed=true;this.started=false;
@@ -237,23 +242,19 @@ export class GameScene extends Phaser.Scene {
   parts.length=kept;
  }
  speakNow(id){say(id,(who,line)=>this.hud?.say?.(who,line));}
- queueSceneVoice(id,{forceQueue=false}={}){
+ /** Campaign already gated Stage 4+. The scene only presents; it does not stamp a second clock. */
+ queueSceneVoice(id){
   if(!id)return false;
   if(id==='wingman_phase3')this.cameras?.main?.flash?.(300,225,190,255);
-  const gate=this.voiceGate||(this.voiceGate=createVoiceGate());
-  this.voiceClock??=0;
-  return offerVoice(gate,id,this.voiceClock,next=>this.speakNow(next),{forceQueue});
+  this.speakNow(id);return true;
  }
- tickVoiceGate(dt){
-  if(!(dt>0)||this.holdingVoice||this.world?.paused)return;
-  this.voiceClock=(this.voiceClock||0)+dt;
-  if(this.voiceGate?.queue.length)flushVoiceGate(this.voiceGate,this.voiceClock,next=>this.speakNow(next));
- }
- playHeld(ids){for(const id of ids||[])this.queueSceneVoice(id,{forceQueue:true});}
- /** Silent stage openers duck the bed. Anything with its own soundtrack stops it. */
+ playHeld(ids){for(const id of ids||[])this.queueSceneVoice(id);}
+ /** Silent stage openers (and Stage 4's mute kidnap) duck the bed. A scored clip stops it. */
  stageBedClip(key){
   const keys=Array.isArray(key)?key:[key];
-  return keys.length>0&&keys.every(k=>/^stage\d+$/.test(k));
+  if(!keys.length)return false;
+  if(keys.every(k=>/^stage\d+$/.test(k)))return true;
+  return (this.stageNo||0)>=4&&keys.every(isSilentOpenerClip);
  }
  victoryClip(key){
   const keys=Array.isArray(key)?key:[key];
@@ -279,9 +280,8 @@ export class GameScene extends Phaser.Scene {
    const carry=this._carryVoice||[];this._carryVoice=null;done?.([...carry,...held]);
   });
   if(finished)return;
-  const pending=this.voiceGate?.queue?.length?this.voiceGate.queue.splice(0):[];
   const carried=this._carryVoice||[];this._carryVoice=null;
-  this.voiceHold=[...carried,...pending];this.holdingVoice=true;
+  this.voiceHold=[...carried];this.holdingVoice=true;
   if(bed){this._duckOwner=clipOwner;duckStageBed(true,clipOwner);}else playTrack(null,{fade:.4});
   stopSceneAudio();this.setPauseReason('cutscene',true);
  }
@@ -349,7 +349,7 @@ export class GameScene extends Phaser.Scene {
   if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;inp.update(dt);
   if(gameplayWantsPause(inp))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
   this.accumulator+=dt;
-  while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();const prevElapsed=w.elapsed||0;w.update(1/60,controls);const stepped=(w.elapsed||0)>prevElapsed?(w.elapsed-prevElapsed):(!w.paused&&!this.holdingVoice?1/60:0);this.tickVoiceGate(stepped);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
+  while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
   this.handleEvents();
   this.syncViews(dt);this.fx?.update(dt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(dt);this.stepDust(dt);}if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);

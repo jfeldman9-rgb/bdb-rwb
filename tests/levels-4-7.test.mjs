@@ -214,9 +214,11 @@ test('Stage 4 scripted beats fit the rolling window (<=1/8s, <=3/60s) and voice-
     assert.equal(report.stageTimes.length, 1);
     assert.ok(report.ambientPerMin <= 4, `${hz}Hz ambient ${report.ambientPerMin}/min`);
     assert.ok(report.totalPerMin <= 7, `${hz}Hz total ${report.totalPerMin}/min`);
-    assert.ok(report.minAmbientGap >= 7.95, `${hz}Hz ambient gap ${report.minAmbientGap}`);
+    if (report.ambient >= 2) assert.ok(report.minAmbientGap >= 7.95, `${hz}Hz ambient gap ${report.minAmbientGap}`);
     assert.ok(report.minVoiceGap >= 7.99, `${hz}Hz voice gap ${report.minVoiceGap}`);
     assert.ok(report.maxIn60s <= 3, `${hz}Hz max in 60s ${report.maxIn60s}`);
     assert.equal(report.rollingOk, true, `${hz}Hz rolling window`);
+    assert.ok((report.allCounts.dad_catchphrase || 0) >= 1, `${hz}Hz locked dad_catchphrase`);
+    assert.ok(Object.keys(report.allCounts).some(id => id.startsWith('papi_crowd_')), `${hz}Hz locked papi crowd`);
   }
 });

@@ -13,11 +13,10 @@ globalThis.document = {
 };
 globalThis.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
 
-const { GameScene, roleAnim } = await import('../src/game-scene.js');
+const { GameScene, roleAnim, trackForStageStart, isSilentOpenerClip } = await import('../src/game-scene.js');
 const { Campaign } = await import('../src/campaign.js');
 const { Yetti, laneY } = await import('../src/yettis.js');
 const { registerVoiceLines } = await import('../src/voice-lines.js');
-const { rollingVoiceStats } = await import('../src/voice-gate.js');
 const { duckStageBed, playTrack, musicState } = await import('../src/audio.js');
 const { createStartupGuard } = await import('../src/startup.js');
 registerVoiceLines();
@@ -64,25 +63,37 @@ test('init() resets rescueBeat and invalidates stale held-clip callbacks across 
   pendingDone?.();
 });
 
-test('GameScene playHeld and handleEvents enforce the rolling window (<=1/8s, <=3/60s) across held bursts', () => {
+test('GameScene presents campaign-approved lines immediately and does not own a second gate', () => {
   const scene = Object.create(GameScene.prototype);
   const spoken = [];
   scene.game = { runSeq: 0, inp: { update() {}, take: () => false, snapshot: () => ({}), clear() {} }, story: { play(_k, done) { done(); } } };
   scene.init({ world: new Campaign({ stage: 4 }) });
   scene.world.events = [];
-  scene.hud = { say(_who, line) { spoken.push([+(scene.voiceClock).toFixed(2), line]); }, update() {} };
+  scene.hud = { say(_who, line) { spoken.push(line); }, update() {} };
 
-  scene.playHeld(['nar_ch4', 'claudia_s4', 'bob_s4', 'bouncer_intro']);
-  assert.equal(spoken.length, 1, 'only the first held line speaks immediately');
+  assert.equal(scene.voiceGate, undefined);
+  assert.equal(scene.voiceClock, undefined);
+  scene.world.events.push({ type: 'voice', data: 'dad_catchphrase' });
+  scene.world.events.push({ type: 'voice', data: 'papi_crowd_01' });
+  scene.handleEvents();
+  assert.deepEqual(spoken, [
+    'Son, sometimes you just need to use the fly swatter to keep the women away!',
+    'We love you Papacito! Pick me!',
+  ]);
+});
 
-  for (let i = 0; i < 65 * 60; i++) scene.tickVoiceGate(1 / 60);
-  assert.equal(spoken.length, 4);
-  const stamps = spoken.map(([t]) => t);
-  assert.ok(Math.abs(stamps[0] - 0) < .05);
-  assert.ok(Math.abs(stamps[1] - 8) < .05);
-  assert.ok(Math.abs(stamps[2] - 16) < .05);
-  assert.ok(Math.abs(stamps[3] - 60) < .05);
-  assert.equal(rollingVoiceStats(stamps).ok, true);
+test('Stage 4 silent kidnap keeps the chapter bed; Stage 2 keeps its historical stop', () => {
+  assert.equal(isSilentOpenerClip('stage4'), true);
+  assert.equal(isSilentOpenerClip('kidnap'), true);
+  assert.equal(isSilentOpenerClip('rescue_pre_boss'), false);
+  assert.equal(trackForStageStart(4, [{ type: 'cutscene', data: 'stage4' }, { type: 'cutscene', data: 'kidnap' }]), 'stage4');
+  assert.equal(trackForStageStart(2, [{ type: 'cutscene', data: 'stage2' }, { type: 'cutscene', data: 'kidnap' }]), null);
+  const s4 = Object.create(GameScene.prototype);
+  s4.stageNo = 4;
+  assert.equal(s4.stageBedClip(['stage4', 'kidnap']), true);
+  const s2 = Object.create(GameScene.prototype);
+  s2.stageNo = 2;
+  assert.equal(s2.stageBedClip(['stage2', 'kidnap']), false);
 });
 
 test('roleAnim selects every Bouncer animation directly before generic role fallbacks while preserving legacy roles', () => {

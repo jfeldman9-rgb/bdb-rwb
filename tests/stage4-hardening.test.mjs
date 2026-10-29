@@ -218,23 +218,23 @@ test('Salsero lane-hop and Bouncer reshield retain timer remainders across 30, 6
   }
 });
 
-test('rolling voice gate enforces <=1 line per 8s and <=3 lines per 60s under heavy Stage 4 bursts', () => {
+test('rolling voice gate queues reserved lines and drops flavour under heavy Stage 4 bursts', () => {
   const gate = createVoiceGate();
   const said = [];
   const stamps = [];
   const emit = (t, id) => offerVoice(gate, id, t, out => { said.push(out); stamps.push(t); });
 
   emit(0, 'nar_ch4');
-  emit(0.5, 'yetti_porkchop_01'); // dropped (ambient while closed)
-  emit(2, 'claudia_s4');          // queued (priority)
-  emit(4.5, 'bob_s4');            // queued (priority)
-  emit(5, 'bouncer_grab');        // dropped (ephemeral while closed)
-  emit(6, 'bouncer_intro');       // queued (priority)
+  emit(0.5, 'yetti_porkchop_01'); // dropped (flavour while closed)
+  emit(2, 'claudia_s4');          // queued (reserved)
+  emit(4.5, 'bob_s4');            // queued (reserved)
+  emit(5, 'bouncer_grab');        // queued (reserved grab)
+  emit(6, 'bouncer_intro');       // boss-moment takes the front of the queue
 
-  for (let t = 1; t <= 70; t += 0.5) {
+  for (let t = 1; t <= 80; t += 0.5) {
     flushVoiceGate(gate, t, out => { said.push(out); stamps.push(t); });
   }
-  assert.deepEqual(said, ['nar_ch4', 'claudia_s4', 'bob_s4', 'bouncer_intro']);
-  assert.deepEqual(stamps, [0, 8, 16, 60]);
+  assert.deepEqual(said, ['nar_ch4', 'bouncer_intro', 'claudia_s4', 'bob_s4', 'bouncer_grab']);
+  assert.deepEqual(stamps, [0, 8, 16, 60, 68]);
   assert.equal(rollingVoiceStats(stamps).ok, true);
 });

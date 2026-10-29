@@ -5,7 +5,7 @@
 import { pathToFileURL } from 'node:url';
 import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
-import { rollingVoiceStats } from '../src/voice-gate.js';
+import { rollingVoiceStats, isDubbedDadCall } from '../src/voice-gate.js';
 
 const AMBIENT_GROUP = [
   [/^bdb_produce$/, 'produce'],
@@ -55,7 +55,8 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
       const id = e.data;
       const stamp = +w.elapsed.toFixed(4);
       allCounts[id] = (allCounts[id] || 0) + 1;
-      if (!w.victory) voiceAt.push(stamp);
+      // dad_call_* is dubbed by the call-in clip and does not consume a presented slot.
+      if (!w.victory && !isDubbedDadCall(id)) voiceAt.push(stamp);
       const g = ambientGroup(id);
       if (g) ambientAt.push(stamp);
       if (setPiece) continue;

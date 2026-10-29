@@ -13,7 +13,7 @@ import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
-import { createVoiceGate, resetVoiceGate, offerVoice, flushVoiceGate } from './voice-gate.js';
+import { createVoiceGate, resetVoiceGate, offerVoice, flushVoiceGate, isDubbedDadCall, hasReservedQueued } from './voice-gate.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -78,10 +78,17 @@ export class Campaign {
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
   }
+  /** Stage 4+ presents through one gate on this.elapsed. Stages 1–3 stay ungated. */
+  gatesVoice() { return this.stageNo >= 4 && !this.victory; }
+  holdsClearForVoice() { return this.gatesVoice() && hasReservedQueued(this.voiceGate); }
   emit(type, data) {
-    if (type === 'voice' && this.stageNo >= 4 && !this.victory) {
-      offerVoice(this.voiceGate, data, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
-      return;
+    if (type === 'voice') {
+      // Call-in clip already speaks dad_call_*; stamping it would starve the catchphrase.
+      if (isDubbedDadCall(data)) { this.events.push({ type, data }); return; }
+      if (this.gatesVoice()) {
+        offerVoice(this.voiceGate, data, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
+        return;
+      }
     }
     this.events.push({ type, data });
   }
@@ -362,7 +369,7 @@ export class Campaign {
   }
   armVoice(id, delay = 0) { if (!id) return; (this.voiceAt ||= []).push({ id, at: this.elapsed + delay }); }
   flushVoice() {
-    if (this.stageNo >= 4 && !this.victory && this.voiceGate?.queue.length) {
+    if (this.gatesVoice() && this.voiceGate?.queue.length) {
       flushVoiceGate(this.voiceGate, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
     }
     const list = this.voiceAt;
@@ -450,7 +457,7 @@ export class Campaign {
     this.barks.open = true;
     const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
     try {
-    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
+    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.holdsClearForVoice())this.clearTimer=1/60;else if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
       if(this.papiPending){

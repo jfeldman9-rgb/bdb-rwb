@@ -124,6 +124,12 @@ test('painted Stage 4 Salsero and Bouncer are not placeholders', async () => {
       assert.equal(a.frames.length, n, `${key}_${name}`);
       assert.equal(a.holds[0], hold(fps));
     }
+    if (key === 'yetti_salsero') {
+      assert.equal(m.anims.find((x) => x.name === 'yetti_salsero_spin').loop, true, 'spin loops so the 0.55s tell does not freeze');
+    }
+    if (key === 'bouncer') {
+      assert.equal(m.anims.find((x) => x.name === 'bouncer_grab').loop, true, 'grab loops so the 0.65s tell does not freeze');
+    }
   }
 });
 

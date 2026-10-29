@@ -87,7 +87,8 @@ STANDINS = {
   'choirmaster': {'sing': (6, 10), 'hurt': (2, 14), 'down': (3, 12), 'ring': (4, 14)},
 }
 
-LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture'} | {f'run{i}' for i in range(1, 7)}
+# spin/grab tells last longer than one 16fps pass; loop so the last frame does not freeze.
+LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture', 'spin'} | {f'run{i}' for i in range(1, 7)}
 
 
 def stage4_standin(key, anim, i):
@@ -224,7 +225,7 @@ def pack(key, anims_spec, source=None):
     a = {
       'name': f'{key}_{anim}',
       'frames': [], 'pages': [], 'holds': [],
-      'loop': anim in LOOP or anim.startswith('run'),
+      'loop': anim in LOOP or anim.startswith('run') or (key == 'bouncer' and anim == 'grab'),
       'fps': fps,
     }
     for i in range(first, first + count):
