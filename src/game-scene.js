@@ -2,7 +2,7 @@ import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
 import { Fighter } from './fighter.js';
 import { TYPES, laneOf, laneY, LANE_H, choirAura, telegraphPlan } from './yettis.js';
-import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
+import { queueCharPages,makeCharAnims,makeSockAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES,CAGED } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
 import { HUD } from './hud.js';
@@ -19,7 +19,7 @@ import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cu
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
-import { RECOIL_KICK, stepRecoil, hostileShape, killImpact } from './shot-feel.js';
+import { RECOIL_KICK, stepRecoil, hostileShape, killImpact, SOCK_DRAW_SCALE, SOCK_DRAW_Y } from './shot-feel.js';
 
 /** Silent picture (stage opener, or Stage 4's mute kidnap) keeps the bed.
  *  A scored clip still owns the speakers. Stages 1–3 keep their historical bed stop
@@ -95,7 +95,7 @@ export class GameScene extends Phaser.Scene {
   this.lastDialogue=null;this.victoryDialogue=[];
   this._sceneToken=(this._sceneToken||0)+1;
   if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}
-  this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.loadFailed=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.rescueBeat=false;this.holdingVoice=false;this.voiceHold=[];this._carryVoice=null;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;
+  this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.loadFailed=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.sockViews=new Map();this.sockPuffs=[];this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.rescueBeat=false;this.holdingVoice=false;this.voiceHold=[];this._carryVoice=null;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;
  }
  failChapterLoad(error){
   this.loadFailed=true;this.started=false;
@@ -135,7 +135,7 @@ export class GameScene extends Phaser.Scene {
  mountTextures(){this.fx=bootOwnedTextures(this);}
  assemble(){
   for(const key of STAGE_TEXTURES[this.stageNo]||[])if(!this.textures.exists(key))throw new Error(`Missing stage texture: ${key}`);
-  this.game.campaign=this.world;this.metas=makeCharAnims(this,STAGE_CHARS[this.stageNo]);
+  this.game.campaign=this.world;this.metas=makeCharAnims(this,STAGE_CHARS[this.stageNo]);makeSockAnims(this);
   this.backdrop=buildBackdrop(this,this.world.def);
   this.dadLabel=this.add.text(0,0,'BDB',{fontFamily:'Arial',fontSize:20,fontStyle:'bold',color:'#fff0ad',stroke:'#192235',strokeThickness:4}).setDepth(19001).setVisible(false);
   this.g=this.add.graphics().setDepth(19000);this.hud=new HUD(this);this.papiFX=new PapacitoFX(this);
@@ -147,7 +147,7 @@ export class GameScene extends Phaser.Scene {
   if(opening)playTrack(opening);
   this.offDadBless=installDadGestureBless(globalThis);
   this.offRotate=bindRotatePause(this);
-  this.events.once('shutdown',()=>{this._sceneToken=(this._sceneToken||0)+1;if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
+  this.events.once('shutdown',()=>{this._sceneToken=(this._sceneToken||0)+1;if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();for(const s of this.sockViews.values())s.destroy();this.sockViews.clear();for(const s of this.sockPuffs||[])s.destroy();this.sockPuffs=[];this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();presentStage(this);this.hud.update(this.world);
  }
  setBloom(on){this.bloomEnabled=!!on;}
@@ -206,6 +206,35 @@ export class GameScene extends Phaser.Scene {
  showDad(d){const v=this.dadView,m=v.meta,a=m.anims.find(x=>x.name==='dad_'+d.state);Object.assign(v,{x:d.x,y:d.y,z:0});
   if(a){const i=Math.min(a.frames.length-1,d.frame|0);v.cur='dad_'+d.state;v.sprite.anims.stop();v.sprite.setTexture(m.pages[a.pages[i]],a.frames[i]);}else v.play(d.state,1,false);
   v.sprite.setAlpha(d.alpha??1);v.sync();v.shadow.setAlpha(.9*(d.alpha??1));}
+
+ /** Painted sock for guard/hover snowballs. Halo/shockwave stay procedural. */
+ syncSocks(){
+  const w=this.world, views=this.sockViews||(this.sockViews=new Map());
+  const live=new Set();
+  for(const p of w.hostile){
+   if(hostileShape(p.kind).shape!=='sock')continue;
+   live.add(p);
+   let spr=views.get(p);
+   if(!spr){
+    if(!this.textures.exists('sock-0')||!this.anims.exists('sock_spin'))continue;
+    spr=this.add.sprite(p.x,p.y-SOCK_DRAW_Y,'sock-0','sock_spin_00').setOrigin(.5,.5).setScale(SOCK_DRAW_SCALE).setDepth(18950);
+    spr.play('sock_spin');views.set(p,spr);
+   }
+   spr.setPosition(p.x,p.y-SOCK_DRAW_Y);spr.setFlipX(p.dir<0);
+  }
+  for(const [p,spr] of [...views.entries()]){
+   if(live.has(p))continue;
+   this.spawnSockPuff(spr.x,spr.y);
+   spr.destroy();views.delete(p);
+  }
+ }
+ spawnSockPuff(x,y){
+  if(!this.textures.exists('sock-0')||!this.anims.exists('sock_puff'))return;
+  const spr=this.add.sprite(x,y,'sock-0','sock_puff_00').setOrigin(.5,.5).setScale(SOCK_DRAW_SCALE).setDepth(18960);
+  (this.sockPuffs||(this.sockPuffs=[])).push(spr);
+  spr.play('sock_puff');
+  spr.once('animationcomplete',()=>{spr.destroy();const list=this.sockPuffs;if(!list)return;const i=list.indexOf(spr);if(i>=0)list.splice(i,1);});
+ }
  effects(dt){
   const w=this.world,g=this.g;g.clear();
   // Procedural paddle only for the old silhouette stand-in; the packed swat frames carry the BDB swatter.
@@ -236,7 +265,8 @@ export class GameScene extends Phaser.Scene {
    if(!e.boss&&e.hp<e.maxHp){g.fillStyle(0x201b30);g.fillRect(e.x-30,e.y-215,60,5);g.fillStyle(0xb7dce7);g.fillRect(e.x-30,e.y-215,60*e.hp/e.maxHp,5);}
   }
   for(const p of w.projectiles){g.fillStyle(0x491b7d);g.fillEllipse(p.x,p.y,48,19);g.fillStyle(0xba77ed);g.fillEllipse(p.x-5*p.dir,p.y-4,26,6);g.fillStyle(0x9bcc63);g.fillTriangle(p.x+22*p.dir,p.y,p.x+32*p.dir,p.y-9,p.x+33*p.dir,p.y+4);}
-  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else{g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-65,28,32);}}
+  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else if(s.shape!=='sock'||!this.textures.exists('sock-0')){g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-SOCK_DRAW_Y,28,32);}}
+  this.syncSocks();
   for(const p of w.pickups){g.fillStyle(0xfff1bb);g.fillRoundedRect(p.x-12,p.y-38,24,32,5);g.fillStyle(0xcc8fde);g.fillRect(p.x-9,p.y-30,18,13);g.fillStyle(0x7bd6c7);g.fillRect(p.x-10,p.y-43,20,6);}
   const parts=this.particles;let kept=0;
   for(let i=0;i<parts.length;i++){const p=parts[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);if(p.life>0)parts[kept++]=p;}

@@ -1,0 +1,76 @@
+{
+  "canvas": [
+    128,
+    128
+  ],
+  "baseline": 64,
+  "scale": 1,
+  "pages": [
+    "sock-0"
+  ],
+  "anims": [
+    {
+      "name": "sock_spin",
+      "frames": [
+        "sock_spin_00",
+        "sock_spin_01",
+        "sock_spin_02",
+        "sock_spin_03",
+        "sock_spin_04",
+        "sock_spin_05",
+        "sock_spin_06",
+        "sock_spin_07"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": true,
+      "fps": 16
+    },
+    {
+      "name": "sock_puff",
+      "frames": [
+        "sock_puff_00",
+        "sock_puff_01",
+        "sock_puff_02",
+        "sock_puff_03",
+        "sock_puff_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": false,
+      "fps": 16
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/projectiles/sock"
+}

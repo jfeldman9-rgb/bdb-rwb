@@ -10,9 +10,12 @@ export function killImpact(type, data) {
   if (type === 'ko' && data?.source !== 'bob') return { heavy: true, splat: true, kick: false };
   return null;
 }
-/** Snowball stays an ice ellipse. Halo is a ring. Shockwave is a flat bar. */
+/** Guard/hover throw a painted sock. Halo is a ring. Shockwave is a flat bar. */
 export function hostileShape(kind) {
   if (kind === 'halo') return { shape: 'ring', color: 0xffdf89 };
   if (kind === 'shockwave') return { shape: 'bar', color: 0xffdf89 };
-  return { shape: 'ellipse', color: 0xdaefff };
+  return { shape: 'sock', color: 0xc9a882 };
 }
+/** On-screen sock size ≈ hostile hitbox (~60px). Source frames are 128×128. */
+export const SOCK_DRAW_SCALE = 0.45;
+export const SOCK_DRAW_Y = 65;

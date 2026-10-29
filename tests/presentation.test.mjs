@@ -24,9 +24,9 @@ test('a killing eggplant splats once; Papi and Dad still splat on the ko', () =>
   assert.equal(killImpact('ko', { source: 'dad' }).kick, false);
 });
 
-test('hostile projectiles use three different shapes', () => {
+test('hostile projectiles use three different shapes (sock / ring / bar)', () => {
   const shapes = ['snowball', 'halo', 'shockwave'].map(k => hostileShape(k).shape);
-  assert.deepEqual(shapes, ['ellipse', 'ring', 'bar']);
+  assert.deepEqual(shapes, ['sock', 'ring', 'bar']);
   assert.equal(new Set(shapes).size, 3);
 });
 

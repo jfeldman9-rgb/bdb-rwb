@@ -1,7 +1,7 @@
 import { VW,VH,RS0,q,coarsePointer } from './config.js';
 import { Input, titleWantsBegin } from './input.js';
 import { installViewportFit } from './viewport.js';
-import { queueCharJson,queueCharPages,makeCharAnims } from './assets.js';
+import { queueCharJson,queueCharPages,makeCharAnims,queueSockAtlas } from './assets.js';
 import { GameScene } from './game-scene.js';
 import { loadSave,persistSave } from './save.js';
 import { resolveDifficulty } from './difficulty.js';
@@ -20,7 +20,7 @@ import { blessDadFromGesture } from './dad-call-cutscene.js';
 
 class Boot extends Phaser.Scene {
  constructor(){super('boot');}
- preload(){window.__bdbStartup?.watchLoader(this.load);queueCharJson(this);this.load.image('chapter1-boulevard','assets/bg/chapter1-boulevard.webp');}
+ preload(){window.__bdbStartup?.watchLoader(this.load);queueCharJson(this);queueSockAtlas(this);this.load.image('chapter1-boulevard','assets/bg/chapter1-boulevard.webp');}
  create(){this.scene.start('title');}
 }
 class Title extends Phaser.Scene {
