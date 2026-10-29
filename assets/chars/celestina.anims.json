@@ -10,14 +10,37 @@
   ],
   "anims": [
     {
+      "name": "celestina_idle",
+      "frames": [
+        "celestina_idle_00",
+        "celestina_idle_01",
+        "celestina_idle_02",
+        "celestina_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
       "name": "celestina_walk",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "celestina_walk_00",
+        "celestina_walk_01",
+        "celestina_walk_02",
+        "celestina_walk_03",
+        "celestina_walk_04",
+        "celestina_walk_05"
       ],
       "pages": [
         0,
@@ -39,161 +62,11 @@
       "fps": 10
     },
     {
-      "name": "celestina_toss",
+      "name": "celestina_flutter",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "loop": true,
-      "fps": 10
-    },
-    {
-      "name": "celestina_blink",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "loop": true,
-      "fps": 10
-    },
-    {
-      "name": "celestina_hold",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "loop": true,
-      "fps": 10
-    },
-    {
-      "name": "celestina_rush",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71,
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "celestina_roar",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71,
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "celestina_hurt",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02"
-      ],
-      "pages": [
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "celestina_down",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03"
+        "celestina_flutter_00",
+        "celestina_flutter_01",
+        "celestina_flutter_02"
       ],
       "pages": [
         0,
@@ -205,16 +78,99 @@
         83,
         83
       ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "celestina_toss",
+      "frames": [
+        "celestina_toss_00",
+        "celestina_toss_01",
+        "celestina_toss_02",
+        "celestina_toss_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "celestina_blink",
+      "frames": [
+        "celestina_blink_00",
+        "celestina_blink_01",
+        "celestina_blink_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "celestina_hurt",
+      "frames": [
+        "celestina_hurt_00",
+        "celestina_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "celestina_down",
+      "frames": [
+        "celestina_down_00",
+        "celestina_down_01",
+        "celestina_down_02",
+        "celestina_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
       "loop": false,
       "fps": 12
     }
   ],
-  "placeholder": true,
-  "source": "stand-in cloned from choirmaster",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 15,
-    "unique": 6,
-    "reused": 9
+    "logical": 26,
+    "unique": 26,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

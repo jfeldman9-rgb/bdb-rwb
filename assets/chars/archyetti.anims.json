@@ -10,14 +10,37 @@
   ],
   "anims": [
     {
+      "name": "archyetti_idle",
+      "frames": [
+        "archyetti_idle_00",
+        "archyetti_idle_01",
+        "archyetti_idle_02",
+        "archyetti_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
       "name": "archyetti_walk",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "archyetti_walk_00",
+        "archyetti_walk_01",
+        "archyetti_walk_02",
+        "archyetti_walk_03",
+        "archyetti_walk_04",
+        "archyetti_walk_05"
       ],
       "pages": [
         0,
@@ -39,155 +62,57 @@
       "fps": 10
     },
     {
-      "name": "archyetti_gavel",
+      "name": "archyetti_slam",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
+        "archyetti_slam_00",
+        "archyetti_slam_01",
+        "archyetti_slam_02",
+        "archyetti_slam_03",
+        "archyetti_slam_04"
       ],
       "pages": [
+        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
+        83,
+        83,
+        83,
+        83,
+        83
       ],
       "loop": false,
-      "fps": 14
+      "fps": 12
     },
     {
       "name": "archyetti_verdict",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
+        "archyetti_verdict_00",
+        "archyetti_verdict_01",
+        "archyetti_verdict_02"
       ],
       "pages": [
-        0,
         0,
         0,
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "archyetti_rush",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
+        83,
+        83,
+        83
       ],
       "loop": true,
-      "fps": 10
+      "fps": 12
     },
     {
       "name": "archyetti_roar",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71,
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "archyetti_floored",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "loop": true,
-      "fps": 10
-    },
-    {
-      "name": "archyetti_hurt",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02"
-      ],
-      "pages": [
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "archyetti_down",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03"
+        "archyetti_roar_00",
+        "archyetti_roar_01",
+        "archyetti_roar_02"
       ],
       "pages": [
         0,
@@ -201,14 +126,57 @@
       ],
       "loop": false,
       "fps": 12
+    },
+    {
+      "name": "archyetti_hurt",
+      "frames": [
+        "archyetti_hurt_00",
+        "archyetti_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "archyetti_down",
+      "frames": [
+        "archyetti_down_00",
+        "archyetti_down_01",
+        "archyetti_down_02",
+        "archyetti_down_03",
+        "archyetti_down_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
     }
   ],
-  "placeholder": true,
-  "source": "stand-in cloned from choirmaster",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 15,
-    "unique": 6,
-    "reused": 9
+    "logical": 28,
+    "unique": 28,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

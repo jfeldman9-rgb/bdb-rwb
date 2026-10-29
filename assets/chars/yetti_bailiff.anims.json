@@ -10,43 +10,14 @@
   ],
   "anims": [
     {
-      "name": "yetti_bailiff_idle",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "loop": true,
-      "fps": 10
-    },
-    {
       "name": "yetti_bailiff_walk",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "yetti_bailiff_walk_00",
+        "yetti_bailiff_walk_01",
+        "yetti_bailiff_walk_02",
+        "yetti_bailiff_walk_03",
+        "yetti_bailiff_walk_04",
+        "yetti_bailiff_walk_05"
       ],
       "pages": [
         0,
@@ -70,107 +41,26 @@
     {
       "name": "yetti_bailiff_block",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "yetti_bailiff_block_00",
+        "yetti_bailiff_block_01"
       ],
       "pages": [
-        0,
-        0,
-        0,
-        0,
         0,
         0
       ],
       "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
+        125,
+        125
       ],
       "loop": true,
-      "fps": 10
+      "fps": 8
     },
     {
-      "name": "yetti_bailiff_grab",
+      "name": "yetti_bailiff_raise",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71,
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "yetti_bailiff_hold",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "loop": true,
-      "fps": 10
-    },
-    {
-      "name": "yetti_bailiff_hurt",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02"
-      ],
-      "pages": [
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "yetti_bailiff_knockdown",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03"
+        "yetti_bailiff_raise_00",
+        "yetti_bailiff_raise_01",
+        "yetti_bailiff_raise_02"
       ],
       "pages": [
         0,
@@ -184,14 +74,94 @@
       ],
       "loop": false,
       "fps": 12
+    },
+    {
+      "name": "yetti_bailiff_grab",
+      "frames": [
+        "yetti_bailiff_grab_00",
+        "yetti_bailiff_grab_01",
+        "yetti_bailiff_grab_02",
+        "yetti_bailiff_grab_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_bailiff_hold",
+      "frames": [
+        "yetti_bailiff_hold_00",
+        "yetti_bailiff_hold_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "yetti_bailiff_hurt",
+      "frames": [
+        "yetti_bailiff_hurt_00",
+        "yetti_bailiff_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_bailiff_knockdown",
+      "frames": [
+        "yetti_bailiff_knockdown_00",
+        "yetti_bailiff_knockdown_01",
+        "yetti_bailiff_knockdown_02",
+        "yetti_bailiff_knockdown_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
     }
   ],
-  "placeholder": true,
-  "source": "stand-in cloned from choirmaster",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 15,
-    "unique": 6,
-    "reused": 9
+    "logical": 23,
+    "unique": 23,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

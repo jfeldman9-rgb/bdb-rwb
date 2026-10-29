@@ -1,10 +1,10 @@
 {
   "draw_scale": 0.38,
-  "disk_webp_bytes": 4232992,
-  "disk_webp_MiB": 4.037,
-  "all_chars_gpu_RGBA_MiB": 46.94,
+  "disk_webp_bytes": 6551848,
+  "disk_webp_MiB": 6.248,
+  "all_chars_gpu_RGBA_MiB": 72.317,
   "stage1_resident_gpu_RGBA_MiB": 33.482,
-  "pages": 16,
+  "pages": 22,
   "compressed": {
     "formats": {
       "ASTC": "ASTC 4x4 UNORM (KTX1, 8 bpp)",
@@ -62,9 +62,9 @@
       "dj"
     ],
     "stage5_gpu_MiB": {
-      "rgba_webp": 38.936,
-      "astc": 11.282,
-      "etc2": 11.282
+      "rgba_webp": 45.735,
+      "astc": 12.982,
+      "etc2": 12.982
     },
     "stage6_keys": [
       "bob",
@@ -82,9 +82,9 @@
       "claudia"
     ],
     "stage6_gpu_MiB": {
-      "rgba_webp": 34.899,
-      "astc": 10.273,
-      "etc2": 10.273
+      "rgba_webp": 45.673,
+      "astc": 12.966,
+      "etc2": 12.966
     },
     "stage7_keys": [
       "bob",
@@ -102,34 +102,34 @@
       "claudia"
     ],
     "stage7_gpu_MiB": {
-      "rgba_webp": 34.899,
-      "astc": 10.273,
-      "etc2": 10.273
+      "rgba_webp": 45.472,
+      "astc": 12.916,
+      "etc2": 12.916
     },
     "all_chars_gpu_MiB": {
-      "rgba_webp": 50.483,
-      "astc": 14.169,
-      "etc2": 14.169
+      "rgba_webp": 72.317,
+      "astc": 19.627,
+      "etc2": 19.627
     },
     "disk_MiB": {
-      "webp": 4.199,
-      "astc_ktx": 12.623,
-      "etc2_ktx": 12.623,
-      "astc_ktx_gzip": 6.927,
-      "etc2_ktx_gzip": 4.103
+      "webp": 6.248,
+      "astc_ktx": 18.081,
+      "etc2_ktx": 18.081,
+      "astc_ktx_gzip": 10.377,
+      "etc2_ktx_gzip": 6.198
     },
     "pages": {
       "archyetti-0": {
-        "w": 860,
-        "h": 180,
-        "rgba": 619200,
-        "webp_disk": 28280,
-        "astc_gpu": 154800,
-        "astc_disk": 154896,
-        "astc_gzip": 46934,
-        "etc2_gpu": 154800,
-        "etc2_disk": 154896,
-        "etc2_gzip": 26624
+        "w": 1700,
+        "h": 736,
+        "rgba": 5004800,
+        "webp_disk": 436526,
+        "astc_gpu": 1251200,
+        "astc_disk": 1251296,
+        "astc_gzip": 771628,
+        "etc2_gpu": 1251200,
+        "etc2_disk": 1251296,
+        "etc2_gzip": 455587
       },
       "bob-0": {
         "w": 976,
@@ -156,16 +156,16 @@
         "etc2_gzip": 635421
       },
       "celestina-0": {
-        "w": 860,
-        "h": 180,
-        "rgba": 619200,
-        "webp_disk": 28280,
-        "astc_gpu": 154800,
-        "astc_disk": 154896,
-        "astc_gzip": 46934,
-        "etc2_gpu": 154800,
-        "etc2_disk": 154896,
-        "etc2_gzip": 26624
+        "w": 796,
+        "h": 1664,
+        "rgba": 5298176,
+        "webp_disk": 474578,
+        "astc_gpu": 1324544,
+        "astc_disk": 1324640,
+        "astc_gzip": 769840,
+        "etc2_gpu": 1324544,
+        "etc2_disk": 1324640,
+        "etc2_gzip": 474831
       },
       "choirmaster-0": {
         "w": 860,
@@ -204,16 +204,16 @@
         "etc2_gzip": 149172
       },
       "dj-0": {
-        "w": 860,
-        "h": 180,
-        "rgba": 619200,
-        "webp_disk": 28280,
-        "astc_gpu": 154800,
-        "astc_disk": 154896,
-        "astc_gzip": 46934,
-        "etc2_gpu": 154800,
-        "etc2_disk": 154896,
-        "etc2_gzip": 26624
+        "w": 1456,
+        "h": 780,
+        "rgba": 4542720,
+        "webp_disk": 406770,
+        "astc_gpu": 1135680,
+        "astc_disk": 1135776,
+        "astc_gzip": 695604,
+        "etc2_gpu": 1135680,
+        "etc2_disk": 1135776,
+        "etc2_gzip": 415507
       },
       "interventionist-0": {
         "w": 860,
@@ -264,16 +264,16 @@
         "etc2_gzip": 26789
       },
       "yetti_bailiff-0": {
-        "w": 860,
-        "h": 180,
-        "rgba": 619200,
-        "webp_disk": 28280,
-        "astc_gpu": 154800,
-        "astc_disk": 154896,
-        "astc_gzip": 46934,
-        "etc2_gpu": 154800,
-        "etc2_disk": 154896,
-        "etc2_gzip": 26624
+        "w": 888,
+        "h": 1100,
+        "rgba": 3907200,
+        "webp_disk": 352842,
+        "astc_gpu": 976800,
+        "astc_disk": 976896,
+        "astc_gzip": 568958,
+        "etc2_gpu": 976800,
+        "etc2_disk": 976896,
+        "etc2_gzip": 349939
       },
       "yetti_charger-0": {
         "w": 1708,
@@ -336,16 +336,16 @@
         "etc2_gzip": 371804
       },
       "yetti_minero-0": {
-        "w": 860,
-        "h": 180,
-        "rgba": 619200,
-        "webp_disk": 28280,
-        "astc_gpu": 154800,
-        "astc_disk": 154896,
-        "astc_gzip": 46934,
-        "etc2_gpu": 154800,
-        "etc2_disk": 154896,
-        "etc2_gzip": 26624
+        "w": 1400,
+        "h": 720,
+        "rgba": 4032000,
+        "webp_disk": 324140,
+        "astc_gpu": 1008000,
+        "astc_disk": 1008096,
+        "astc_gzip": 550414,
+        "etc2_gpu": 1008000,
+        "etc2_disk": 1008096,
+        "etc2_gzip": 333386
       },
       "yetti_salsero-0": {
         "w": 1392,
@@ -360,16 +360,16 @@
         "etc2_gzip": 467025
       },
       "yetti_tagger-0": {
-        "w": 860,
-        "h": 180,
-        "rgba": 619200,
-        "webp_disk": 28280,
-        "astc_gpu": 154800,
-        "astc_disk": 154896,
-        "astc_gzip": 46934,
-        "etc2_gpu": 154800,
-        "etc2_disk": 154896,
-        "etc2_gzip": 26624
+        "w": 1660,
+        "h": 576,
+        "rgba": 3824640,
+        "webp_disk": 324000,
+        "astc_gpu": 956160,
+        "astc_disk": 956256,
+        "astc_gzip": 542537,
+        "etc2_gpu": 956160,
+        "etc2_disk": 956256,
+        "etc2_gzip": 327115
       },
       "yetti_walker-0": {
         "w": 2016,

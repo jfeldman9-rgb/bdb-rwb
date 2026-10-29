@@ -12,41 +12,35 @@
     {
       "name": "yetti_tagger_idle",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "yetti_tagger_idle_00",
+        "yetti_tagger_idle_01",
+        "yetti_tagger_idle_02",
+        "yetti_tagger_idle_03"
       ],
       "pages": [
-        0,
-        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
+        125,
+        125,
+        125,
+        125
       ],
       "loop": true,
-      "fps": 10
+      "fps": 8
     },
     {
       "name": "yetti_tagger_walk",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "yetti_tagger_walk_00",
+        "yetti_tagger_walk_01",
+        "yetti_tagger_walk_02",
+        "yetti_tagger_walk_03",
+        "yetti_tagger_walk_04",
+        "yetti_tagger_walk_05"
       ],
       "pages": [
         0,
@@ -70,10 +64,10 @@
     {
       "name": "yetti_tagger_shake",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
+        "yetti_tagger_shake_00",
+        "yetti_tagger_shake_01",
+        "yetti_tagger_shake_02",
+        "yetti_tagger_shake_03"
       ],
       "pages": [
         0,
@@ -82,21 +76,21 @@
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": false,
-      "fps": 14
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "yetti_tagger_throw",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
+        "yetti_tagger_throw_00",
+        "yetti_tagger_throw_01",
+        "yetti_tagger_throw_02",
+        "yetti_tagger_throw_03"
       ],
       "pages": [
         0,
@@ -105,44 +99,47 @@
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
+        83,
+        83,
+        83,
+        83
       ],
       "loop": false,
-      "fps": 14
+      "fps": 12
     },
     {
       "name": "yetti_tagger_hurt",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02"
+        "yetti_tagger_hurt_00",
+        "yetti_tagger_hurt_01"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        71,
-        71
+        83,
+        83
       ],
       "loop": false,
-      "fps": 14
+      "fps": 12
     },
     {
       "name": "yetti_tagger_knockdown",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03"
+        "yetti_tagger_knockdown_00",
+        "yetti_tagger_knockdown_01",
+        "yetti_tagger_knockdown_02",
+        "yetti_tagger_knockdown_03"
       ],
       "pages": [
+        0,
         0,
         0,
         0
       ],
       "holds": [
+        83,
         83,
         83,
         83
@@ -151,12 +148,12 @@
       "fps": 12
     }
   ],
-  "placeholder": true,
-  "source": "stand-in cloned from choirmaster",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 15,
-    "unique": 6,
-    "reused": 9
+    "logical": 24,
+    "unique": 24,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

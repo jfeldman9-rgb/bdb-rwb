@@ -71,8 +71,8 @@
     {
       "stage": 5,
       "key": "s5-mid5",
-      "alpha": 0.9943780499957768,
-      "camX": 6477.301463997973,
+      "alpha": 0.9952760003436746,
+      "camX": 6477.732480164964,
       "zone": 5
     }
   ],
@@ -160,6 +160,12 @@
     "/workspace/docs/shots/browser-smoke-from-5/stage6-intro.png",
     "/workspace/docs/shots/browser-smoke-from-5/stage7-intro.png",
     "/workspace/docs/shots/browser-smoke-from-5/final-victory.png",
-    "/workspace/docs/shots/browser-smoke-from-5/final-victory-panel.png"
+    "/workspace/docs/shots/browser-smoke-from-5/final-victory-panel.png",
+    "/workspace/docs/shots/browser-smoke-from-5/painted-tagger.png",
+    "/workspace/docs/shots/browser-smoke-from-5/painted-dj.png",
+    "/workspace/docs/shots/browser-smoke-from-5/painted-minero.png",
+    "/workspace/docs/shots/browser-smoke-from-5/painted-celestina.png",
+    "/workspace/docs/shots/browser-smoke-from-5/painted-bailiff.png",
+    "/workspace/docs/shots/browser-smoke-from-5/painted-archyetti.png"
   ]
 }

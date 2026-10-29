@@ -134,6 +134,29 @@ test('painted Stage 4 Salsero and Bouncer are not placeholders', async () => {
   }
 });
 
+test('painted Stage 5–7 cast ships SPEC.md anims and is not a placeholder', async () => {
+  const expect = {
+    yetti_tagger: [['idle', 4, 8], ['walk', 6, 10], ['shake', 4, 12], ['throw', 4, 12], ['hurt', 2, 12], ['knockdown', 4, 12]],
+    yetti_minero: [['idle', 4, 8], ['walk', 6, 10], ['lamp', 3, 12], ['slam', 5, 12], ['hurt', 2, 12], ['knockdown', 4, 12]],
+    yetti_bailiff: [['walk', 6, 10], ['block', 2, 8], ['raise', 3, 12], ['grab', 4, 12], ['hold', 2, 8], ['hurt', 2, 12], ['knockdown', 4, 12]],
+    dj: [['idle', 4, 8], ['walk', 6, 10], ['cast', 4, 12], ['drop', 5, 12], ['hurt', 2, 12], ['down', 4, 12]],
+    celestina: [['idle', 4, 8], ['walk', 6, 10], ['flutter', 3, 12], ['toss', 4, 12], ['blink', 3, 12], ['hurt', 2, 12], ['down', 4, 12]],
+    archyetti: [['idle', 4, 8], ['walk', 6, 10], ['slam', 5, 12], ['verdict', 3, 12], ['roar', 3, 12], ['hurt', 2, 12], ['down', 5, 12]],
+  };
+  for (const [key, anims] of Object.entries(expect)) {
+    const m = await json(`assets/chars/${key}.anims.json`);
+    assert.equal(m.placeholder, false, key);
+    assert.equal(m.baseline, 570);
+    assert.equal(m.scale, 0.38);
+    for (const [name, n, fps] of anims) {
+      const a = m.anims.find((x) => x.name === `${key}_${name}`);
+      assert.ok(a, `${key}_${name}`);
+      assert.equal(a.frames.length, n, `${key}_${name}`);
+      assert.equal(a.holds[0], hold(fps));
+    }
+  }
+});
+
 test('papi_stampede is six looping 8-frame runs and the loader uses the keyed webp', async () => {
   const m = await json('assets/chars/papi_stampede.anims.json');
   assert.equal(m.placeholder, false);

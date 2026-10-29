@@ -162,6 +162,23 @@ test('roleAnim selects every Bouncer animation directly before generic role fall
   assert.equal(roleAnim({ type: 'wingman', state: 'recover' }), 'land');
   assert.equal(roleAnim({ type: 'charger', state: 'telegraph' }), 'windup');
   assert.equal(roleAnim({ type: 'lecturer', state: 'hold' }), 'lecture');
+  assert.equal(roleAnim({ type: 'tagger', state: 'telegraph' }), 'shake');
+  assert.equal(roleAnim({ type: 'tagger', state: 'recover' }), 'throw');
+  assert.equal(roleAnim({ type: 'minero', state: 'telegraph' }), 'lamp');
+  assert.equal(roleAnim({ type: 'minero', state: 'slam' }), 'slam');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'telegraph', shield: false }), 'grab');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'hold' }), 'hold');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'wait', shield: true }), 'block');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'recover' }), 'raise');
+  assert.equal(roleAnim({ type: 'dj', state: 'telegraph' }), 'cast');
+  assert.equal(roleAnim({ type: 'dj', state: 'drop' }), 'drop');
+  assert.equal(roleAnim({ type: 'celestina', state: 'telegraph' }), 'toss');
+  assert.equal(roleAnim({ type: 'celestina', state: 'blink' }), 'blink');
+  assert.equal(roleAnim({ type: 'celestina', state: 'hold' }), 'flutter');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'telegraph' }), 'verdict');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'slam' }), 'slam');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'roar' }), 'roar');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'floored' }), 'down');
 });
 
 test('Nightmare unlock on Stage 3 clear announces at Stage 3 and carries into Stage 4 final victory once', () => {

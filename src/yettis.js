@@ -25,17 +25,17 @@ export const TYPES = Object.freeze({
     anims: { telegraph: 'shake', recover: 'throw', hurt: 'hurt', dead: 'knockdown', wait: 'idle', default: 'walk' } },
   dj: { hp: 1200, speed: 60, art: 'dj', tint: 0xffffff, boss: true, ranged: true, scriptedBossVoices: true,
     tell: .7, addFromPhase: 1,
-    anims: { telegraph: 'scratch', slam: 'drop', drop: 'drop', roar: 'roar', hurt: 'hurt', dead: 'down', default: 'idle' } },
+    anims: { telegraph: 'cast', slam: 'drop', drop: 'drop', roar: 'cast', hurt: 'hurt', dead: 'down', wait: 'idle', approach: 'walk', default: 'idle' } },
   minero: { hp: 48, speed: 75, art: 'yetti_minero', tint: 0xffffff, heavy: true, lamp: { tell: .8 },
-    anims: { telegraph: 'lamp', slam: 'slam', hurt: 'hurt', dead: 'knockdown', default: 'walk' } },
+    anims: { telegraph: 'lamp', slam: 'slam', hurt: 'hurt', dead: 'knockdown', wait: 'idle', default: 'walk' } },
   celestina: { hp: 1300, speed: 85, art: 'celestina', tint: 0xffffff, boss: true, grab: true, grabVoice: false,
     scriptedBossVoices: true, tell: .65, rushPhase: 3, addFromPhase: 1,
-    anims: { telegraph: 'toss', blink: 'blink', hold: 'hold', rush: 'rush', roar: 'roar', hurt: 'hurt', dead: 'down', default: 'walk' } },
+    anims: { telegraph: 'toss', blink: 'blink', hold: 'flutter', rush: 'flutter', roar: 'flutter', hurt: 'hurt', dead: 'down', wait: 'idle', default: 'walk' } },
   bailiff: { hp: 54, speed: 70, art: 'yetti_bailiff', tint: 0xffffff, shield: true, heavy: true, grab: true, tell: .65,
-    anims: { telegraph: 'grab', hold: 'hold', block: 'block', hurt: 'hurt', dead: 'knockdown', default: 'walk' } },
+    anims: { telegraph: 'grab', hold: 'hold', block: 'block', recover: 'raise', hurt: 'hurt', dead: 'knockdown', default: 'walk' } },
   archyetti: { hp: 1320, speed: 70, art: 'archyetti', tint: 0xffffff, boss: true, scriptedBossVoices: true,
     tell: .65, rushPhase: 2, addFromPhase: 1,
-    anims: { telegraph: 'gavel', rush: 'rush', roar: 'roar', floored: 'floored', hurt: 'hurt', dead: 'down', default: 'walk' } },
+    anims: { telegraph: 'verdict', slam: 'slam', rush: 'slam', roar: 'roar', floored: 'down', hurt: 'hurt', dead: 'down', wait: 'idle', default: 'walk' } },
 });
 /** RWB boss gates: one long bar, phase 2 under 66%, phase 3 under 33%. */
 export const BOSS_GATES = Object.freeze([1, .66, .33]);

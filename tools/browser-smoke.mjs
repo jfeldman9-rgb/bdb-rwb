@@ -332,6 +332,29 @@ try {
   assert.equal(await evaluate('document.querySelector("#victory h2")?.textContent'), 'CLAUDIA RESCUED. FOR REAL THIS TIME.');
   await shot('final-victory-panel');
   assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), false);
+  for (const { stage, type } of [
+    { stage: 5, type: 'tagger' }, { stage: 5, type: 'dj' },
+    { stage: 6, type: 'minero' }, { stage: 6, type: 'celestina' },
+    { stage: 7, type: 'bailiff' }, { stage: 7, type: 'archyetti' },
+  ]) {
+    await send('Page.navigate', { url: `${origin}/?stage=${stage}&demo=1&nocutscenes=1` });
+    await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started');
+    const placed = await evaluate(`(async()=>{
+      const [{Yetti,laneY},{ArchYetti}]=await Promise.all([import('/src/yettis.js'),import('/src/archyetti.js')]);
+      const w=window.__game.campaign;
+      w.paused=false;w.hostile=[];w.pending=[];
+      for(const e of w.enemies)e.alive=false;
+      const x=w.bob.x+240,y=laneY(1);
+      w.bob.x=x-240;w.bob.y=y;w.camX=w.bob.x-180;
+      const enemy=${JSON.stringify(type)}==='archyetti'?new ArchYetti(x,y):new Yetti(${JSON.stringify(type)},x,y);
+      enemy.facing=-1;w.enemies=[enemy];
+      return {type:enemy.type,x:enemy.x};
+    })()`);
+    assert.equal(placed.type, type);
+    await sleep(200);
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    await shot(`painted-${type}`);
+  }
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,

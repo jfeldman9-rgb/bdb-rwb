@@ -12,12 +12,35 @@
     {
       "name": "dj_idle",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04",
-        "choirmaster_sing_05",
-        "choirmaster_sing_06"
+        "dj_idle_00",
+        "dj_idle_01",
+        "dj_idle_02",
+        "dj_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "dj_walk",
+      "frames": [
+        "dj_walk_00",
+        "dj_walk_01",
+        "dj_walk_02",
+        "dj_walk_03",
+        "dj_walk_04",
+        "dj_walk_05"
       ],
       "pages": [
         0,
@@ -39,12 +62,12 @@
       "fps": 10
     },
     {
-      "name": "dj_scratch",
+      "name": "dj_cast",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
+        "dj_cast_00",
+        "dj_cast_01",
+        "dj_cast_02",
+        "dj_cast_03"
       ],
       "pages": [
         0,
@@ -53,90 +76,73 @@
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
+        83,
+        83,
+        83,
+        83
       ],
-      "loop": false,
-      "fps": 14
+      "loop": true,
+      "fps": 12
     },
     {
       "name": "dj_drop",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
+        "dj_drop_00",
+        "dj_drop_01",
+        "dj_drop_02",
+        "dj_drop_03",
+        "dj_drop_04"
       ],
       "pages": [
+        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
-        71,
-        71,
-        71,
-        71
+        83,
+        83,
+        83,
+        83,
+        83
       ],
       "loop": false,
-      "fps": 14
-    },
-    {
-      "name": "dj_roar",
-      "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03",
-        "choirmaster_sing_04"
-      ],
-      "pages": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "holds": [
-        71,
-        71,
-        71,
-        71
-      ],
-      "loop": false,
-      "fps": 14
+      "fps": 12
     },
     {
       "name": "dj_hurt",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02"
+        "dj_hurt_00",
+        "dj_hurt_01"
       ],
       "pages": [
         0,
         0
       ],
       "holds": [
-        71,
-        71
+        83,
+        83
       ],
       "loop": false,
-      "fps": 14
+      "fps": 12
     },
     {
       "name": "dj_down",
       "frames": [
-        "choirmaster_sing_01",
-        "choirmaster_sing_02",
-        "choirmaster_sing_03"
+        "dj_down_00",
+        "dj_down_01",
+        "dj_down_02",
+        "dj_down_03"
       ],
       "pages": [
+        0,
         0,
         0,
         0
       ],
       "holds": [
+        83,
         83,
         83,
         83
@@ -145,12 +151,12 @@
       "fps": 12
     }
   ],
-  "placeholder": true,
-  "source": "stand-in cloned from choirmaster",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 15,
-    "unique": 6,
-    "reused": 9
+    "logical": 25,
+    "unique": 25,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",
