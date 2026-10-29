@@ -65,4 +65,45 @@ test('the victory panel shows Claudia\'s line instead of burying the caption', (
   assert.equal(line.textContent, "Let's leave before they reform.");
   assert.equal(scene.caption, '');
   assert.equal(panel.hidden, false);
+  assert.equal(score.textContent, '42 points · Chapter 3 complete');
+});
+
+test('stage 4 victory names the chapter and does not replay the keep rescue', () => {
+  const line = { textContent: '' };
+  const panel = { hidden: true };
+  const score = { textContent: '' };
+  const prev = globalThis.document.getElementById;
+  globalThis.document.getElementById = (id) => id === 'victory-line' ? line : id === 'victory' ? panel : id === 'victory-score' ? score : null;
+  const scene = Object.create(GameScene.prototype);
+  scene.finished = false;
+  scene.stageNo = 4;
+  scene.freed = false;
+  scene.pauseReasons = new Set();
+  scene.world = { score: 90, paused: false, bossActive: false, stageNo: 4, beatenAtStart: false, save: { beaten: true } };
+  scene.game = { inp: { clear() {} }, story: { play() { throw new Error('stage 4 must not replay rescue_2'); } } };
+  scene.hud = { caption: { setText() {} } };
+  scene.freeClaudia = () => { scene.freed = true; };
+  scene.playHeld = () => {};
+  try { scene.presentVictory(); }
+  finally { globalThis.document.getElementById = prev; }
+  assert.equal(scene.freed, true);
+  assert.equal(panel.hidden, false);
+  assert.equal(score.textContent, '90 points · Chapter 4 complete');
+});
+
+test('a stage 3 clear frees Claudia and plays the keep rescue without freezing a skipped clip', () => {
+  const scene = Object.create(GameScene.prototype);
+  let played = null;
+  scene.stageNo = 3;
+  scene.pauseReasons = new Set();
+  scene.voiceHold = [];
+  scene.world = { stageNo: 3, score: 1, paused: false, bossActive: false, victory: false, def: { next: 4 }, events: [{ type: 'clear', data: 3 }] };
+  scene.game = { inp: { clear() {} }, isPaused: false, pause() {}, resume() {}, story: { play(key, done) { played = key; done(); } } };
+  scene.freeClaudia = () => { scene.freed = true; };
+  scene.playHeld = () => {};
+  scene.handleEvents();
+  assert.equal(scene.freed, true);
+  assert.equal(played, 'victory');
+  assert.equal(scene.world.paused, false);
+  assert.equal(scene.world.events.length, 0);
 });

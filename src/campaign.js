@@ -70,7 +70,7 @@ export function hitTier({ phase = false, killed = false, bonk = false, shieldBro
 export class Campaign {
   constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {}, rng, stageIntroPlayed = false } = {}) {
     this.difficultyKey = difficulty; this.difficulty = DIFFICULTIES[difficulty]; this.onSave = onSave;
-    this.save = normalizeSave(save); this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
+    this.save = normalizeSave(save); this.beatenAtStart = !!this.save.beaten; this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });

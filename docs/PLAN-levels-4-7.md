@@ -435,9 +435,15 @@ The hard band is 140–240 s for every stage at every rate, for both fresh-start
 | Wingmen (S3 boss) | `src/wingman.js` | Unchanged. S7 imports `applyBossDamage` / `isBossFinisherReady` and copies its patterns into `src/archyetti.js`. |
 | S1–S3 content | `src/stage1-def.js`, `src/stage2-def.js`, `src/stage3-def.js` | **Byte-identical.** S3's `next: 4` is applied in `src/stages.js` as `{...STAGE3, next: 4}` frozen, so `stage3-def.js` stays untouched. |
 | S3 Nightmare special cases | `NIGHTMARE_S3`, `NIGHTMARE_S3_TRIMS`, `snowClearZ`, `ADVENTURE_S3_DAMAGE` (`src/campaign.js:20-48`) | Unchanged. Do not copy them to S4–S7. |
-| Cutscene table and intro | `STAGE_CLIPS` / `STORY_MAX_MS` (`src/cutscene.js:30-41`), `assets/cutscenes/*.mp4` bytes | Unchanged. S4 reuses the `'kidnap'` key and S7 the `'victory'` key. |
+| Cutscene table and intro | `STAGE_CLIPS` / `STORY_MAX_MS` (`src/cutscene.js:30-41`), `assets/cutscenes/*.mp4` bytes | Unchanged, except the Pass A amendment below. S4 still reuses the `'kidnap'` key. S7 still uses the `'victory'` key. |
 | Existing derived plates and atlases | `assets/bg/s1-*`..`s3-*`, `assets/chars/*` for existing keys | No re-encode churn. Run `tools/derive-plates.py` / `tools/pack-flat.py` **only** for new keys (`--only`). |
-| Existing tests | `tests/*.test.mjs` | Do not edit, **except** assertions that hard-code 3 as the *final* stage or a 3-stage campaign (listed in Pass A). Those switch to `maxStage`. |
+| Existing tests | `tests/*.test.mjs` | Do not edit, **except** assertions that hard-code 3 as the *final* stage or a 3-stage campaign (listed in Pass A), and the intro tests named in the Pass A amendment. Those switch to `maxStage`. |
+
+### Pass A amendment (chapter intros)
+
+Jason authorized `STAGE_CLIPS` keys `stage1`–`stage4` and the matching files under `assets/cutscenes/`. Those files are loaded when the clip plays. Nothing in the preloader fetches them. Acceptance #8's empty diff does not apply to `src/cutscene.js` or those new cutscene files.
+
+A fresh chapter-1 start plays `intro` (`intro_v3`, Bob's yell and Dad). Gameplay then plays `stage1`. `?intro=v2` stays `intro_v2`. `?intro=short` and a stage-1 `resume=1` retry play `stage1` only. `tests/title-flow.test.mjs` and `tests/stage-intros.test.mjs` may assert that. A missing stage 2–4 file must fail the media tests and smoke. It must not be skipped.
 
 ---
 
@@ -682,7 +688,7 @@ Do not use any paid service. Stop and report if anything in the LOCKED list woul
 5. `runVoiceRate({stage:4, hz:60})`: ambient ≤ 4/min, total ≤ 7/min, min gap ≥ 7.95 s.
 6. `npm run smoke -- --from=4` clears S4 in headless Chrome, with screenshots of all 6 plate runs. `npm run smoke` (from S1) still reaches victory, now after S4.
 7. GPU: the S4 kit is ≤ 12 MiB ASTC and ≤ 48 MiB RGBA in `_pack_report.json`.
-8. `git diff main -- src/stage1-def.js src/stage2-def.js src/stage3-def.js src/eggplant.js src/config.js src/camera.js src/barks.js src/papacito.js src/dad-call.js src/wingman.js src/cutscene.js assets/cutscenes assets/audio/voice/bdb_open.mp3 assets/audio/voice/bdb_produce.mp3` is **empty**.
+8. `git diff main -- src/stage1-def.js src/stage2-def.js src/stage3-def.js src/eggplant.js src/config.js src/camera.js src/barks.js src/papacito.js src/dad-call.js src/wingman.js assets/audio/voice/bdb_open.mp3 assets/audio/voice/bdb_produce.mp3` is **empty**. `src/cutscene.js` and `assets/cutscenes/` may add `stage1`–`stage4` only (see the Pass A amendment). Existing clip bytes stay.
 
 ### Pass B: Stage 5 (branch `cursor/bdb-level-5`)
 

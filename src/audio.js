@@ -305,6 +305,16 @@ function stopTrack(T, fade) {
   fadeGain(T.gain.gain, 0, fade);
   T.stopTimer = afterAudioTime(fade, halt);
 }
+/** Hold the current stage bed under a silent clip, then restore it. No-op until a track is playing. */
+export function duckStageBed(on) {
+  init();
+  if (!ctx || !currentTrack) return;
+  const T = tracks[currentTrack];
+  if (!T?.M) return;
+  const target = on ? T.M.gain * 0.35 : T.M.gain;
+  if (T.fallback && T.el) { T.el.volume = 0.34 * target; return; }
+  if (T.gain) fadeGain(T.gain.gain, target, 0.4);
+}
 /** Fade to music. fade defaults to 1.5s; restart starts at loop top. */
 export function playTrack(id, opts = {}) {
   if (id !== null && !MUSIC[id]) return;

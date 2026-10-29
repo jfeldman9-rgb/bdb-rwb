@@ -125,7 +125,7 @@ test('every PRESENT voice has an mp3; the Stage 4 script captions without missin
   for (const id of PRESENT) assert.ok(existsSync(asset(`audio/voice/${id}.mp3`)), id);
   const lines = {
     nar_ch4: 'Chapter Four. The Afterparty Relapse.', claudia_s4: 'Bob! Not again!', bob_s4: 'Again? Seriously?',
-    bouncer_intro: "You're not on the list, Papi.", bouncer_phase2: 'The rope comes out now.',
+    bouncer_intro: "You're not on the list, Papi.", bouncer_grab: "You're not on the list.", bouncer_phase2: 'The rope comes out now.',
     bouncer_phase3: "Club's closed. Forever.", bouncer_defeat: "Fine. You're on the list.",
   };
   for (const [id, text] of Object.entries(lines)) {

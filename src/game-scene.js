@@ -9,7 +9,7 @@ import { HUD } from './hud.js';
 import { PapacitoFX } from './papacito-fx.js';
 import { q } from './config.js';
 import { gameplayWantsPause } from './input.js';
-import { say,sfx,playTrack,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
+import { say,sfx,playTrack,duckStageBed,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
 import { stageLines, LINES } from './voice-lines.js';
 import { showStuck } from './recovery.js';
 import { persistSave } from './save.js';
@@ -20,9 +20,11 @@ import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
 import { RECOIL_KICK, stepRecoil, hostileShape, killImpact } from './shot-feel.js';
 
-/** Opening bed. A cutscene already queued on this load fades the track the same frame, so leave it silent until the clip ends. */
+/** Opening bed. A scored clip queued on this load (kidnap, rescue) owns the speakers.
+ *  A silent stage opener keeps the bed so the picture is not eleven seconds of dead air. */
 export function trackForStageStart(stageNo, events) {
-  if (events?.some(e => e.type === 'cutscene')) return null;
+  const clips = (events || []).filter(e => e.type === 'cutscene');
+  if (clips.some(e => !/^stage\d+$/.test(String(e.data)))) return null;
   return `stage${stageNo}`;
 }
 
@@ -207,6 +209,11 @@ export class GameScene extends Phaser.Scene {
   parts.length=kept;
  }
  playHeld(ids){(ids||[]).forEach((id,i)=>{say(id,(who,line)=>this.hud?.say(who,line),true,false,i?{wait:2.5*i}:null);if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);});}
+ /** Silent stage openers duck the bed. Anything with its own soundtrack stops it. */
+ stageBedClip(key){
+  const keys=Array.isArray(key)?key:[key];
+  return keys.length>0&&keys.every(k=>/^stage\d+$/.test(k));
+ }
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
   // Play first so a superseded clip can still read the lines it was holding.
@@ -214,29 +221,46 @@ export class GameScene extends Phaser.Scene {
   // to the stopSceneAudio that ducks the clip which just took over.
   // A clip that finishes inside play() must not re-arm that hold and swallow the next line.
   // The story player owns pauseForClip, so destroy() can resume the loop it paused.
+  const bed=this.stageBedClip(key);
   let finished=false;
   this.game.story.play(key,(how)=>{
    finished=true;const held=this.voiceHold||[];this.voiceHold=[];this.holdingVoice=false;this.setPauseReason('cutscene',false);
-   if(how==='abort'){this._carryVoice=(this._carryVoice||[]).concat(held);return;}
-   if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
+   if(how==='abort'){if(bed)duckStageBed(false);this._carryVoice=(this._carryVoice||[]).concat(held);return;}
+   if(bed)duckStageBed(false);
+   else if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
    const carry=this._carryVoice||[];this._carryVoice=null;done?.([...carry,...held]);
   });
   if(finished)return;
   const carried=this._carryVoice||[];this._carryVoice=null;
-  this.voiceHold=carried.slice();this.holdingVoice=true;playTrack(null,{fade:.4});stopSceneAudio();this.setPauseReason('cutscene',true);
+  this.voiceHold=carried.slice();this.holdingVoice=true;
+  if(bed)duckStageBed(true);else playTrack(null,{fade:.4});
+  stopSceneAudio();this.setPauseReason('cutscene',true);
  }
  freeClaudia(){this.claudiaCage?.destroy();this.claudiaCage=null;this.claudia?.play('claudia_freed');}
+ /** Stage 3 still frees Claudia and plays the keep rescue before the campaign continues. */
+ presentChapterRescue(){
+  if(this.rescueBeat)return;this.rescueBeat=true;this.freeClaudia?.();
+  this.startHeldClip('victory',held=>{
+   this.playHeld(held);
+   if(!this.world?.victory)playTrack(`stage${this.stageNo}`,{fade:.4});
+  });
+ }
  presentVictory(){
   if(this.finished)return;this.finished=true;this.freeClaudia?.();
-  this.startHeldClip('victory',held=>{
+  const show=held=>{
    this.playHeld(held);
    const panel=document.getElementById('victory'),score=document.getElementById('victory-score'),line=document.getElementById('victory-line');
    // Claudia's line sits in the panel, above the eyebrow. The canvas caption would render under that overlay.
    if(line)line.textContent=LINES.claudia_leave[1];
    this.hud?.caption?.setText?.('');
-   if(score)score.textContent=`${Math.floor(this.world.score)} points · Nightmare unlocked`;
+   const stage=this.stageNo||this.world?.stageNo||1;
+   const flipped=!this.world?.beatenAtStart&&!!this.world?.save?.beaten&&stage<=3;
+   if(score)score.textContent=`${Math.floor(this.world.score)} points · ${flipped?'Nightmare unlocked':`Chapter ${stage} complete`}`;
    if(panel)panel.hidden=false;document.body.classList.remove('playing');
-  });
+  };
+  // rescue_2 was shot for the keep. It plays on the Stage 3 clear, not again over the final panel.
+  if((this.stageNo||0)>3){show([]);return;}
+  this.startHeldClip('victory',show);
  }
  handleEvents(){
   const ev=this.world.events, batch=this._evBatch||(this._evBatch=[]);
@@ -251,7 +275,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
   if(type==='shield')sfx.clang(data?.chips||1);
-  if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear')sfx.levelClear();
+  if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear'){sfx.levelClear();if(data===3&&this.world.def?.next)this.presentChapterRescue();}
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.stampede();}
   if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}

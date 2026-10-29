@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { STAGE_CLIPS } from '../src/cutscene.js';
 import { createStoryPlayer } from '../src/cutscene-hooks.js';
 import { Campaign } from '../src/campaign.js';
-import { beginChapter } from '../src/title-flow.js';
+import { beginChapter, stageIntroAlreadyPlayed } from '../src/title-flow.js';
 
 globalThis.Phaser = { Scene: class {} };
 globalThis.window = globalThis;
@@ -49,13 +49,15 @@ function harness() {
   };
 }
 
-test('stage intro keys are additive and the stage 1 poster alias uses the supplied bytes', () => {
+test('stage intro keys are additive and each poster alias matches its poster bytes', () => {
   assert.deepEqual(STAGE_CLIPS, {
     intro: ['intro_v3'], intro_v2: ['intro_v2'],
     stage1: ['stage1_intro'], stage2: ['stage2_intro'], stage3: ['stage3_intro'], stage4: ['stage4_intro'],
     kidnap: ['kidnap_1', 'kidnap_2'], rescue_pre_boss: ['rescue_1'], victory: ['rescue_2'],
   });
-  assert.deepEqual(readFileSync('assets/cutscenes/stage1_intro.jpg'), readFileSync('assets/cutscenes/stage1_intro_poster.jpg'));
+  for (const stage of [1, 2, 3, 4]) {
+    assert.deepEqual(readFileSync(`assets/cutscenes/stage${stage}_intro.jpg`), readFileSync(`assets/cutscenes/stage${stage}_intro_poster.jpg`));
+  }
 });
 
 test('direct and campaign stage loads request each opener before kidnap and narration', () => {
@@ -69,21 +71,22 @@ test('direct and campaign stage loads request each opener before kidnap and narr
   }
 });
 
-test('chapter select waits for the opener and does not replay it in gameplay', () => {
+test('chapter select plays its opener once; chapter 1 follows intro_v3 with the short clip', () => {
   for (const stage of [1, 2, 3, 4]) {
     let finish, world;
+    const opener = stage === 1 ? 'intro' : `stage${stage}`;
     const key = beginChapter({ stage, query: new URLSearchParams(),
-      play(clip, done) { assert.equal(clip, `stage${stage}`); finish = done; },
-      start(introKey) { world = new Campaign({ stage, stageIntroPlayed: !!introKey }); },
+      play(clip, done) { assert.equal(clip, opener); finish = done; },
+      start(introKey) { world = new Campaign({ stage, stageIntroPlayed: stageIntroAlreadyPlayed(introKey) }); },
     });
     assert.equal(world, undefined);
-    assert.equal(key, `stage${stage}`);
+    assert.equal(key, opener);
     finish();
-    assert.ok(!world.events.some(e => e.type === 'cutscene' && e.data === key));
-    assert.equal(world.events.some(e => e.data === 'kidnap'), [2, 4].includes(stage));
+    const opening = world.events.filter(e => e.type === 'cutscene').map(e => e.data);
+    assert.deepEqual(opening, stage === 1 ? ['stage1'] : [2, 4].includes(stage) ? ['kidnap'] : []);
     world.events = [];
     world.loadStage(stage);
-    assert.ok(world.events.some(e => e.type === 'cutscene' && e.data === key), 'a later load owns its opener again');
+    assert.ok(world.events.some(e => e.type === 'cutscene' && e.data === `stage${stage}`), 'a later load owns its opener again');
   }
 });
 
@@ -98,7 +101,7 @@ test('stage 4 opener and re-kidnap share a single paused sequence and held narra
   assert.deepEqual(h.story.player.run.ids, ['stage4_intro', 'kidnap_1', 'kidnap_2']);
   assert.ok(scene.holdingVoice);
   assert.deepEqual(scene.voiceHold, ['nar_ch4']);
-  h.video.emit('error'); // Missing stage 4 advances to the existing kidnap media.
+  h.video.emit('error'); // A failed stage opener still advances to the kidnap clips.
   assert.match(h.video.src, /kidnap_1.mp4$/);
   assert.ok(h.game.isPaused);
   assert.ok(world.paused);

@@ -54,6 +54,16 @@ test('Salsero stays light and hops one lane toward Bob at 220px/s every 1.4 seco
   assert.equal(RANGED_TYPES.has('salsero'), false);
 });
 
+test('a Lecturer grab still speaks the intervention line', () => {
+  const { world, enemy } = arena('lecturer', 560);
+  enemy.cooldown = 0;
+  enemy.update(.01, world);
+  enemy.update(.7, world);
+  assert.equal(enemy.state, 'hold');
+  assert.equal(world.events.some(e => e.data === 'lecturer_intervention'), true);
+  assert.equal(world.events.some(e => e.data === 'bouncer_grab'), false);
+});
+
 test('Salsero tells for .55/pace then lunges through the marked spot with a bounded duration', () => {
   for (const pace of [.72, 1, 1.15, 1.25]) {
     const { world, enemy } = arena('salsero', 650);
@@ -113,6 +123,8 @@ test('Bouncer uses the .65 second rope-grab tell and Bob can mash free', () => {
   enemy.update(.64, world); assert.equal(world.bob.grabbedBy, null);
   enemy.update(.02, world); assert.equal(world.bob.grabbedBy, enemy);
   assert.equal(enemy.state, 'hold');
+  assert.ok(world.events.some(e => e.type === 'voice' && e.data === 'bouncer_grab'));
+  assert.equal(world.events.some(e => e.data === 'lecturer_intervention'), false);
   world.bob.mash(6);
   assert.equal(world.bob.grabbedBy, null); assert.equal(enemy.state, 'hurt');
 });

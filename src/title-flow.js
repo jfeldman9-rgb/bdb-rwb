@@ -4,11 +4,19 @@ import { INTRO_V2, STAGE_CLIPS } from './cutscene.js';
 /** Clip key for a chapter start, or null when this chapter has no opening intro. */
 export function chapterIntroKey(stage, query) {
   const no = Number(stage) || 1;
-  // Keep both full-length openings available through an explicit selection.
+  // Legacy full alternate. The default chapter-1 opening is intro_v3.
   if (no === 1 && INTRO_V2.enabled(query)) return 'intro_v2';
-  if (no === 1 && query?.get?.('intro') === 'v3') return 'intro';
+  // A freeze-reload retry, or an explicit short cut, plays only the stage clip.
+  if (no === 1 && (query?.get?.('intro') === 'short' || query?.get?.('resume') === '1')) return 'stage1';
+  if (no === 1) return 'intro';
   const key = `stage${no}`;
   return STAGE_CLIPS[key] ? key : null;
+}
+
+/** The title already played this chapter's short opener, so gameplay must not repeat it.
+ *  The full intro is not that opener: chapter 1 follows it with the stage1 clip. */
+export function stageIntroAlreadyPlayed(introKey) {
+  return typeof introKey === 'string' && /^stage\d+$/.test(introKey);
 }
 
 /**

@@ -5,7 +5,7 @@ export const VOICE_ROLES = Object.freeze({Bob:'bdb-bob-warm-baritone',Claudia:'b
 export const LINES = {
  nar_ch4:['Narrator','Chapter Four. The Afterparty Relapse.'],
  claudia_s4:['Claudia','Bob! Not again!'],bob_s4:['Bob','Again? Seriously?'],
- bouncer_intro:['Bouncer',"You're not on the list, Papi."],bouncer_phase2:['Bouncer','The rope comes out now.'],
+ bouncer_intro:['Bouncer',"You're not on the list, Papi."],bouncer_grab:['Bouncer',"You're not on the list."],bouncer_phase2:['Bouncer','The rope comes out now.'],
  bouncer_phase3:['Bouncer',"Club's closed. Forever."],bouncer_defeat:['Bouncer',"Fine. You're on the list."],
  bdb_open:['Bob','I brought the eggplant.'],bdb_produce:['Bob','Die, Yetti, die!'],bdb_laugh:['Bob','Ha! Dead!'],
  claudia_open:['Claudia','Bob. Winged Yettis locked me in Moonlit Keep.'],claudia_question:['Claudia','Is that what I think it is?'],claudia_leave:['Claudia',"Let's leave before they reform."],

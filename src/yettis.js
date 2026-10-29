@@ -16,7 +16,7 @@ export const TYPES = Object.freeze({
   salsero: { hp: 24, speed: 130, art: 'yetti_salsero', tint: 0xffffff,
     lunge: { reach: 260, tell: .55, over: 60, min: .3, max: .5 }, laneHop: 1.4,
     anims: { telegraph: 'spin', rush: 'lunge', hurt: 'hurt', dead: 'knockdown', wait: 'idle', recover: 'idle', default: 'walk' } },
-  bouncer: { hp: 1240, speed: 80, art: 'bouncer', tint: 0xffffff, boss: true, shield: true, grab: true,
+  bouncer: { hp: 1240, speed: 80, art: 'bouncer', tint: 0xffffff, boss: true, shield: true, grab: true, grabVoice: 'bouncer_grab',
     scriptedBossVoices: true, rushPhase: 2, stompPhase: 3, reshield: 12,
     anims: { telegraph: 'grab', hold: 'hold', rush: 'rush', slam: 'stomp', roar: 'roar', hurt: 'hurt', dead: 'down', default: 'walk' } },
 });
@@ -215,7 +215,7 @@ export class Yetti {
             // Adds come from the roar and the phase timer only; the per-attack
             // telegraph no longer summons or the arena double-fills.
           } else if (Math.abs(b.x-this.x) < 95 && Math.abs(b.y-this.attackY) < 35 && b.z < 65) {
-            if (t.grab && b.grab(this)) { this.state = 'hold'; world.emit('voice','lecturer_intervention'); return; }
+            if (t.grab && b.grab(this)) { this.state = 'hold'; world.emit('voice', t.grabVoice || 'lecturer_intervention'); return; }
             world.hurtBob(false, this.x);
           } else if ((this.type === 'interventionist' && this.phase >= 2) || (t.stompPhase && this.phase >= t.stompPhase)) {
             // Phase III slams both ways, so backing off behind him is no longer safe.
