@@ -20,6 +20,7 @@ const { registerVoiceLines } = await import('../src/voice-lines.js');
 const { duckStageBed, playTrack, musicState } = await import('../src/audio.js');
 const { createStartupGuard } = await import('../src/startup.js');
 const { q } = await import('../src/config.js');
+const { maxStage } = await import('../src/stages.js');
 registerVoiceLines();
 
 test('restarting from the Stage 3 cage into Stage 4 discards destroyed Claudia views before final victory', () => {
@@ -88,7 +89,7 @@ test('a Bouncer defeat flushed in the victory update remains visible through the
   const prevGet = document.getElementById;
   document.getElementById = id => els[id] || null;
   try {
-    const w = new Campaign({ stage: 5, rng: () => 1 });
+    const w = new Campaign({ stage: maxStage, rng: () => 1 });
     w.elapsed = 182.7; w.voiceAt = []; w.events = [];
     w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = ['bouncer_defeat'];
     const scene = Object.create(GameScene.prototype);

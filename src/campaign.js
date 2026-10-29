@@ -130,6 +130,7 @@ export class Campaign {
     if (stage === 3) this.armVoice('claudia_open', 2);
     if (stage === 4) { this.armVoice('claudia_s4', 8); this.armVoice('bob_s4', 16); }
     if (stage === 5) { this.armVoice('claudia_s5', 8); this.armVoice('bob_s5', 16); }
+    if (stage === 6) this.armVoice('bob_s6', 8);
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -226,6 +227,7 @@ export class Campaign {
     if (rescue) { this.rescuePreBossPlayed = true; this.emit('cutscene', 'rescue_pre_boss'); }
     this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
     if (rescue) this.armVoice('claudia_question', 3.5);
+    if (z.type==='celestina') this.armVoice('claudia_s6', 3.5);
     if (z.type==='choirmaster') this.summonWalkers();
   }
   /** Top the arena's minions up to `types.length`, stepping in from alternating screen edges. */
@@ -290,6 +292,7 @@ export class Campaign {
       else if (e.type==='choirmaster') this.banner(II?'THE CHOIRMASTER · PHASE II: THE CHOIR SWELLS':'THE CHOIRMASTER · PHASE III: HALLELUJAH, HARD MODE');
       else if (e.type==='bouncer') this.banner(II?'PHASE II: THE ROPE COMES OUT':'PHASE III: LAST CALL');
       else if (e.type==='dj') this.banner(II?'PHASE II: REQUEST DENIED':'PHASE III: WAIT FOR IT…');
+      else if (e.type==='celestina') this.banner(II?'PHASE II: SOMETHING BORROWED':'PHASE III: SPEAK NOW OR FOREVER HOLD YOUR EGGPLANT');
       else this.banner(`${this.def.boss.name} · PHASE ${II?'II':'III'}`);
       if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_phase${result.phase}`);
       this.hostile=[];
@@ -464,7 +467,7 @@ export class Campaign {
     this.stats.stages.push(this.stageNo);this.stats.stageTimes.push(+(this.elapsed-this.stageStart).toFixed(1));this.save=clearStage(this.save,this.stageNo,this.score);this.onSave(this.save);
     if(!wasBeaten&&this.save.beaten){this.nightmareUnlockedPending=true;this.emit('unlock','nightmare');}
     this.clearTimer=2.5; this.hostile=[]; this.enemies.forEach(e=>{e.alive=false;});
-    this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
+    this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:this.stageNo===6?STORY.shaft:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
   }
   update(dt,input={}) {
     if(this.paused||!Number.isFinite(dt)||dt<=0)return;

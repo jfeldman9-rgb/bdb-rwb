@@ -21,4 +21,4 @@ export const STAGE5 = Object.freeze({ no: 5, key: 'cable', title: 'THE GONDOLA O
     [['tagger','R',0],['tagger','L',.8],['charger','R',1.6],['salsero','L',2.4]],
     [['guard','R',0],['choir','R',.6],['lecturer','L',1.4],['hover','R',2.4]],
     [['charger','R',0],['salsero','L',.8],['tagger','R',1.6],['guard','R',2.4],['lecturer','L',3.2],['hover','R',4]] ] },
-], boss: { at: 6700, l: 6480, r: 7760, type: 'dj', name: 'DJ HALO' }, next: null });
+], boss: { at: 6700, l: 6480, r: 7760, type: 'dj', name: 'DJ HALO' }, next: 6 });

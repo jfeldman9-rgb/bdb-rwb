@@ -29,8 +29,8 @@ function arena(type, x = 800, y = laneY(1)) {
 }
 
 test('Stage 5 is the current campaign tip with the gondola geometry', () => {
-  assert.equal(maxStage, 5);
-  assert.equal(STAGE5.next, null);
+  assert.ok(maxStage >= 5);
+  assert.equal(STAGE5.next, 6);
   assert.deepEqual([STAGE5.no, STAGE5.key, STAGE5.title, STAGE5.bg, STAGE5.hpScale, STAGE5.pace],
     [5, 'cable', 'THE GONDOLA OF NO RETURN', 's5-mid5', 2.2, 1.18]);
   const geometry = ({ at, l, r }) => ({ at, l, r });

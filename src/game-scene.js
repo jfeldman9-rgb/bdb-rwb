@@ -141,7 +141,13 @@ export class GameScene extends Phaser.Scene {
   this.dadLabel=this.add.text(0,0,'BDB',{fontFamily:'Arial',fontSize:20,fontStyle:'bold',color:'#fff0ad',stroke:'#192235',strokeThickness:4}).setDepth(19001).setVisible(false);
   this.g=this.add.graphics().setDepth(19000);this.hud=new HUD(this);this.papiFX=new PapacitoFX(this);
   if(CAGED.has(this.stageNo)){const bl=this.world.def.boss.l,m=this.metas.claudia,a=m.anims[0];this.claudia=this.add.sprite(bl+970,490,m.pages[0],a.frames[0]).setOrigin(.5,.95).setScale(.27).setTint(0xffb4d7).play(a.name);
-   const cage=this.add.graphics();cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);this.claudiaCage=cage;}
+   const cage=this.add.graphics();
+   if(this.stageNo===6){
+    cage.lineStyle(6,0x9ef6ff,.95);cage.beginPath();cage.arc(bl+970,430,72,Math.PI,0,false);cage.strokePath();
+    cage.lineStyle(4,0xe8fbff,.75);cage.lineBetween(bl+898,430,bl+898,500);cage.lineBetween(bl+1042,430,bl+1042,500);
+    cage.lineStyle(3,0xffd6ef,.85);cage.strokeCircle(bl+970,358,10);
+   }else{cage.lineStyle(5,0xabb5cb,.9);cage.strokeRect(bl+910,350,120,150);for(let x=bl+930;x<bl+1030;x+=22)cage.lineBetween(x,350,x,500);}
+   this.claudiaCage=cage;}
   document.getElementById('boot').hidden=true;document.body.classList.add('playing');document.getElementById('title').hidden=true;
   this.game.inp.clear();preloadClips(stageLines(this.stageNo));
   const opening=trackForStageStart(this.stageNo,this.world.events);
@@ -280,6 +286,13 @@ export class GameScene extends Phaser.Scene {
      g.lineStyle(5,0xffdf89,.85);g.strokeCircle(e.x,e.y-90,r);
      g.lineStyle(3,0xff9a3c,.7);g.strokeCircle(e.x,e.y-90,r+18);
     }
+    else if(e.type==='celestina'&&e.phase>=3&&e.safeBand!=null){
+     for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,w.bounds.r-w.bounds.l,LANE_H);
+    }
+    else if(TYPES[e.type]?.lamp){
+     const lane=laneOf(e.attackY??e.y);
+     g.fillStyle(0xfff3a0,.34);g.fillRect(w.bounds.l,laneY(lane)-LANE_H/2,w.bounds.r-w.bounds.l,LANE_H);
+    }
     else{
      const plan=telegraphPlan(e,w);
      if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(plan.from,plan.y-75,100,145);}
@@ -359,6 +372,10 @@ export class GameScene extends Phaser.Scene {
   stopSceneAudio();this.setPauseReason('cutscene',true);
  }
  freeClaudia(){this.claudiaCage?.destroy();this.claudiaCage=null;this.claudia?.play('claudia_freed');}
+ liftAltarClaudia(){
+  this.claudiaCage?.destroy();this.claudiaCage=null;
+  if(this.claudia)this.tweens?.add?.({targets:this.claudia,y:this.claudia.y-280,alpha:0,duration:900});
+ }
  /** Stage 3 still frees Claudia and plays the keep rescue before the campaign continues. */
  presentChapterRescue(){
   if(this.rescueBeat)return;this.rescueBeat=true;this.freeClaudia?.();
@@ -401,7 +418,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
   if(type==='shield')sfx.clang(data?.chips||1);
-  if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear'){sfx.levelClear();if(data===3&&this.world.def?.next)this.presentChapterRescue();}
+  if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear'){sfx.levelClear();if(data===3&&this.world.def?.next)this.presentChapterRescue();if(data===6)this.liftAltarClaudia();}
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.stampede();}
   if(type==='dad_callin'){if(!playDadCall(this,(_how,presentation)=>this.world.finishDadCallin(presentation)))this.world.finishDadCallin();}

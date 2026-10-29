@@ -48,5 +48,15 @@
     "s5-mid4",
     "s5-mid5",
     "s5-floor"
+  ],
+  "s6": [
+    "s6-far",
+    "s6-mid0",
+    "s6-mid1",
+    "s6-mid2",
+    "s6-mid3",
+    "s6-mid4",
+    "s6-mid5",
+    "s6-floor"
   ]
 }

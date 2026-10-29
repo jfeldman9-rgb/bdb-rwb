@@ -26,6 +26,7 @@ STAGE1 = ['bob', 'yetti_walker', 'yetti_guard', 'yetti_hover', 'yetti_charger', 
           'yetti_lecturer', 'interventionist', 'dad', 'papi_stampede']
 STAGE4 = [key for key in STAGE1 if key != 'interventionist'] + ['yetti_salsero', 'bouncer']
 STAGE5 = [key for key in STAGE1 if key != 'interventionist'] + ['yetti_salsero', 'yetti_tagger', 'dj']
+STAGE6 = [key for key in STAGE1 if key != 'interventionist'] + ['yetti_tagger', 'yetti_minero', 'celestina', 'claudia']
 # vkFormat -> (GL internal format, file suffix, Phaser loader key)
 FORMATS = {
   157: (0x93B0, 'astc', 'ASTC'),  # VK_FORMAT_ASTC_4x4_UNORM_BLOCK  -> COMPRESSED_RGBA_ASTC_4x4_KHR
@@ -168,6 +169,8 @@ def report():
     'stage4_gpu_MiB': gpu_totals(STAGE4) if set(STAGE4) <= set(rows) else None,
     'stage5_keys': STAGE5,
     'stage5_gpu_MiB': gpu_totals(STAGE5) if set(STAGE5) <= set(rows) else None,
+    'stage6_keys': STAGE6,
+    'stage6_gpu_MiB': gpu_totals(STAGE6) if set(STAGE6) <= set(rows) else None,
     'all_chars_gpu_MiB': gpu_totals(allk),
     'disk_MiB': {'webp': mib(tot(allk, 'webp_disk')), 'astc_ktx': mib(tot(allk, 'astc_disk')),
                  'etc2_ktx': mib(tot(allk, 'etc2_disk')), 'astc_ktx_gzip': mib(tot(allk, 'astc_gzip')),
