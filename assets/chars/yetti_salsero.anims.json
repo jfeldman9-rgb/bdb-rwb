@@ -12,12 +12,12 @@
     {
       "name": "yetti_salsero_idle",
       "frames": [
+        "yetti_salsero_idle_00",
         "yetti_salsero_idle_01",
         "yetti_salsero_idle_02",
         "yetti_salsero_idle_03",
         "yetti_salsero_idle_04",
-        "yetti_salsero_idle_05",
-        "yetti_salsero_idle_06"
+        "yetti_salsero_idle_05"
       ],
       "pages": [
         0,
@@ -41,14 +41,14 @@
     {
       "name": "yetti_salsero_walk",
       "frames": [
-        "yetti_salsero_idle_01",
-        "yetti_salsero_idle_02",
-        "yetti_salsero_idle_03",
-        "yetti_salsero_idle_04",
-        "yetti_salsero_idle_05",
-        "yetti_salsero_idle_06",
-        "yetti_salsero_walk_07",
-        "yetti_salsero_walk_08"
+        "yetti_salsero_walk_00",
+        "yetti_salsero_walk_01",
+        "yetti_salsero_walk_02",
+        "yetti_salsero_walk_03",
+        "yetti_salsero_walk_04",
+        "yetti_salsero_walk_05",
+        "yetti_salsero_walk_06",
+        "yetti_salsero_walk_07"
       ],
       "pages": [
         0,
@@ -76,10 +76,10 @@
     {
       "name": "yetti_salsero_spin",
       "frames": [
+        "yetti_salsero_spin_00",
         "yetti_salsero_spin_01",
         "yetti_salsero_spin_02",
-        "yetti_salsero_spin_03",
-        "yetti_salsero_spin_04"
+        "yetti_salsero_spin_03"
       ],
       "pages": [
         0,
@@ -99,18 +99,24 @@
     {
       "name": "yetti_salsero_lunge",
       "frames": [
-        "yetti_salsero_idle_01",
-        "yetti_salsero_idle_02",
-        "yetti_salsero_idle_03",
-        "yetti_salsero_idle_04"
+        "yetti_salsero_lunge_00",
+        "yetti_salsero_lunge_01",
+        "yetti_salsero_lunge_02",
+        "yetti_salsero_lunge_03",
+        "yetti_salsero_lunge_04",
+        "yetti_salsero_lunge_05"
       ],
       "pages": [
+        0,
+        0,
         0,
         0,
         0,
         0
       ],
       "holds": [
+        63,
+        63,
         63,
         63,
         63,
@@ -122,9 +128,9 @@
     {
       "name": "yetti_salsero_hurt",
       "frames": [
-        "yetti_salsero_idle_01",
-        "yetti_salsero_idle_02",
-        "yetti_salsero_idle_03"
+        "yetti_salsero_hurt_00",
+        "yetti_salsero_hurt_01",
+        "yetti_salsero_hurt_02"
       ],
       "pages": [
         0,
@@ -142,11 +148,11 @@
     {
       "name": "yetti_salsero_knockdown",
       "frames": [
-        "yetti_salsero_idle_01",
-        "yetti_salsero_idle_02",
-        "yetti_salsero_idle_03",
-        "yetti_salsero_idle_04",
-        "yetti_salsero_idle_05"
+        "yetti_salsero_knockdown_00",
+        "yetti_salsero_knockdown_01",
+        "yetti_salsero_knockdown_02",
+        "yetti_salsero_knockdown_03",
+        "yetti_salsero_knockdown_04"
       ],
       "pages": [
         0,
@@ -166,12 +172,12 @@
       "fps": 14
     }
   ],
-  "placeholder": true,
-  "source": "local coloured silhouettes",
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
   "dedupe": {
-    "logical": 30,
-    "unique": 12,
-    "reused": 18
+    "logical": 32,
+    "unique": 32,
+    "reused": 0
   },
   "gpu": {
     "ASTC": "astc.ktx",

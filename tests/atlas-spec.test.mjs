@@ -108,6 +108,25 @@ test('painted role Yettis ship FPS.md anims and are not placeholders',async()=>{
   }
 });
 
+test('painted Stage 4 Salsero and Bouncer are not placeholders', async () => {
+  const expect = {
+    yetti_salsero: [['idle', 6, 12], ['walk', 8, 12], ['spin', 4, 16], ['lunge', 6, 16], ['hurt', 3, 14], ['knockdown', 5, 14]],
+    bouncer: [['walk', 8, 12], ['block', 2, 10], ['grab', 4, 16], ['hold', 2, 8], ['rush', 6, 16], ['stomp', 4, 14], ['roar', 4, 12], ['hurt', 3, 14], ['down', 5, 14]],
+  };
+  for (const [key, anims] of Object.entries(expect)) {
+    const m = await json(`assets/chars/${key}.anims.json`);
+    assert.equal(m.placeholder, false, key);
+    assert.equal(m.baseline, 570);
+    assert.equal(m.scale, 0.38);
+    for (const [name, n, fps] of anims) {
+      const a = m.anims.find((x) => x.name === `${key}_${name}`);
+      assert.ok(a, `${key}_${name}`);
+      assert.equal(a.frames.length, n, `${key}_${name}`);
+      assert.equal(a.holds[0], hold(fps));
+    }
+  }
+});
+
 test('papi_stampede is six looping 8-frame runs and the loader uses the keyed webp', async () => {
   const m = await json('assets/chars/papi_stampede.anims.json');
   assert.equal(m.placeholder, false);

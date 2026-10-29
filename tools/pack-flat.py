@@ -69,11 +69,17 @@ REAL = {
   }),
   # Papacito stampede (Oct 28 feedback): 6 clothed adult runners, 8 frames @16fps.
   'papi_stampede': ('papi_stampede', {f'run{i}': (8, 16, 0) for i in range(1, 7)}),
+  # Painted Stage 4 (Oct 28 Game Art): yetti_salsero + bouncer, 720x600 feet y≈560, 00-based.
+  'yetti_salsero': ('yetti_salsero', {
+    'idle': (6, 12, 0), 'walk': (8, 12, 0), 'spin': (4, 16, 0), 'lunge': (6, 16, 0),
+    'hurt': (3, 14, 0), 'knockdown': (5, 14, 0),
+  }),
+  'bouncer': ('bouncer', {
+    'walk': (8, 12, 0), 'block': (2, 10, 0), 'grab': (4, 16, 0), 'hold': (2, 8, 0),
+    'rush': (6, 16, 0), 'stomp': (4, 14, 0), 'roar': (4, 12, 0), 'hurt': (3, 14, 0), 'down': (5, 14, 0),
+  }),
 }
 STANDINS = {
-  # Pass A previews until painted 720x600 frames arrive in /workspace/bdb-art/sprites.
-  'yetti_salsero': {'idle': (6, 12), 'walk': (8, 12), 'spin': (4, 16), 'lunge': (4, 16), 'hurt': (3, 14), 'knockdown': (5, 14)},
-  'bouncer': {'walk': (8, 12), 'block': (2, 10), 'grab': (4, 16), 'hold': (2, 8), 'rush': (6, 16), 'stomp': (4, 14), 'roar': (4, 12), 'hurt': (3, 14), 'down': (5, 14)},
   'claudia': {'idle-caged': (4, 10), 'freed': (4, 12), 'portrait': (1, 1)},
   'wingman': {'hover': (6, 12), 'ring': (4, 14), 'telegraph': (2, 10), 'dive': (3, 14), 'land': (3, 12), 'hurt': (2, 14), 'split': (4, 12)},
   'papi_runners': {f'run{i}': (8, 16) for i in range(1, 5)},
