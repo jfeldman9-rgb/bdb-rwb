@@ -11,7 +11,9 @@ export class Bob {
   get busy() { return ['hurt','knockdown','getup','grabbed','dead'].includes(this.state); }
   setState(state, time = 0) { this.state = state; this.stateTime = time; }
   takeHit({ charger = false, damage = 1, dir = 0 } = {}) {
-    if (this.inv > 0 || !this.alive) return false;
+    // A knockdown outlasts the ordinary hit's .55s grace. Protect the whole
+    // helpless recovery so a second attacker cannot hit before getup starts.
+    if (this.inv > 0 || !this.alive || this.state === 'knockdown' || this.state === 'getup') return false;
     this.hp = Math.max(0, this.hp - damage); this.grabbedBy = null;
     this.hitTimes = this.hitTimes.filter(t => this.time - t <= 2); this.hitTimes.push(this.time);
     this.dashTime = 0; this.inv = .55;

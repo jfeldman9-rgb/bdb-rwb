@@ -31,7 +31,7 @@ export class ArchYetti extends Yetti {
     return { accepted: true, killed: !this.alive };
   }
   update(dt, world) {
-    if (this.phase >= 3 && this.hp <= 1) {
+    if (this.alive && this.phase >= 3 && this.hp <= 1) {
       this.state = 'floored';
       this.choirBuff = 1;
       return;

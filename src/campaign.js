@@ -314,7 +314,7 @@ export class Campaign {
     const result=papacitoEffect(this.papi,this.enemies,{phase:this.finisher?.phase||0,camX:this.camX,paused:this.paused,
       dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,hitTime:e=>papiHitTime(e.x-this.camX)});
     if (!result.allowed) {
-      this.banner(result.reason==='weaken'?'WEAKEN BOTH WINGMEN FIRST':result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
+      this.banner(result.reason==='weaken'?(this.court?'WEAKEN THE ARCH-YETTI FIRST':'WEAKEN BOTH WINGMEN FIRST'):result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
       if (result.reason==='protein') this.speak('bob_papiwait_01', 2.5);
       else if (result.reason==='empty' || result.reason==='weaken') this.speak('bob_papi_01', 2.5);
       return false;
@@ -477,6 +477,7 @@ export class Campaign {
     this.stats.stages.push(this.stageNo);this.stats.stageTimes.push(+(this.elapsed-this.stageStart).toFixed(1));this.save=clearStage(this.save,this.stageNo,this.score);this.onSave(this.save);
     if(!wasBeaten&&this.save.beaten){this.nightmareUnlockedPending=true;this.emit('unlock','nightmare');}
     this.clearTimer=2.5; this.hostile=[]; this.enemies.forEach(e=>{e.alive=false;});
+    this.bob.releaseGrab();
     this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:this.stageNo===6?STORY.shaft:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
   }
   update(dt,input={}) {
@@ -499,6 +500,12 @@ export class Campaign {
           this.recordKo(e,'papi');
         }
         if(pending.schedule.every(s=>s.done)){ this.score+=pending.score; this.papiPending=null; }
+      }
+      // Finishers settle before combat resumes: surviving adds must not get
+      // one last hit or grab after the runner has already defeated the boss.
+      if (this.papiTime === 0 && !this.papiPending && this.finisher) {
+        this.finisher.update(0, this);
+        if (this.finisher.complete) this.finishStage();
       }
       return;
     }

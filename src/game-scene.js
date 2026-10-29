@@ -89,6 +89,51 @@ export function roleAnim(m) {
   return 'idle';
 }
 
+/** Paint damages the whole lane bin, including when its thrower stands off-centre. */
+export function paintFootprint(p) {
+ const width=p.w||TYPES.tagger.paint.w;
+ return {x:p.x-width/2,y:laneY(laneOf(p.y))-LANE_H/2,w:width,h:LANE_H};
+}
+
+/** Draw the committed attack, so a previous volley cannot hide a new charge. */
+export function drawEnemyWarning(g,e,w) {
+ if(e.state!=='telegraph'&&!(e.type==='dj'&&e.state==='drop'))return;
+ const band=y=>g.fillRect(w.bounds.l,y-LANE_H/2,w.bounds.r-w.bounds.l,LANE_H);
+ g.fillStyle(0xff5575,.28);
+ if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)band(laneY(i));}
+ else if(e.type==='wingman'){g.fillEllipse(e.attackX,e.attackY,180,60);g.lineStyle(3,0xffccad);g.strokeEllipse(e.attackX,e.attackY,180,60);}
+ else if(e.mode==='rush'){
+  const strip=warningRect(telegraphPlan(e,w),w.bounds);
+  g.fillRect(strip.x,strip.y,strip.w,strip.h);
+ }
+ else if(TYPES[e.type]?.paint){
+  const area=paintFootprint({x:e.attackX??e.x,y:e.attackY??e.y,w:TYPES[e.type].paint.w});
+  g.fillStyle(0xff3cad,.28);g.fillRect(area.x,area.y,area.w,area.h);
+  g.lineStyle(3,0xff3cad,.9);g.strokeRect(area.x,area.y,area.w,area.h);
+  const x=area.x+area.w/2,y=area.y+area.h/2;
+  g.lineBetween(x-16,y-16,x+16,y+16);g.lineBetween(x+16,y-16,x-16,y+16);
+ }
+ else if(e.type==='dj'){
+  if(e.phase>=3){for(let i=0;i<3;i++)band(laneY(i));}
+  else if(e.phase===2){for(let i=0;i<3;i++)if(i!==e.safeBand)band(laneY(i));}
+  else band(e.attackY??e.y);
+  const r=42+16*Math.abs(Math.sin((w.elapsed||0)*8));
+  g.lineStyle(5,0xffdf89,.85);g.strokeCircle(e.x,e.y-90,r);
+  g.lineStyle(3,0xff9a3c,.7);g.strokeCircle(e.x,e.y-90,r+18);
+ }
+ else if((e.type==='celestina'&&e.phase>=3||e.type==='archyetti'&&e.phase>=2)&&e.safeBand!=null){
+  for(let i=0;i<3;i++)if(i!==e.safeBand)band(laneY(i));
+ }
+ else if(TYPES[e.type]?.lamp){g.fillStyle(0xfff3a0,.34);band(e.attackY??e.y);}
+ else if(e.type==='celestina'||e.type==='archyetti'){band(e.attackY??e.y);}
+ else{
+  const plan=telegraphPlan(e,w);
+  if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(plan.from,plan.y-75,100,145);}
+  const strip=warningRect(plan,w.bounds);
+  g.fillRect(strip.x,strip.y,strip.w,strip.h);
+ }
+}
+
 
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
@@ -277,38 +322,16 @@ export class GameScene extends Phaser.Scene {
    if(e.choirBuff>1){g.lineStyle(3,0xffd56a,.35+.35*Math.sin(spin*6));g.strokeEllipse(e.x,e.y-90,78,160);}
    if(e.type==='hover'){g.lineStyle(3,0x9de1ff,.9);g.strokeEllipse(e.x,e.y,90,20);}
    if(e.shield){const sx=e.x+e.facing*48,sy=e.y-82;g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(sx,sy,34,110);const chips=e.shieldHits||0;if(chips>=1){g.lineStyle(2,0x6a4a12,.95);g.lineBetween(sx-10,sy-28,sx+8,sy+6);}if(chips>=2){g.lineBetween(sx+12,sy-22,sx-6,sy+18);}}
-   if(e.state==='telegraph'){
-    g.fillStyle(0xff5575,.28);
-    if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,1280,LANE_H);}
-    else if(e.type==='wingman'){g.fillEllipse(e.attackX,e.attackY,180,60);g.lineStyle(3,0xffccad);g.strokeEllipse(e.attackX,e.attackY,180,60);}
-    else if(e.type==='dj'){
-     const r=42+16*Math.abs(Math.sin(spin*8));
-     g.lineStyle(5,0xffdf89,.85);g.strokeCircle(e.x,e.y-90,r);
-     g.lineStyle(3,0xff9a3c,.7);g.strokeCircle(e.x,e.y-90,r+18);
-    }
-    else if((e.type==='celestina'&&e.phase>=3||e.type==='archyetti'&&e.phase>=2)&&e.safeBand!=null){
-     for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,w.bounds.r-w.bounds.l,LANE_H);
-    }
-    else if(TYPES[e.type]?.lamp){
-     const lane=laneOf(e.attackY??e.y);
-     g.fillStyle(0xfff3a0,.34);g.fillRect(w.bounds.l,laneY(lane)-LANE_H/2,w.bounds.r-w.bounds.l,LANE_H);
-    }
-    else{
-     const plan=telegraphPlan(e,w);
-     if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(plan.from,plan.y-75,100,145);}
-     if(TYPES[e.type]?.paint){
-      g.fillStyle(0xff3cad,.28);
-      const ax=e.attackX??e.x, ay=e.attackY??e.y;
-      g.lineStyle(4,0xff3cad,.9);g.lineBetween(ax-22,ay-22,ax+22,ay+22);g.lineBetween(ax+22,ay-22,ax-22,ay+22);
-     }
-     const strip=warningRect(plan,w.bounds);
-     g.fillRect(strip.x,strip.y,strip.w,strip.h);
-    }
-   }
+   drawEnemyWarning(g,e,w);
    if(!e.boss&&e.hp<e.maxHp){g.fillStyle(0x201b30);g.fillRect(e.x-30,e.y-215,60,5);g.fillStyle(0xb7dce7);g.fillRect(e.x-30,e.y-215,60*e.hp/e.maxHp,5);}
   }
   for(const p of w.projectiles){g.fillStyle(0x491b7d);g.fillEllipse(p.x,p.y,48,19);g.fillStyle(0xba77ed);g.fillEllipse(p.x-5*p.dir,p.y-4,26,6);g.fillStyle(0x9bcc63);g.fillTriangle(p.x+22*p.dir,p.y,p.x+32*p.dir,p.y-9,p.x+33*p.dir,p.y+4);}
-  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else if(s.shape==='splat'){g.fillStyle(s.color,.55);g.fillEllipse(p.x,p.y-8,Math.max(28,(p.w||80)/2),16);}else if(s.shape!=='sock'||!this.textures.exists('sock-0')){g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-SOCK_DRAW_Y,28,32);}}
+  for(const p of w.hostile){const s=hostileShape(p.kind);if(s.shape==='ring'){g.lineStyle(4,s.color);g.strokeCircle(p.x,p.y-65,16);}else if(s.shape==='bar'){g.fillStyle(s.color);g.fillRect(p.x-46,p.y-70,92,8);}else if(s.shape==='splat'){
+   const area=paintFootprint(p);
+   g.fillStyle(s.color,p.hit ? .14 : .38);g.fillRect(area.x,area.y,area.w,area.h);
+   if(!p.hit){g.lineStyle(2,s.color,.9);g.strokeRect(area.x,area.y,area.w,area.h);}
+   g.fillStyle(s.color,p.hit ? .18 : .65);g.fillEllipse(p.x,area.y+area.h/2,area.w,18);
+  }else if(s.shape!=='sock'||!this.textures.exists('sock-0')){g.lineStyle(4,s.color);g.strokeEllipse(p.x,p.y-SOCK_DRAW_Y,28,32);}}
   this.syncSocks();
   for(const p of w.pickups){g.fillStyle(0xfff1bb);g.fillRoundedRect(p.x-12,p.y-38,24,32,5);g.fillStyle(0xcc8fde);g.fillRect(p.x-9,p.y-30,18,13);g.fillStyle(0x7bd6c7);g.fillRect(p.x-10,p.y-43,20,6);}
   const parts=this.particles;let kept=0;

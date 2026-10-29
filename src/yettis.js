@@ -167,6 +167,12 @@ export function rushDuration(e, pace = 1) {
   }
   return clamp((Math.abs((e.attackX ?? e.x) - e.x) + 140) / (430 * pace), .65, 1.2);
 }
+function djSafeBand(e) {
+  const lane = laneOf(e.attackY ?? e.y);
+  const step = e.volley % 2 === 0 ? 1 : -1;
+  const adjacent = lane + step < 0 || lane + step > 2 ? lane - step : lane + step;
+  return 3 - lane - adjacent;
+}
 export function telegraphPlan(e, world) {
   const bounds = world?.bounds || { l: 0, r: 1280 };
   const spec = attackSpec(e);
@@ -202,6 +208,13 @@ export class Yetti {
   planTelegraph(b, world) {
     this.attackX = b.x; this.attackY = this.y; this.rushDir = this.facing;
     this.warnFrom = null; this.warnTo = null;
+    // Commit the next volley before its tell: the safe lane must not be the
+    // previous attack's lane, and a bridal/court rush has no safe-band promise.
+    this.safeBand = null;
+    if (this.mode !== 'rush') {
+      if ((this.type === 'celestina' && this.phase >= 3) || (this.type === 'archyetti' && this.phase >= 2)) this.safeBand = this.volley % 3;
+      else if (this.type === 'dj' && this.phase === 2) this.safeBand = djSafeBand(this);
+    }
     const plan = telegraphPlan(this, world);
     this.warnFrom = plan.from; this.warnTo = plan.to; this.warnY = plan.y;
   }
@@ -335,9 +348,11 @@ export class Yetti {
     }
     if (this.state === 'rush') {
       const prevX = this.x, stepSpeed = (t.lunge?.speed ?? 430) * pace;
-      this.x += this.rushDir * stepSpeed * dt; this.timer -= dt;
-      if (rushHits(this, b, prevX)) world.hurtBob(true, this.x);
+      // Spend only the remaining travel time, then test the clamped segment.
+      // A long frame must not add an unmarked tail beyond the promised stop.
+      this.x += this.rushDir * stepSpeed * Math.min(dt, Math.max(0, this.timer)); this.timer -= dt;
       this.x = clamp(this.x, world.bounds.l+55, world.bounds.r-55);
+      if (rushHits(this, b, prevX)) world.hurtBob(true, this.x);
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = this.boss ? 1 : 2; }
       return;
     }
@@ -390,12 +405,9 @@ export class Yetti {
       return 'drop';
     }
     if (this.phase >= 2) {
-      const lane = laneOf(this.attackY ?? this.y);
-      const step = this.volley++ % 2 === 0 ? 1 : -1;
-      let adj = lane + step;
-      if (adj < 0 || adj > 2) adj = lane - step;
-      world.snowball(this.x, laneY(lane), this.rushDir, 'halo');
-      world.snowball(this.x, laneY(clamp(adj, 0, 2)), this.rushDir, 'halo');
+      this.safeBand ??= djSafeBand(this);
+      this.volley++;
+      for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
       return false;
     }
     for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, this.attackY, dir, 'shockwave');
@@ -404,7 +416,8 @@ export class Yetti {
   /** La Celestina only. Wingmen safe-band stays in wingman.js. */
   resolveCelestina(world) {
     if (this.phase >= 3) {
-      this.safeBand = this.volley++ % 3;
+      this.safeBand ??= this.volley % 3;
+      this.volley++;
       for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
       return false;
     }
@@ -424,18 +437,25 @@ export class Yetti {
   repositionBlink(world) {
     const seed = (((this.id | 0) * 1103515245) + ((this.volley | 0) * 12345)) >>> 0;
     const dist = 300 + (seed % 201);
-    const dir = (seed >>> 8) & 1 ? 1 : -1;
-    this.x = clamp(this.x + dir * dist, world.bounds.l + 55, world.bounds.r - 55);
+    const lo = world.bounds.l + 55, hi = world.bounds.r - 55;
+    let dir = (seed >>> 8) & 1 ? 1 : -1;
+    // Turn inward at an edge rather than blinking repeatedly into the clamp.
+    if ((dir > 0 ? hi - this.x : this.x - lo) < 300) dir = -dir;
+    this.x = clamp(this.x + dir * dist, lo, hi);
     this.y = laneY(seed % 3);
     this.attackY = this.y;
+    this.volley++;
   }
   /** Arch-Yetti gavel / verdict. Wingmen safe-band stays in wingman.js. */
   resolveArchYetti(world) {
     if (this.phase >= 2) {
-      this.safeBand = this.volley++ % 3;
+      this.safeBand ??= this.volley % 3;
+      this.volley++;
       for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
       if (this.phase >= 3) {
-        for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, this.attackY ?? this.y, dir, 'shockwave');
+        const lane = laneOf(this.attackY ?? this.y);
+        const slamY = laneY(lane === this.safeBand ? (lane + 1) % 3 : lane);
+        for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, slamY, dir, 'shockwave');
         return true;
       }
       return false;

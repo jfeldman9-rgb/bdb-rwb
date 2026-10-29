@@ -80,9 +80,12 @@ export function meleeHits(e, b) {
 
 export function rushHits(e, b, prevX) {
   const spec = ATTACK.rush;
-  const lunge = !!(e.lunge || e.type === 'salsero');
-  const hitX = lunge
-    ? b.x >= Math.min(prevX, e.x) - spec.sweep && b.x <= Math.max(prevX, e.x) + spec.sweep
-    : Math.abs(b.x - e.x) < spec.reach;
+  if (e.warnFrom != null && e.warnTo != null) {
+    const dir = e.rushDir || e.facing || -1;
+    const along = (b.x - e.warnFrom) * dir;
+    // Contact never extends behind the warning's origin or beyond its end cap.
+    if (along < 0 || along > (e.warnTo - e.warnFrom) * dir + spec.sweep) return false;
+  }
+  const hitX = b.x >= Math.min(prevX, e.x) - spec.sweep && b.x <= Math.max(prevX, e.x) + spec.sweep;
   return hitX && Math.abs(b.y - e.y) < spec.halfH && b.z < spec.zMax;
 }
