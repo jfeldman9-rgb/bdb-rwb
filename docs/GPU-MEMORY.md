@@ -1,6 +1,6 @@
 # Character atlas GPU memory (iPhone)
 
-Measured Oct 28 2026 on `cursor/bdb-level4` after the Stage 4 Pass A stand-in atlases.
+Updated Oct 29 2026 on `cursor/bdb-level4`, using the painted Stage 4 atlases and loader-selected formats.
 Source of truth: `assets/chars/_pack_report.json` (`tools/pack-flat.py` + `tools/compress-ktx.py`).
 Estimates are level-0 texture bytes from page sizes: RGBA = w×h×4, ASTC 4×4 / ETC2 RGBA8 = w×h×1
 (128-bit blocks per 4×4 texels). No mipmaps. Pack scale is `DRAW_SCALE = 0.38`.
@@ -9,30 +9,26 @@ Estimates are level-0 texture bytes from page sizes: RGBA = w×h×4, ASTC 4×4 /
 
 | Path | Stage 1 kit GPU | Stage 4 kit GPU | All chars GPU | Disk (chars) |
 |---|---|---|---|---|
-| **IMG fallback** (webp → RGBA upload) | **33.482 MiB** | **35.952 MiB** | 38.372 MiB | 3.206 MiB webp |
-| **ASTC 4×4** (iPhone A8+, Apple GPUs, most Android) | **8.370 MiB** | **8.988 MiB** | 9.593 MiB | 9.594 MiB `.astc.ktx` (5.131 MiB gzip) |
-| **ETC2 RGBA8** (GLES3 / WebGL2 without ASTC) | **8.370 MiB** | **8.988 MiB** | 9.593 MiB | 9.594 MiB `.etc2.ktx` (2.992 MiB gzip) |
+| **IMG fallback** (webp → RGBA upload) | **33.482 MiB** | **44.520 MiB** | 46.940 MiB | 4.037 MiB webp |
+| **ASTC 4×4 + keyed IMG** | **9.918 MiB** | **12.678 MiB** | 13.283 MiB | 11.737 MiB `.astc.ktx` (6.659 MiB gzip) |
+| **ETC2 RGBA8 + keyed IMG** | **9.918 MiB** | **12.678 MiB** | 13.283 MiB | 11.737 MiB `.etc2.ktx` (3.950 MiB gzip) |
 
-Budget target: **under 60 MiB** GPU residency for a Stage 1 kit. ASTC Stage 1 is ~8.4 MiB (well under).
+Budget target: **under 60 MiB** GPU residency for a Stage 1 kit. ASTC + IMG Stage 1 is ~9.9 MiB (well under).
 `STAGE_CHARS` loads role atlases for every stage (shared kit); bosses swap per stage.
 
 Painted role pages (ASTC GPU bytes): hover 0.68 MiB, charger 1.09 MiB, choir 0.88 MiB, lecturer 1.07 MiB.
 
-Stage 4 uses the shared kit plus `yetti_salsero` and `bouncer`, and meets its stricter
-**≤12 MiB ASTC / ≤48 MiB RGBA** cap. These are local clothed silhouette stand-ins with readable
-pink dance clothing, clipboard, velvet rope, and lanyard; painted source frames were not present.
-Salsero has 30 logical frames / 12 unique frames (1488×184, 0.261 MiB ASTC), and the Bouncer has
-38 logical frames / 18 unique frames (1436×368, 0.504 MiB ASTC). Both include WebP, ASTC, ETC2,
-page JSON, and animation JSON. Only these new keys were packed:
+Stage 4 uses the shared kit plus `yetti_salsero` and `bouncer`. The character-page
+ceiling is **≤13 MiB on ASTC/ETC2 devices / ≤48 MiB RGBA**. The previous 12 MiB check
+counted an unused compressed stampede page. `charPageSources()` deliberately chooses
+the keyed WebP for `papi_stampede`; its KTX files still contain the pink matte. Its
+actual 2,164,096 RGBA bytes replace the assumed 541,024 compressed bytes. No art or
+media was re-encoded. Disk columns above count all shipped character files, including
+unused stampede KTX files; they are not a per-device download estimate.
 
-```sh
-node tools/make-placeholders.mjs --only yetti_salsero,bouncer
-```
-
-`_pack_report.json` records `compressed.stage4_keys` and `compressed.stage4_gpu_MiB`.
-Report tooling now counts the resident `papi_stampede` rather than the retired `papi_runners`;
-no existing atlas was re-encoded. The report also corrects the previously stale stampede WebP
-disk-size entry (actual unchanged file: 126,374 bytes).
+`python3 tools/compress-ktx.py --report` updates the accounting without encoding assets.
+It queries the production loader's `charPageSources()` format choices. Tests independently
+sum the selected page residency and compare Stage 1 and Stage 4 with the report.
 
 Stage 4's eight painted background plates were generated through the built-in `image_gen`
 tool, using `s3-mid0.webp` and `chapter1-boulevard.webp` as visual style references. The prompt

@@ -26,8 +26,8 @@
     ],
     "stage1_gpu_MiB": {
       "rgba_webp": 33.482,
-      "astc": 8.37,
-      "etc2": 8.37
+      "astc": 9.918,
+      "etc2": 9.918
     },
     "stage4_keys": [
       "bob",
@@ -44,13 +44,13 @@
     ],
     "stage4_gpu_MiB": {
       "rgba_webp": 44.52,
-      "astc": 11.13,
-      "etc2": 11.13
+      "astc": 12.678,
+      "etc2": 12.678
     },
     "all_chars_gpu_MiB": {
       "rgba_webp": 46.94,
-      "astc": 11.735,
-      "etc2": 11.735
+      "astc": 13.283,
+      "etc2": 13.283
     },
     "disk_MiB": {
       "webp": 4.037,

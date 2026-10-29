@@ -71,163 +71,80 @@ test('every locked quote is pinned in the captions and the voice manifest', asyn
   assert.equal(manifest.files.some(file => file.text.includes('Bob, why')), false);
 });
 
-test('stage lines, bonks, KOs, hurts, Dad, and Papi each fire their registered id', () => {
-  const early = new Campaign();
-  early.events = [];
-  early.update(3.9, {});
-  assert.equal(voices(early).includes('bdb_open'), false);
-  early.update(0.2, {});
-  assert.ok(voices(early).includes('bdb_open'));
-  early.update(20, {});
-  assert.equal(voices(early).some((id) => /^nar_intro_/.test(id)), false);
+// Cue wiring includes both immediately accepted speech and durable reserved offers.
+const requested = w => [...voices(w), ...w.voiceGate.queue];
 
-  const w = new Campaign();
-  const e = w.spawnYetti('walker', 500, 630);
-  e.hp = 80;
-  w.events = [];
-  w.hit(e, 1, 1, true);
-  assert.ok(voices(w).includes('bdb_produce'));
-  w.events = [];
-  w.hit(e, 1, 1, true);
-  assert.equal(voices(w).includes('bdb_produce'), false);
-  w.elapsed = 30;
-  w.events = [];
+test('stage opens become due on schedule and wait for the global budget', () => {
+  const w = new Campaign({ rng: () => 1 }); w.events = [];
+  w.update(3.9); assert.equal(requested(w).includes('bdb_open'), false);
+  w.update(.2); assert.ok(w.voiceGate.queue.includes('bdb_open'));
+  w.update(4); assert.ok(voices(w).includes('bdb_open'));
+  assert.equal(voices(w).some(id => /^nar_intro_/.test(id)), false);
+});
+
+test('bonks, KOs, hurts and choir cues still reach the common dialogue authority', () => {
+  const w = new Campaign({ rng: () => 1 }); w.elapsed = 100; w.voiceAt = []; w.events = [];
+  const e = w.spawnYetti('walker', 500, 630); e.hp = 80;
+  w.hit(e, 1, 1, true); assert.ok(voices(w).includes('bdb_produce'));
+  w.events = []; w.hit(e, 1, 1, true); assert.equal(requested(w).includes('bdb_produce'), false);
+  w.elapsed += 60;
   for (let i = 0; i < 4; i++) w.recordKo({ recorded: false, boss: false, type: 'walker', x: 400, y: 630 }, 'bob');
   assert.ok(voices(w).includes('bdb_laugh'));
-
-  w.elapsed = 50;
-  w.bob.inv = 0;
-  w.events = [];
-  w.hurtBob();
-  assert.equal(voices(w).some((id) => id.startsWith('bob_hurt_')), false);
-  w.bob.inv = 0;
-  w.events = [];
-  w.hurtBob();
-  assert.ok(voices(w).includes('bob_hurt_01'));
-  w.events = [];
-  w.useDad();
-  assert.match(w.message, /ZONE 3/);
-  assert.equal(voices(w).includes('bob_dadwait_01'), false);
-
-  w.elapsed = 70;
-  w.events = [];
-  w.spawnYetti('choir', 900, 630);
+  w.elapsed += 60; w.events = []; w.bob.inv = 0; w.hurtBob();
+  assert.equal(voices(w).some(id => /^bob_hurt_/.test(id)), false);
+  w.bob.inv = 0; w.hurtBob(); assert.ok(voices(w).includes('bob_hurt_01'));
+  w.elapsed += 60; w.events = []; w.spawnYetti('choir', 900, 630);
   assert.ok(voices(w).includes('choir_serious'));
-  const turned = new Yetti('walker', 900, 630);
-  turned.facing = 1;
-  w.bob.x = 200;
-  w.elapsed = 110;
-  w.events = [];
-  turned.update(1 / 60, w);
-  assert.ok(voices(w).includes('yetti_turnback'));
+  w.elapsed += 60; w.events = [];
+  const turned = new Yetti('walker', 900, 630); turned.facing = 1; w.bob.x = 200;
+  turned.update(1 / 60, w); assert.ok(voices(w).includes('yetti_turnback'));
+});
 
-  const s2 = new Campaign({ stage: 2 });
-  s2.spawnYetti('walker', 500, 630);
-  s2.events = [];
-  assert.equal(s2.useDad(), true);
-  assert.ok(voices(s2).includes('dad_call_01'));
-  s2.finishDadCallin();
-  assert.equal(voices(s2).includes('dad_catchphrase'), false, 'the line waits for the swat');
-  for (let i = 0; i < Math.ceil(DAD_TIMING.impact * 60); i++) s2.update(1 / 60, {});
-  const phrase = s2.events.findIndex(e => e.type === 'voice' && e.data === 'dad_catchphrase');
-  const hit = s2.events.findIndex(e => e.type === 'dadhit');
-  assert.ok(phrase >= 0 && hit === phrase + 1, 'catchphrase lands on the impact');
-  s2.spawnYetti('walker', 500, 630);
-  s2.dad = null;
-  s2.dadCall.on = false;
-  s2.dadCall.charges = 1;
-  s2.events = [];
-  assert.equal(s2.useDad(), true);
-  assert.ok(voices(s2).includes('dad_call_02'));
-  s2.dad = null;
-  s2.dadCall.on = false;
-  s2.dadCall.charges = 0;
-  s2.events = [];
-  assert.equal(s2.useDad(), false);
-  assert.match(s2.message, /OUT OF SWATS/);
-  assert.match(s2.message, /0\/1/);
-  assert.ok(voices(s2).includes('bob_dadwait_01'));
-  s2.finishDadCallin();
-  s2.dad.age = DAD_TIMING.total;
-  s2.events = [];
-  s2.update(0.05, {});
-  assert.equal(s2.dad, null);
-  assert.ok(voices(s2).includes('dad_done_01'));
+test('Dad swats on impact while his fallback and locked catchphrase queue for speech', () => {
+  const w = new Campaign({ stage: 2, rng: () => 1 }); w.events = [];
+  w.spawnYetti('walker', 500, 630); assert.equal(w.useDad(), true);
+  assert.equal(voices(w).includes('dad_call_01'), false);
+  w.finishDadCallin(); assert.ok(w.voiceGate.queue.includes('dad_call_01'));
+  for (let i = 0; i < Math.ceil(DAD_TIMING.impact * 60); i++) w.update(1 / 60);
+  assert.ok(w.events.some(e => e.type === 'dadhit'), 'combat impact is independent of speech availability');
+  assert.ok(w.voiceGate.queue.includes('dad_catchphrase'));
+  w.elapsed = 8; w.flushVoice(); assert.ok(voices(w).includes('dad_call_01'));
+  w.elapsed = 16; w.flushVoice(); assert.ok(voices(w).includes('dad_catchphrase'));
+});
 
-  const crowd = new Campaign({ stage: 2 });
-  crowd.spawnYetti('walker', 500, 630);
-  crowd.papi.charges = 0;
-  crowd.events = [];
-  assert.equal(crowd.usePapi(), false);
-  assert.match(crowd.message, /PROTEIN/);
-  assert.ok(voices(crowd).includes('bob_papiwait_01'));
-  crowd.papi.charges = 1;
-  crowd.events = [];
-  assert.equal(crowd.usePapi(), true);
-  assert.equal(voices(crowd).some(id => id.startsWith('bob_papacito_')), false);
-  assert.ok(voices(crowd).includes('papi_crowd_01'));
-  assert.match(crowd.message, /PAPACITO STAMPEDE/);
-  crowd.papiTime = 0;
-  crowd.papiPending = null;
-  crowd.papi.charges = 1;
-  crowd.spawnYetti('walker', 640, 630);
-  crowd.events = [];
-  assert.equal(crowd.usePapi(), true);
-  assert.ok(voices(crowd).includes('papi_crowd_02'));
-  const fin = new Campaign({ stage: 3 });
-  fin.wingmen = { phase: 3 };
+test('Papi keeps both locked crowd variants and a finisher still offers its brag', () => {
+  const w = new Campaign({ stage: 2 }); w.events = [];
+  for (let i = 1; i <= 2; i++) {
+    w.spawnYetti('walker', 500, 630); w.papi.charges = 1; w.papiTime = 0; w.papiPending = null;
+    assert.equal(w.usePapi(), true); assert.ok(requested(w).includes(`papi_crowd_0${i}`));
+    assert.match(w.message, /PAPACITO STAMPEDE/);
+  }
+  const fin = new Campaign({ stage: 3 }); fin.wingmen = { phase: 3 }; fin.papi.charges = 1;
   fin.enemies = [{ boss: true, alive: true, hp: 1, x: 400, y: 630, type: 'wingman' }];
-  fin.papi.charges = 1;
-  fin.events = [];
+  const offered = [], emit = fin.emit.bind(fin);
+  fin.emit = (type, id) => { if (type === 'voice') offered.push(id); emit(type, id); };
   assert.equal(fin.usePapi(), true);
-  assert.ok(voices(fin).some(id => id.startsWith('bob_papacito_')));
-  assert.ok(voices(fin).some(id => id.startsWith('papi_crowd_')));
+  assert.ok(offered.some(id => /^bob_papacito_/.test(id)));
+  assert.ok(requested(fin).includes('papi_crowd_01'));
   assert.match(fin.message, /COUNCIL ADJOURNED/);
-  const quiet = new Campaign({ stage: 2 });
-  quiet.enemies = [];
-  quiet.papi.charges = 1;
-  quiet.events = [];
-  assert.equal(quiet.usePapi(), false);
-  assert.match(quiet.message, /CROWD/);
-  assert.ok(voices(quiet).includes('bob_papi_01'));
+});
 
-  const s3 = new Campaign({ stage: 3 });
-  s3.events = [];
-  s3.startBoss();
-  const order = s3.events.map(ev => `${ev.type}:${ev.data}`);
-  assert.ok(order.indexOf('cutscene:rescue_pre_boss') < order.indexOf('voice:wingman_council'));
-  assert.ok(s3.voiceAt.some(v => v.id === 'claudia_question'));
-  s3.finishStage();
-  s3.events = [];
-  s3.update(3, {});
-  // Pass A: Stage 3 clears into Stage 4; final victory only after Stage 4 (next null).
-  assert.equal(s3.victory, false);
-  assert.equal(s3.stageNo, 4);
-  assert.ok(s3.events.some(ev => ev.type === 'cutscene' && ev.data === 'kidnap'));
-  assert.ok(voices(s3).includes('nar_ch4'));
-  assert.ok(s3.voiceAt.some(v => v.id === 'claudia_s4'));
-  assert.ok(s3.voiceAt.some(v => v.id === 'bob_s4'));
-  const s4 = new Campaign({ stage: 4 });
-  s4.events = [];
-  s4.finishStage();
-  s4.events = [];
-  s4.update(3, {});
-  assert.equal(s4.victory, true);
-  assert.ok(voices(s4).includes('nar_victory'));
-  assert.ok(voices(s4).includes('claudia_leave'));
-
-  const said = [];
-  const men = new Wingmen();
-  men.phase = 3;
-  const world = {
-    enemies: [{ type: 'wingman', alive: false }, { type: 'wingman', alive: false }],
+test('rescue and finale cues queue across chapter changes without resetting speech', () => {
+  const w = new Campaign({ stage: 3 }); w.events = []; w.startBoss();
+  assert.ok(w.events.some(e => e.data === 'rescue_pre_boss'));
+  assert.ok(requested(w).includes('wingman_council'));
+  assert.ok(w.voiceAt.some(v => v.id === 'claudia_question'));
+  w.finishStage(); w.update(3);
+  assert.equal(w.stageNo, 4); assert.equal(w.victory, false);
+  assert.ok(requested(w).includes('nar_ch4'));
+  w.finishStage(); w.update(3);
+  assert.equal(w.victory, true);
+  for (const id of ['nar_victory', 'claudia_leave']) assert.ok(requested(w).includes(id));
+  const said = [], men = new Wingmen(); men.phase = 3;
+  const world = { enemies: [{ type: 'wingman', alive: false }, { type: 'wingman', alive: false }],
     papi: { charges: 1 }, bob: { x: 0 }, bounds: { l: 0, r: 1000 }, checkpoint: {},
-    emit(type, data) { if (type === 'voice') said.push(data); },
-    banner() {}, dropTrio() {},
-  };
-  men.update(0.1, world);
-  men.update(0.1, world);
-  assert.deepEqual(said, ['wingman_defeat']);
+    emit(type, id) { if (type === 'voice') said.push(id); }, banner() {}, dropTrio() {} };
+  men.update(.1, world); men.update(.1, world); assert.deepEqual(said, ['wingman_defeat']);
 });
 
 test('flushVoice emits due lines in place', () => {
@@ -243,5 +160,7 @@ test('flushVoice emits due lines in place', () => {
   w.flushVoice();
   assert.equal(w.voiceAt, queue);
   assert.deepEqual(queue.map(v => v.id), ['nar_intro_01']);
+  assert.ok(w.voiceGate.queue.includes('bdb_open'));
+  w.elapsed = 8; w.flushVoice();
   assert.ok(w.events.some(e => e.type === 'voice' && e.data === 'bdb_open'));
 });

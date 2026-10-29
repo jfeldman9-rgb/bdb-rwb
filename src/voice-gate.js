@@ -3,10 +3,10 @@ import { BARK } from './barks.js';
 const EPS = 1e-6;
 /**
  * Locked quotes and set-piece / scripted lines queue behind the rolling window
- * instead of dropping. Flavour (hurts, yetti taunts, papacito brags) still drops.
- * Dubbed dad_call_* is not presented here; Campaign emits it without stamping.
+ * instead of dropping. Optional flavour (hurts, Papacito brags) still drops.
+ * Movie-owned Dad calls are resolved before offering a fallback to this gate.
  */
-export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_open$|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_catchphrase$|dad_done_|papi_crowd_|papi_chorus$|bouncer_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;
+export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_(?:open|produce)$|yetti_(?:porkchop|colombian_room|purple_car)_|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_(?:catchphrase$|call_|done_)|papi_crowd_|papi_chorus$|bouncer_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;
 export const PRIORITY_VOICE = RESERVED_VOICE;
 export const BOSS_MOMENT_VOICE = /^(?:bouncer|interventionist|choirmaster|wingman)_(?:intro|phase\d+|defeat)$/;
 export const DUBBED_DAD_CALL = /^dad_call_0/;

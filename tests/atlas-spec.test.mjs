@@ -83,10 +83,11 @@ test('queueCharPages asks Phaser for ASTC, then ETC2, then the webp atlas',async
  const plain={...m};delete plain.gpu;assert.deepEqual(Object.keys(charPageSources(plain,'dad-0')),['IMG']);
  calls.length=0;queueCharPages({...scene,cache:{json:{get:()=>plain}}},['dad']);assert.deepEqual(calls[0],['atlas','dad-0','assets/chars/dad-0.webp','assets/chars/dad-0.json']);
 });
-test('Stage 1 kit on-device estimate with ASTC/ETC2 is a quarter of the RGBA webp path',async()=>{
+test('Stage 1 device estimate follows the loader, including the keyed IMG-only stampede',async()=>{
+ const {charPageSources}=await import('../src/assets.js');
  const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_stampede'];let rgba=0,astc=0;
- for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}}
- assert.equal(astc*4,rgba);assert.ok(astc/2**20<60,`stage1 ASTC MiB ${astc/2**20}`);
+ for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;if(charPageSources(m,p).ASTC){const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}else astc+=s.w*s.h*4;}}
+ assert.ok(astc<rgba/3);assert.ok(astc/2**20<60,`stage1 ASTC+IMG MiB ${astc/2**20}`);
  const r=await json('assets/chars/_pack_report.json');assert.ok(Math.abs(r.compressed.stage1_gpu_MiB.astc-astc/2**20)<.01);
 });
 

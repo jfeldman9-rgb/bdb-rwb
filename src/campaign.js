@@ -13,7 +13,7 @@ import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
-import { createVoiceGate, resetVoiceGate, offerVoice, flushVoiceGate, isDubbedDadCall, hasReservedQueued } from './voice-gate.js';
+import { createVoiceGate, offerVoice, flushVoiceGate, isReservedVoice } from './voice-gate.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -78,13 +78,10 @@ export class Campaign {
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
   }
-  /** Stage 4+ presents through one gate on this.elapsed. Stages 1–3 stay ungated. */
-  gatesVoice() { return this.stageNo >= 4 && !this.victory; }
-  holdsClearForVoice() { return this.gatesVoice() && hasReservedQueued(this.voiceGate); }
+  /** Every chapter and the finale share this.elapsed and one uninterrupted budget. */
+  gatesVoice() { return true; }
   emit(type, data) {
     if (type === 'voice') {
-      // Call-in clip already speaks dad_call_*; stamping it would starve the catchphrase.
-      if (isDubbedDadCall(data)) { this.events.push({ type, data }); return; }
       if (this.gatesVoice()) {
         offerVoice(this.voiceGate, data, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
         return;
@@ -110,8 +107,9 @@ export class Campaign {
     this.latchedDash = this.latchedFire = this.latchedPapi = this.latchedDad = false;
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
+    // A chapter transition cannot erase a reserved line or reset the global budget.
+    for (const v of this.voiceAt || []) if (isReservedVoice(v.id)) this.emit('voice', v.id);
     this.voiceAt = [];
-    if (this.voiceGate) resetVoiceGate(this.voiceGate);
     this.produceSpokeOnce = false;
     if (this.barks) {
       this.clearAmbient();
@@ -326,14 +324,19 @@ export class Campaign {
     }
     this.stats.dad++; this.bob.inv=Math.max(this.bob.inv,DAD.inv);
     this.clearAmbient();
-    // The call-in clip carries Dad's VO. Emit it first so the scene can skip the dub.
+    // Resolve movie ownership before offering separate speech. Headless/no-movie
+    // callers use finishDadCallin()'s default, which consumes the common budget.
+    this.rot ||= Object.create(null);
+    const call = this.rot.dad_call || 0; this.rot.dad_call = call + 1;
+    this.dadCallVoice = ['dad_call_01','dad_call_02','dad_call_03'][call % 3];
     this.emit('dad_callin');
-    this.speakRot('dad_call', ['dad_call_01','dad_call_02','dad_call_03'], 0);
     return true;
   }
   /** After the call-in cutscene (or immediately if cutscenes are off). */
-  finishDadCallin() {
+  finishDadCallin({ dubbed = false } = {}) {
     if (this.dad) return;
+    const id = this.dadCallVoice; this.dadCallVoice = null;
+    if (id && !dubbed) this.emit('voice', id);
     this.dad = new Dad(this.camX, this.bob.y, this.bob.x + 150);
     this.emit('dad');
   }
@@ -410,6 +413,11 @@ export class Campaign {
     this.emit('voice', id);
   }
   clearAmbient() {
+    // Optional combat chatter expires with its set-piece. Locked quotes transfer
+    // to the durable campaign queue before the bark scheduler is cleared.
+    for (const o of [...Object.values(this.barks.held), ...this.barks.offers]) {
+      if (isReservedVoice(o.id)) this.emit('voice', o.id);
+    }
     this.barks.held = Object.create(null);
     this.barks.offers = [];
   }
@@ -445,6 +453,7 @@ export class Campaign {
   }
   finishStage() {
     if(this.clearTimer)return;
+    this.clearAmbient();
     const wasBeaten=!!this.save.beaten;
     this.stats.stages.push(this.stageNo);this.stats.stageTimes.push(+(this.elapsed-this.stageStart).toFixed(1));this.save=clearStage(this.save,this.stageNo,this.score);this.onSave(this.save);
     if(!wasBeaten&&this.save.beaten){this.nightmareUnlockedPending=true;this.emit('unlock','nightmare');}
@@ -452,12 +461,14 @@ export class Campaign {
     this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
   }
   update(dt,input={}) {
-    if(this.paused||this.victory||!Number.isFinite(dt)||dt<=0)return;
+    if(this.paused||!Number.isFinite(dt)||dt<=0)return;
     this.elapsed+=dt;this.messageTime=Math.max(0,this.messageTime-dt);this.flushVoice();
+    // Combat has ended, but reserved speech continues over the responsive panel.
+    if(this.victory)return;
     this.barks.open = true;
     const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
     try {
-    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.holdsClearForVoice())this.clearTimer=1/60;else if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
+    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
       if(this.papiPending){

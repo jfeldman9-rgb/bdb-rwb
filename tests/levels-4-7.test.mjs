@@ -15,6 +15,7 @@ import { STORY } from '../src/story.js';
 import { normalizeSave } from '../src/save.js';
 import { LINES, PRESENT } from '../src/voice-lines.js';
 import { MUSIC } from '../src/audio.js';
+import { charPageSources } from '../src/assets.js';
 import { rollingVoiceStats } from '../src/voice-gate.js';
 import { runVoiceRate } from '../tools/voice-rate.mjs';
 
@@ -107,15 +108,25 @@ test('every Stage 4 resident atlas has webp, ASTC, ETC2, page metadata and anima
     }
   }
   const report = JSON.parse(readFileSync(asset('chars/_pack_report.json'), 'utf8'));
-  const pages = STAGE_CHARS[4].flatMap(key => JSON.parse(readFileSync(asset(`chars/${key}.anims.json`), 'utf8')).pages);
-  let astc = 0, rgba = 0;
-  for (const page of pages) {
-    assert.ok(report.compressed.pages[page], `missing GPU report page ${page}`);
-    astc += report.compressed.pages[page].astc_gpu;
-    rgba += report.compressed.pages[page].rgba;
+  const totals = { ASTC: 0, ETC: 0, IMG: 0 };
+  for (const key of STAGE_CHARS[4]) {
+    const meta = JSON.parse(readFileSync(asset(`chars/${key}.anims.json`), 'utf8'));
+    for (const page of meta.pages) {
+      const bytes = report.compressed.pages[page];
+      assert.ok(bytes, `missing GPU report page ${page}`);
+      const sources = charPageSources(meta, page);
+      if (key === 'papi_stampede') assert.deepEqual(Object.keys(sources), ['IMG']);
+      for (const supported of Object.keys(totals)) {
+        const selected = supported in sources ? supported : 'IMG';
+        totals[supported] += selected === 'IMG' ? bytes.rgba : selected === 'ASTC' ? bytes.astc_gpu : bytes.etc2_gpu;
+      }
+    }
   }
-  assert.ok(astc <= 12 * 1024 ** 2, `Stage 4 ASTC ${(astc / 1024 ** 2).toFixed(3)} MiB`);
-  assert.ok(rgba <= 48 * 1024 ** 2, `Stage 4 RGBA ${(rgba / 1024 ** 2).toFixed(3)} MiB`);
+  // Honest residency ceiling: keyed stampede is RGBA even on compressed devices.
+  for (const fmt of ['ASTC', 'ETC']) assert.ok(totals[fmt] <= 13 * 1024 ** 2, `Stage 4 ${fmt}+IMG ${(totals[fmt] / 1024 ** 2).toFixed(3)} MiB`);
+  assert.ok(Math.abs(report.compressed.stage4_gpu_MiB.astc - totals.ASTC / 1024 ** 2) < .001);
+  assert.ok(Math.abs(report.compressed.stage4_gpu_MiB.etc2 - totals.ETC / 1024 ** 2) < .001);
+  assert.ok(totals.IMG <= 48 * 1024 ** 2, `Stage 4 RGBA ${(totals.IMG / 1024 ** 2).toFixed(3)} MiB`);
 });
 
 test('BARK retains every baseline gate and cooldown value', () => {

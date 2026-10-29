@@ -5,7 +5,8 @@
 import { pathToFileURL } from 'node:url';
 import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
-import { rollingVoiceStats, isDubbedDadCall } from '../src/voice-gate.js';
+import { rollingVoiceStats } from '../src/voice-gate.js';
+import { maxStage } from '../src/stages.js';
 
 const AMBIENT_GROUP = [
   [/^bdb_produce$/, 'produce'],
@@ -44,22 +45,30 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
   let scripted = 0;
   let combat = 0;
   let excluded = 0;
+  let panel = 0;
   const ambientAt = [];
   const voiceAt = [];
   const step = 1 / hz;
-  const done = () => stage == null ? w.victory : w.stats.stages.includes(stage);
+  // Final-stage/full runs include the panel and every queued finale/locked line.
+  const done = () => stage != null && stage < maxStage
+    ? w.stats.stages.includes(stage)
+    : w.victory && !w.voiceGate.queue.length && !w.voiceAt.length;
+  let clearAt = null, victoryAt = null;
+  const finaleIds = [];
   const drain = (setPiece) => {
     for (const e of w.events) {
       if (e.type === 'dad_callin') w.finishDadCallin();
+      if (e.type === 'clear' && e.data === maxStage) clearAt = w.elapsed;
+      if (e.type === 'victory') victoryAt = w.elapsed;
       if (e.type !== 'voice') continue;
       const id = e.data;
       const stamp = +w.elapsed.toFixed(4);
       allCounts[id] = (allCounts[id] || 0) + 1;
-      // dad_call_* is dubbed by the call-in clip and does not consume a presented slot.
-      if (!w.victory && !isDubbedDadCall(id)) voiceAt.push(stamp);
+      voiceAt.push(stamp);
+      if (w.victory) finaleIds.push(id);
       const g = ambientGroup(id);
       if (g) ambientAt.push(stamp);
-      if (setPiece) continue;
+      if (setPiece || w.victory) continue;
       counts[id] = (counts[id] || 0) + 1;
       if (g) {
         ambient++;
@@ -74,7 +83,8 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     const inDad = !!w.dad;
     w.update(step, bot.update(step, w));
     const setPiece = inPapi || w.papiTime > 0 || inDad || !!w.dad;
-    if (setPiece) excluded += step;
+    if (w.victory) panel += step;
+    else if (setPiece) excluded += step;
     else combat += step;
     drain(setPiece);
   }
@@ -91,6 +101,7 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     elapsed: +w.elapsed.toFixed(1),
     combat: +combat.toFixed(1),
     excluded: +excluded.toFixed(1),
+    panel: +panel.toFixed(1),
     minutes: +minutes.toFixed(3),
     ambient,
     scripted,
@@ -102,6 +113,8 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     minVoiceGap: rolling.minGap,
     maxIn60s: rolling.maxInWindow,
     rollingOk: rolling.ok,
+    victoryWait: victoryAt == null ? null : +(victoryAt - clearAt).toFixed(4),
+    finaleIds,
     voiceAt,
     groups,
     counts,

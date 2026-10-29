@@ -67,7 +67,8 @@ test('direct and campaign stage loads request each opener before kidnap and narr
     w.loadStage(stage);
     const opening = w.events.filter(e => e.type === 'cutscene').map(e => e.data);
     assert.deepEqual(opening, [2, 4].includes(stage) ? [`stage${stage}`, 'kidnap'] : [`stage${stage}`]);
-    assert.ok(w.events.findIndex(e => e.type === 'cutscene') < w.events.findIndex(e => e.type === 'voice'));
+    assert.ok(w.events.some(e => e.type === 'cutscene'));
+    assert.ok(w.voiceGate.queue.includes(`nar_ch${stage}`), 'narration waits for the global budget after the opener');
   }
 });
 

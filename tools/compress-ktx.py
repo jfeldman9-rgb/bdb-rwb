@@ -42,8 +42,8 @@ def find_ktx():
   sys.exit('ktx (KTX-Software >= 4.3) not found; see docs/GPU-MEMORY.md "Toolchain"')
 
 
-KTX = find_ktx()
-ENV = {**os.environ, 'LD_LIBRARY_PATH': f'{KTX.parent.parent / "lib"}:{os.environ.get("LD_LIBRARY_PATH", "")}'}
+KTX = None
+ENV = None
 
 
 def ktx(*args):
@@ -91,7 +91,13 @@ def compress_page(page, tmp):
 
 
 def main():
+  global KTX, ENV
   argv = sys.argv[1:]
+  if '--report' in argv:
+    report()
+    return
+  KTX = find_ktx()
+  ENV = {**os.environ, 'LD_LIBRARY_PATH': f'{KTX.parent.parent / "lib"}:{os.environ.get("LD_LIBRARY_PATH", "")}'}
   only = set(argv[argv.index('--only') + 1].split(',')) if '--only' in argv else None
   masters.mkdir(parents=True, exist_ok=True)
   keys = sorted(p.name[:-len('.anims.json')] for p in out.glob('*.anims.json'))
@@ -133,19 +139,33 @@ def report():
   allk = sorted(p.name[:-len('.anims.json')] for p in out.glob('*.anims.json'))
   rows = {k: sizes(k) for k in allk}
   tot = lambda keys, f: sum(r.get(f, 0) for k in keys for r in rows[k])
+  # Ask the production loader, including its IMG-only keyed stampede policy.
+  sources = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', """
+    import { readFileSync } from 'node:fs';
+    import { charPageSources } from './src/assets.js';
+    const keys = JSON.parse(process.argv[1]);
+    const pages = {};
+    for (const key of keys) {
+      const meta = JSON.parse(readFileSync(`assets/chars/${key}.anims.json`, 'utf8'));
+      for (const page of meta.pages) pages[page] = Object.keys(charPageSources(meta, page));
+    }
+    process.stdout.write(JSON.stringify(pages));
+  """, json.dumps(allk)], text=True))
+  def selected(keys, fmt):
+    field = {'ASTC': 'astc_gpu', 'ETC': 'etc2_gpu', 'IMG': 'rgba'}
+    return sum(r[field[fmt if fmt in sources[r['page']] else 'IMG']] for k in keys for r in rows[k])
+  def gpu_totals(keys):
+    return {label: mib(selected(keys, fmt)) for fmt, label in [('IMG', 'rgba_webp'), ('ASTC', 'astc'), ('ETC', 'etc2')]}
   rp = out / '_pack_report.json'
   rep = json.loads(rp.read_text()) if rp.is_file() else {}
   rep['compressed'] = {
     'formats': {'ASTC': 'ASTC 4x4 UNORM (KTX1, 8 bpp)', 'ETC': 'ETC2 RGBA8 EAC (KTX1, 8 bpp)', 'IMG': 'webp RGBA'},
     'premultiplied': True,
     'stage1_keys': STAGE1,
-    'stage1_gpu_MiB': {'rgba_webp': mib(tot(STAGE1, 'rgba')), 'astc': mib(tot(STAGE1, 'astc_gpu')),
-                       'etc2': mib(tot(STAGE1, 'etc2_gpu'))},
+    'stage1_gpu_MiB': gpu_totals(STAGE1),
     'stage4_keys': STAGE4,
-    'stage4_gpu_MiB': {'rgba_webp': mib(tot(STAGE4, 'rgba')), 'astc': mib(tot(STAGE4, 'astc_gpu')),
-                       'etc2': mib(tot(STAGE4, 'etc2_gpu'))} if set(STAGE4) <= set(rows) else None,
-    'all_chars_gpu_MiB': {'rgba_webp': mib(tot(allk, 'rgba')), 'astc': mib(tot(allk, 'astc_gpu')),
-                          'etc2': mib(tot(allk, 'etc2_gpu'))},
+    'stage4_gpu_MiB': gpu_totals(STAGE4) if set(STAGE4) <= set(rows) else None,
+    'all_chars_gpu_MiB': gpu_totals(allk),
     'disk_MiB': {'webp': mib(tot(allk, 'webp_disk')), 'astc_ktx': mib(tot(allk, 'astc_disk')),
                  'etc2_ktx': mib(tot(allk, 'etc2_disk')), 'astc_ktx_gzip': mib(tot(allk, 'astc_gzip')),
                  'etc2_ktx_gzip': mib(tot(allk, 'etc2_gzip'))},

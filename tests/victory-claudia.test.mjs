@@ -40,7 +40,7 @@ test('victory drops the cage, plays claudia_freed, and retires the produce line'
   assert.ok(lineAt > 0 && lineAt < eyebrowAt, 'Claudia\'s line is above the victory eyebrow');
 });
 
-test('the victory panel shows Claudia\'s line instead of burying the caption', () => {
+test('the victory panel retains the presented caption, then adds Claudia when her turn arrives', () => {
   const line = { textContent: '' };
   const panel = { hidden: true };
   const score = { textContent: '' };
@@ -48,6 +48,7 @@ test('the victory panel shows Claudia\'s line instead of burying the caption', (
   globalThis.document.getElementById = (id) => id === 'victory-line' ? line : id === 'victory' ? panel : id === 'victory-score' ? score : null;
   const scene = Object.create(GameScene.prototype);
   scene.finished = false;
+  scene.lastDialogue = 'BOUNCER  /  Fine. You\'re on the list.';
   scene.freed = false;
   scene.pauseReasons = new Set();
   scene.voiceHold = [];
@@ -58,12 +59,15 @@ test('the victory panel shows Claudia\'s line instead of burying the caption', (
   scene.playHeld = () => { scene.caption = 'canvas'; };
   try {
     scene.presentVictory();
+    assert.equal(line.textContent, 'BOUNCER  /  Fine. You\'re on the list.');
+    scene.presentCaption('Claudia', "Let's leave before they reform.");
   } finally {
     globalThis.document.getElementById = prev;
   }
   assert.equal(scene.freed, true);
-  assert.equal(line.textContent, "Let's leave before they reform.");
-  assert.equal(scene.caption, '');
+  assert.notEqual(scene.caption, '');
+  assert.match(line.textContent, /BOUNCER/);
+  assert.match(line.textContent, /CLAUDIA  \/  Let's leave before they reform\./);
   assert.equal(panel.hidden, false);
   assert.equal(score.textContent, '42 points · Chapter 3 complete');
 });

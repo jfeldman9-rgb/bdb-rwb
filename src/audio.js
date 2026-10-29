@@ -1,3 +1,5 @@
+import { isReservedVoice } from './voice-gate.js';
+
 let ctx = null, master, music, sfxBus, voiceBus, duckG, comp, noiseBuf;
 let muted = false, musicOn = true, musicEl = null, musicSrc = null;
 const clips = Object.create(null), gates = Object.create(null), oneShots = new Map();
@@ -467,7 +469,7 @@ export function presentStage(scene) {
 const SCRIPTED_VOICE = /^(?:nar_|bdb_open|bob_s\d+$|claudia_|wingman_|interventionist_|choirmaster_|bouncer_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
   if (/^papi_crowd_/.test(id || '')) return 'interrupt';
-  return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
+  return isReservedVoice(id) || SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
 }
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';
 const pendingStale = () => voicePending && audioNow() - voicePendingAt > 3;

@@ -10,12 +10,12 @@ import { PapacitoFX } from './papacito-fx.js';
 import { q } from './config.js';
 import { gameplayWantsPause } from './input.js';
 import { say,sfx,playTrack,duckStageBed,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
-import { stageLines, LINES } from './voice-lines.js';
+import { stageLines } from './voice-lines.js';
 import { STORY } from './story.js';
 import { showStuck } from './recovery.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
-import { playDadCall, abortDadCall, installDadGestureBless, dadCallDubbed } from './dad-call-cutscene.js';
+import { playDadCall, abortDadCall, installDadGestureBless } from './dad-call-cutscene.js';
 import { beginCorpse, stepCorpse } from './corpses.js';
 import { bindRotatePause } from './rotate-block.js';
 import { FX } from './fx.js';
@@ -92,6 +92,7 @@ export function roleAnim(m) {
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
  init(data){
+  this.lastDialogue=null;this.victoryDialogue=[];
   this._sceneToken=(this._sceneToken||0)+1;
   if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}
   this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.loadFailed=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.rescueBeat=false;this.holdingVoice=false;this.voiceHold=[];this._carryVoice=null;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;
@@ -241,8 +242,20 @@ export class GameScene extends Phaser.Scene {
   for(let i=0;i<parts.length;i++){const p=parts[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);if(p.life>0)parts[kept++]=p;}
   parts.length=kept;
  }
- speakNow(id){say(id,(who,line)=>this.hud?.say?.(who,line));}
- /** Campaign already gated Stage 4+. The scene only presents; it does not stamp a second clock. */
+ presentCaption(who,line){
+  const text=`${who.toUpperCase()}  /  ${line}`;
+  this.lastDialogue=text;this.hud?.say?.(who,line);
+  if(this.finished){
+   (this.victoryDialogue||=[]).push(text);
+   this.renderVictoryDialogue();
+  }
+ }
+ renderVictoryDialogue(){
+  const line=document.getElementById('victory-line');
+  if(line){line.textContent=(this.victoryDialogue||[]).join('\n');line.scrollTop=line.scrollHeight;}
+ }
+ speakNow(id){say(id,(who,line)=>this.presentCaption(who,line));}
+ /** Campaign approves all dialogue. Presentation never stamps a second clock. */
  queueSceneVoice(id){
   if(!id)return false;
   if(id==='wingman_phase3')this.cameras?.main?.flash?.(300,225,190,255);
@@ -299,12 +312,12 @@ export class GameScene extends Phaser.Scene {
  }
  presentVictory(){
   if(this.finished)return;this.finished=true;this.freeClaudia?.();
+  // Keep the actual last presentation, including a defeat emitted in this batch.
+  this.victoryDialogue=this.lastDialogue?[this.lastDialogue]:[];
   const show=held=>{
    this.playHeld(held);
-   const panel=document.getElementById('victory'),score=document.getElementById('victory-score'),line=document.getElementById('victory-line');
-   // Claudia's line sits in the panel, above the eyebrow. The canvas caption would render under that overlay.
-   if(line)line.textContent=LINES.claudia_leave[1];
-   this.hud?.caption?.setText?.('');
+   const panel=document.getElementById('victory'),score=document.getElementById('victory-score');
+   this.renderVictoryDialogue();
    const stage=this.stageNo||this.world?.stageNo||1;
    const flipped=!!this.world?.nightmareUnlockedPending||(!this.world?.beatenAtStart&&!!this.world?.save?.beaten&&stage<=3);
    if(flipped&&this.world)this.world.nightmareUnlockedPending=false;
@@ -323,7 +336,7 @@ export class GameScene extends Phaser.Scene {
   const bossTrack=bossTrackForBatch(this.stageNo,batch);
   for(let i=0;i<batch.length;i++){
   const {type,data}=batch[i];
-  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else if(!dadCallDubbed(data,this.cutscene))this.queueSceneVoice(data);}
+  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else this.queueSceneVoice(data);}
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
@@ -331,7 +344,7 @@ export class GameScene extends Phaser.Scene {
   if(type==='boss'&&bossTrack)playTrack(bossTrack);if(type==='clear'){sfx.levelClear();if(data===3&&this.world.def?.next)this.presentChapterRescue();}
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.stampede();}
-  if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}
+  if(type==='dad_callin'){if(!playDadCall(this,(_how,presentation)=>this.world.finishDadCallin(presentation)))this.world.finishDadCallin();}
   if(type==='cutscene'){
    const keys=[data];
    while(batch[i+1]?.type==='cutscene')keys.push(batch[++i].data);

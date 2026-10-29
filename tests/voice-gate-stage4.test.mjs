@@ -1,219 +1,138 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { STAGE_CLIPS, INTRO_REV } from '../src/cutscene.js';
 import { Campaign } from '../src/campaign.js';
-import { DAD_TIMING } from '../src/dad.js';
 import { LINES } from '../src/voice-lines.js';
-import {
-  createVoiceGate, offerVoice, flushVoiceGate, rollingVoiceStats,
-  isReservedVoice, isDubbedDadCall, isBossMomentVoice, nextVoiceAt,
-} from '../src/voice-gate.js';
+import { createVoiceGate, offerVoice, flushVoiceGate, rollingVoiceStats,
+  isReservedVoice, isBossMomentVoice, nextVoiceAt } from '../src/voice-gate.js';
+import { runVoiceRate } from '../tools/voice-rate.mjs';
 
-const voices = (w) => w.events.filter(e => e.type === 'voice').map(e => e.data);
+const voices = w => w.events.filter(e => e.type === 'voice').map(e => e.data);
+const locked = [
+  ['Son, sometimes you just need to use the fly swatter to keep the women away!', ['dad_catchphrase']],
+  ['I brought the eggplant.', ['bdb_open']],
+  ['Die, Yetti, die!', ['bdb_produce']],
+  ['Pork Chop Sandwiches!', ['yetti_porkchop_01', 'yetti_porkchop_02']],
+  ['Stay away from the Colombians room.', ['yetti_colombian_room_01', 'yetti_colombian_room_02']],
+  ['Bob why is your car purple?', ['yetti_purple_car_01', 'yetti_purple_car_02']],
+  ["Hold on Claudia! Papacito is coming! It's eggplant time!", []],
+  ['We love you Papacito! Pick me!', ['papi_crowd_01', 'papi_crowd_02']],
+];
 
-function drain(w, said, stamps) {
-  for (const e of w.events) {
-    if (e.type === 'dad_callin') w.finishDadCallin();
-    if (e.type !== 'voice') continue;
-    said.push(e.data);
-    if (!isDubbedDadCall(e.data)) stamps.push(+w.elapsed.toFixed(4));
+test('all eight locked lines map every standalone voice variant to reserved; intro-only quote stays movie-owned', () => {
+  for (const [text, ids] of locked) {
+    assert.deepEqual(Object.keys(LINES).filter(id => LINES[id][1] === text), ids, text);
+    for (const id of ids) assert.equal(isReservedVoice(id), true, `${text}: ${id}`);
   }
-  w.events = [];
-}
-
-test('locked and scripted ids are reserved; dubbed dad_call is not presented', () => {
-  assert.equal(isReservedVoice('dad_catchphrase'), true);
-  assert.equal(isReservedVoice('papi_crowd_01'), true);
-  assert.equal(isReservedVoice('papi_crowd_02'), true);
-  assert.equal(isReservedVoice('bouncer_grab'), true);
-  assert.equal(isReservedVoice('bouncer_phase2'), true);
-  assert.equal(isReservedVoice('bouncer_defeat'), true);
-  assert.equal(isReservedVoice('yetti_porkchop_01'), false);
+  // The seventh quote has no standalone voice ID: it is embedded in the full intro.
+  assert.deepEqual(STAGE_CLIPS.intro, ['intro_v3']);
+  assert.equal(INTRO_REV, 'b67d6176');
+  for (const id of ['bouncer_grab', 'bouncer_phase2', 'bouncer_defeat', 'dad_call_01']) assert.ok(isReservedVoice(id));
   assert.equal(isReservedVoice('bob_papacito_01'), false);
-  assert.equal(isDubbedDadCall('dad_call_01'), true);
-  assert.equal(isDubbedDadCall('dad_catchphrase'), false);
   assert.equal(isBossMomentVoice('bouncer_phase3'), true);
   assert.equal(isBossMomentVoice('bouncer_grab'), false);
 });
 
-test('Stage 4 Dad call always yields the locked catchphrase; Papi always yields the crowd line', () => {
-  const w = new Campaign({ stage: 4, rng: () => 1 });
-  const said = [];
-  const stamps = [];
-  drain(w, said, stamps);
-  w.voiceAt = [];
-  w.spawnYetti('walker', 500, 630);
-  w.papi.charges = 1;
-  w.elapsed = 30;
-  w.events = [];
-  assert.equal(w.useDad(), true);
-  drain(w, said, stamps);
-  assert.ok(said.includes('dad_call_01'), 'dad_call is still emitted for the clip skip');
-  assert.equal(stamps.length, said.filter(id => !isDubbedDadCall(id)).length);
-
-  for (let i = 0; i < Math.ceil(DAD_TIMING.impact * 60) + 2; i++) {
-    w.update(1 / 60, {});
-    drain(w, said, stamps);
-  }
-  assert.ok(said.includes('dad_catchphrase'), 'catchphrase is queued, never dropped');
-  assert.equal(LINES.dad_catchphrase[1], 'Son, sometimes you just need to use the fly swatter to keep the women away!');
-
-  w.dad = null;
-  w.dadCall.on = false;
-  w.papiTime = 0;
-  w.papiPending = null;
-  w.spawnYetti('walker', 640, 630);
-  w.papi.charges = 1;
-  w.events = [];
-  assert.equal(w.usePapi(), true);
-  drain(w, said, stamps);
-  for (let i = 0; i < 20 * 60; i++) {
-    w.update(1 / 60, {});
-    drain(w, said, stamps);
-    if (said.some(id => id.startsWith('papi_crowd_'))) break;
-  }
-  assert.ok(said.some(id => id.startsWith('papi_crowd_')), 'crowd line is queued, never dropped');
-  assert.equal(LINES.papi_crowd_01[1], 'We love you Papacito! Pick me!');
+test('every locked voice variant survives a saturated gate and is eventually emitted verbatim', () => {
+  const gate = createVoiceGate();
+  gate.stamps = [0, 8, 16];
+  const ids = locked.flatMap(([, ids]) => ids);
+  const said = [], stamps = [0, 8, 16];
+  for (const id of ids) offerVoice(gate, id, 17, () => assert.fail('closed window'));
+  assert.deepEqual(gate.queue, ids);
+  for (let t = 18; t < 400; t++) flushVoiceGate(gate, t, id => { said.push(id); stamps.push(t); });
+  assert.deepEqual(said, ids);
+  assert.equal(gate.queue.length, 0);
   assert.equal(rollingVoiceStats(stamps).ok, true);
 });
 
-test('Stage 4 gate defers locked lines instead of dropping them when the 8s window is closed', () => {
-  const w = new Campaign({ stage: 4 });
-  w.elapsed = 20;
-  w.voiceAt = [];
-  resetAndFill(w, [20, 28, 36]);
-  w.events = [];
+for (const stage of [1, 2, 3, 4]) test(`Stage ${stage} uses the same cap, including fallback Dad speech`, () => {
+  const w = new Campaign({ stage, rng: () => 1 });
+  w.events = []; w.voiceAt = [];
+  w.emit('voice', 'dad_call_01');
   w.emit('voice', 'dad_catchphrase');
   w.emit('voice', 'papi_crowd_01');
-  w.emit('voice', 'yetti_porkchop_01');
   assert.deepEqual(voices(w), []);
-  assert.deepEqual(w.voiceGate.queue, ['dad_catchphrase', 'papi_crowd_01']);
-
-  const said = [];
-  const stamps = [20, 28, 36];
-  for (let t = 36.5; t <= 100; t += 0.5) {
-    w.elapsed = t;
-    w.events = [];
-    w.flushVoice();
-    for (const e of w.events) if (e.type === 'voice') {
-      said.push(e.data);
-      stamps.push(t);
-    }
+  assert.deepEqual(w.voiceGate.queue, ['dad_call_01', 'dad_catchphrase', 'papi_crowd_01']);
+  const stamps = [0], said = [];
+  for (let t = 1; t <= 61; t++) {
+    w.elapsed = t; w.events = []; w.flushVoice();
+    for (const id of voices(w)) { said.push(id); stamps.push(t); }
   }
-  assert.deepEqual(said, ['dad_catchphrase', 'papi_crowd_01']);
+  assert.deepEqual(said, ['dad_call_01', 'dad_catchphrase', 'papi_crowd_01']);
+  assert.equal(w.gatesVoice(), true);
   assert.equal(rollingVoiceStats(stamps).ok, true);
 });
 
-function resetAndFill(w, stamps) {
-  w.voiceGate.stamps = stamps.slice();
-  w.voiceGate.queue = [];
-}
-
-test('queued Bouncer phase and defeat lines play before victory, still inside the cap', () => {
-  const w = new Campaign({ stage: 4 });
-  w.elapsed = 141.2;
-  w.voiceAt = [];
-  resetAndFill(w, [125.2, 133.2, 141.2]);
-  w.events = [];
-  w.emit('voice', 'bouncer_phase2');
-  w.emit('voice', 'bouncer_phase3');
-  w.emit('voice', 'bouncer_defeat');
+test('chapter changes preserve the global stamps and pending locked lines', () => {
+  const w = new Campaign({ rng: () => 1 });
+  w.elapsed = 1; w.events = [];
+  w.emit('voice', 'dad_catchphrase');
+  for (const stage of [2, 3, 4]) w.loadStage(stage);
+  assert.deepEqual(w.voiceGate.stamps, [0]);
+  assert.ok(w.voiceGate.queue.includes('dad_catchphrase'));
+  assert.ok(w.voiceGate.queue.includes('bdb_open'), 'scheduled locked opening survives a transition');
   assert.deepEqual(voices(w), []);
-  assert.deepEqual(w.voiceGate.queue, ['bouncer_defeat']);
+});
 
+test('stage clear transfers locked bark offers before victory stops the combat scheduler', () => {
+  const w = new Campaign({ stage: 4 }); w.elapsed = 17; w.voiceAt = []; w.events = [];
+  w.voiceGate.stamps = [0, 8, 16];
+  w.barks.held.yetti = { group: 'yetti', id: 'yetti_purple_car_01' };
+  w.barks.offers.push({ group: 'produce', id: 'bdb_produce' });
+  w.finishStage(); w.update(2.5);
+  assert.equal(w.victory, true);
+  assert.ok(w.voiceGate.queue.includes('yetti_purple_car_01'));
+  assert.ok(w.voiceGate.queue.includes('bdb_produce'));
+  assert.equal(Object.keys(w.barks.held).length, 0);
+  assert.equal(w.barks.offers.length, 0);
+});
+
+for (const hz of [30, 60, 120]) test(`Stage 4 victory opens within 3s and drains its backlog/finale at ${hz} Hz`, () => {
+  const w = new Campaign({ stage: 4, rng: () => 1 });
+  w.elapsed = 141.2; w.voiceAt = [];
+  w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = []; w.events = [];
+  for (const id of ['bouncer_phase2', 'bouncer_phase3', 'bouncer_defeat', ...locked.flatMap(([, ids]) => ids)]) w.emit('voice', id);
+  assert.equal(w.voiceGate.queue[0], 'bouncer_defeat');
   w.finishStage();
-  const presented = [];
-  let victoryAt = null;
-  for (let i = 0; i < 80 * 60 && !(w.victory && presented.some(p => p.id === 'nar_victory')); i++) {
-    w.update(1 / 60, {});
+  const clearAt = w.elapsed, presented = [], stamps = [125.2, 133.2, 141.2];
+  let victoryAt;
+  for (let i = 0; i < hz * 420 && (!w.victory || w.voiceGate.queue.length); i++) {
+    w.update(1 / hz, { x: 1 });
     for (const e of w.events) {
-      if (e.type === 'voice') presented.push({ id: e.data, t: +w.elapsed.toFixed(4) });
       if (e.type === 'victory') victoryAt = w.elapsed;
+      if (e.type === 'voice') { presented.push(e.data); stamps.push(w.elapsed); }
     }
     w.events = [];
   }
-  const defeat = presented.find(p => p.id === 'bouncer_defeat');
-  assert.ok(defeat, 'defeat is not discarded at the clear');
-  assert.equal(w.victory, true);
-  assert.ok(victoryAt >= defeat.t - 1e-6, 'victory waits until the queued boss line has spoken');
-  assert.ok(presented.some(p => p.id === 'nar_victory'));
-  assert.ok(presented.some(p => p.id === 'claudia_leave'));
-  const gated = [125.2, 133.2, 141.2, defeat.t];
-  assert.equal(rollingVoiceStats(gated).ok, true);
+  assert.ok(victoryAt - clearAt <= 3, `wait ${victoryAt - clearAt}`);
+  assert.ok(victoryAt < 150, 'victory does not wait on the saturated window');
+  for (const id of ['bouncer_defeat', ...locked.flatMap(([, ids]) => ids), 'nar_victory', 'claudia_leave']) assert.ok(presented.includes(id), id);
+  assert.equal(w.voiceGate.queue.length, 0);
+  assert.equal(rollingVoiceStats(stamps).ok, true);
 });
 
 test('newer Bouncer phase lines supersede a stale queued phase', () => {
-  const gate = createVoiceGate();
-  const said = [];
+  const gate = createVoiceGate(), said = [];
   offerVoice(gate, 'nar_ch4', 0, id => said.push(id));
-  offerVoice(gate, 'bouncer_phase2', 1, id => said.push(id));
-  offerVoice(gate, 'bouncer_phase3', 2, id => said.push(id));
-  offerVoice(gate, 'bouncer_defeat', 3, id => said.push(id));
+  for (const [i, id] of ['bouncer_phase2', 'bouncer_phase3', 'bouncer_defeat'].entries()) offerVoice(gate, id, i + 1, id => said.push(id));
   assert.deepEqual(gate.queue, ['bouncer_defeat']);
   flushVoiceGate(gate, 8, id => said.push(id));
   assert.deepEqual(said, ['nar_ch4', 'bouncer_defeat']);
 });
 
-test('Stages 1–3 still emit scripted lines immediately; the Stage 4 gate does not apply', () => {
-  const w = new Campaign({ stage: 2 });
-  w.spawnYetti('walker', 500, 630);
-  w.elapsed = 12;
-  w.events = [];
-  assert.equal(w.useDad(), true);
-  assert.ok(voices(w).includes('dad_call_01'));
-  w.finishDadCallin();
-  w.events = [];
-  for (let i = 0; i < Math.ceil(DAD_TIMING.impact * 60); i++) w.update(1 / 60, {});
-  const phrase = w.events.findIndex(e => e.type === 'voice' && e.data === 'dad_catchphrase');
-  const hit = w.events.findIndex(e => e.type === 'dadhit');
-  assert.ok(phrase >= 0 && hit === phrase + 1, 'catchphrase still lands on the impact in Stage 2');
-
-  const s3 = new Campaign({ stage: 3 });
-  s3.elapsed = 10;
-  s3.events = [];
-  s3.emit('voice', 'choir_serious');
-  s3.emit('voice', 'lecturer_intervention');
-  s3.emit('voice', 'dad_catchphrase');
-  s3.emit('voice', 'papi_crowd_01');
-  assert.deepEqual(voices(s3), ['choir_serious', 'lecturer_intervention', 'dad_catchphrase', 'papi_crowd_01']);
-  assert.equal(s3.gatesVoice(), false);
-});
-
-test('one campaign clock: 30 Hz and 60 Hz present the same Stage 4 reserved stamps', () => {
-  const run = (hz) => {
-    const w = new Campaign({ stage: 4 });
-    const stamps = [];
-    w.elapsed = 0;
-    w.voiceAt = [];
-    w.voiceGate.stamps = [];
-    w.voiceGate.queue = [];
-    w.events = [];
-    w.emit('voice', 'nar_ch4');
-    w.emit('voice', 'dad_catchphrase');
-    w.emit('voice', 'papi_crowd_01');
-    w.events = [];
-    const step = 1 / hz;
-    for (let i = 0; i < 20 * hz; i++) {
-      w.update(step, {});
-      for (const e of w.events) if (e.type === 'voice') stamps.push([e.data, +w.elapsed.toFixed(4)]);
-      w.events = [];
-    }
-    return stamps;
-  };
-  const at30 = run(30);
-  const at60 = run(60);
-  assert.deepEqual(at30.map(([id]) => id), ['dad_catchphrase', 'papi_crowd_01']);
-  assert.deepEqual(at60.map(([id]) => id), ['dad_catchphrase', 'papi_crowd_01']);
-  assert.ok(Math.abs(at30[0][1] - 8) < 0.04);
-  assert.ok(Math.abs(at60[0][1] - 8) < 0.04);
-  assert.ok(Math.abs(at30[1][1] - 16) < 0.04);
-  assert.ok(Math.abs(at60[1][1] - 16) < 0.04);
-  assert.equal(rollingVoiceStats(at30.map(([, t]) => t)).ok, true);
-});
-
 test('nextVoiceAt matches the 8s gap and 3-per-60s cap', () => {
   const gate = createVoiceGate();
-  offerVoice(gate, 'nar_ch4', 0, () => {});
-  offerVoice(gate, 'claudia_s4', 8, () => {});
-  offerVoice(gate, 'bob_s4', 16, () => {});
+  for (const [t, id] of [[0, 'nar_ch4'], [8, 'claudia_s4'], [16, 'bob_s4']]) offerVoice(gate, id, t, () => {});
   assert.ok(Math.abs(nextVoiceAt(gate, 16.1) - 60) < 1e-6);
+});
+
+for (const hz of [30, 60, 120]) test(`global Adventure trace includes chapters 1–3 and the finale at ${hz} Hz`, () => {
+  const r = runVoiceRate({ hz });
+  assert.equal(r.cleared, true);
+  assert.equal(r.rollingOk, true, JSON.stringify({ min: r.minVoiceGap, max: r.maxIn60s }));
+  for (const id of ['nar_ch1', 'nar_ch2', 'nar_ch3', 'nar_ch4', 'nar_victory', 'claudia_leave', 'dad_call_01']) assert.ok(r.allCounts[id], id);
+  assert.ok(r.finaleIds.includes('nar_victory'));
+  assert.ok(r.finaleIds.includes('claudia_leave'));
+  assert.ok(r.victoryWait <= 3, `wait ${r.victoryWait}`);
 });

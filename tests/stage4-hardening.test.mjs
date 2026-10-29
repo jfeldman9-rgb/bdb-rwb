@@ -225,7 +225,8 @@ test('rolling voice gate queues reserved lines and drops flavour under heavy Sta
   const emit = (t, id) => offerVoice(gate, id, t, out => { said.push(out); stamps.push(t); });
 
   emit(0, 'nar_ch4');
-  emit(0.5, 'yetti_porkchop_01'); // dropped (flavour while closed)
+  emit(0.5, 'yetti_porkchop_01'); // locked quote queues while closed
+  emit(0.6, 'bob_hurt_01');      // optional flavour drops
   emit(2, 'claudia_s4');          // queued (reserved)
   emit(4.5, 'bob_s4');            // queued (reserved)
   emit(5, 'bouncer_grab');        // queued (reserved grab)
@@ -234,7 +235,7 @@ test('rolling voice gate queues reserved lines and drops flavour under heavy Sta
   for (let t = 1; t <= 80; t += 0.5) {
     flushVoiceGate(gate, t, out => { said.push(out); stamps.push(t); });
   }
-  assert.deepEqual(said, ['nar_ch4', 'bouncer_intro', 'claudia_s4', 'bob_s4', 'bouncer_grab']);
-  assert.deepEqual(stamps, [0, 8, 16, 60, 68]);
+  assert.deepEqual(said, ['nar_ch4', 'bouncer_intro', 'yetti_porkchop_01', 'claudia_s4', 'bob_s4', 'bouncer_grab']);
+  assert.deepEqual(stamps, [0, 8, 16, 60, 68, 76]);
   assert.equal(rollingVoiceStats(stamps).ok, true);
 });

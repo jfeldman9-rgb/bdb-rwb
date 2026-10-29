@@ -9,7 +9,7 @@ import { createStoryPlayer } from './cutscene-hooks.js';
 import { beginChapter, stageIntroAlreadyPlayed } from './title-flow.js';
 import { registerVoiceLines } from './voice-lines.js';
 import { maxStage } from './stages.js';
-import { installAudioLifecycle,unlock,toggleMute,isMuted } from './audio.js';
+import { installAudioLifecycle,unlock,toggleMute,isMuted,playTrack,duckStageBed } from './audio.js';
 import { installGraphicsLifecycle } from './graphics-lifecycle.js';
 import { perf, noteRenderer } from './perf.js';
 import { wireTitleStart } from './title-start.js';
@@ -40,7 +40,12 @@ class Title extends Phaser.Scene {
    this.save={...this.save,difficulty:resolveDifficulty(difficulty.value,this.save.beaten,coarsePointer()),autoFire:doc.getElementById('auto-fire').checked};persistSave(this.save);
    doc.getElementById('title').hidden=true;this.game.inp.clear();
    const stage=Number(chapter.value);
-   beginChapter({stage,query:q,play:(key,done)=>this.game.story.play(key,done),start:introKey=>this.scene.start('gameplay',{stage,difficulty:this.save.difficulty,save:this.save,stageIntroPlayed:stageIntroAlreadyPlayed(introKey)})});
+   const openerBed=Symbol('title-opener');
+   this.events.once('shutdown',()=>duckStageBed(false,openerBed));
+   beginChapter({stage,query:q,play:(key,done)=>{
+    if(/^stage\d+$/.test(key)){playTrack(key);duckStageBed(true,openerBed);}
+    this.game.story.play(key,()=>{duckStageBed(false,openerBed);done();});
+   },start:introKey=>this.scene.start('gameplay',{stage,difficulty:this.save.difficulty,save:this.save,stageIntroPlayed:stageIntroAlreadyPlayed(introKey)})});
   };
   this.disposeTitleStart=wireTitleStart({doc,begin:()=>this.begin(),coarse:coarsePointer()});
   this.events.once('shutdown',()=>this.disposeTitleStart?.());

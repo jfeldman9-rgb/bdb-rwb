@@ -144,7 +144,7 @@ try {
     window.__smokePlates=new Set();
   })`);
   const plates = [];
-  const done = status => fromArg ? status?.stats?.stages.includes(fromStage) : status?.victory;
+  const done = status => fromArg && fromStage < maxStage ? status?.stats?.stages.includes(fromStage) : status?.victory;
   let bossShot = false, splitShot = false, stampedeShot = false, status;
   for (let i = 0; i < 2400; i++) {
     status = await evaluate(`(()=>{
@@ -161,11 +161,12 @@ try {
         if(!window.__stampedeShot&&fx&&fx.runners.length>=14&&fx.age>0.8&&fx.age<1.35){
           window.__stampedeShot=true;stampede={age:+fx.age.toFixed(3),n:fx.runners.length,x:Math.round(fx.runners[0].x)};break;
         }
-        if(${!!fromArg}&&w.stats.stages.includes(${fromStage}))break;
+        if(${!!fromArg && fromStage < maxStage}&&w.stats.stages.includes(${fromStage}))break;
       }
       const card=document.getElementById('startup-error');
       return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.finisher?.phase,
-        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate};
+        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate,
+        victoryWait:s.world.victory?s.world.elapsed-s.world.stageStart-s.world.stats.stageTimes.at(-1):null};
     })()`);
     if (status.plate) {
       await shot(status.plate.key);
@@ -188,6 +189,7 @@ try {
   }
   if (!stampedeShot) throw new Error('Papacito stampede was not on screen mid-sweep');
   if (status.victory) {
+    assert.ok(status.victoryWait <= 3, `clear-to-victory wait ${status.victoryWait}`);
     await waitFor('!document.getElementById("victory").hidden');
     await shot('victory');
   } else await shot(`stage${fromStage}-clear`);
@@ -236,6 +238,19 @@ try {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
   };
+  // Direct Chapter 4 selection owns a music bed before its silent title opener.
+  await send('Page.navigate', { url: `${origin}/?cutscenes=1&demo=1&stage=4` });
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("stage4_intro.mp4")');
+  const openerMusic = await evaluate(`import('/src/audio.js').then(m=>m.musicState())`);
+  assert.equal(openerMusic.wanted, 'stage4');
+  assert.equal(openerMusic.ducked, true);
+  await shot('chapter4-title-opener');
+  await skipVideo();
+  for (const clip of ['kidnap_1.mp4', 'kidnap_2.mp4']) {
+    await waitFor(`!!document.querySelector("#bdb-cutscene video")?.src.includes("${clip}")`);
+    await skipVideo();
+  }
+  await waitFor('window.__game.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
   // Default new game: full intro_v3, then the short stage-1 clip.
   await send('Page.navigate', { url: `${origin}/?cutscenes=1` });
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
@@ -303,7 +318,7 @@ try {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,
     fromStage, campaign: status, plates, touch,
-    checks: { started: true, framesAdvanced: true, noErrorCard: true, requestedStage: true, allPlateRuns: true, introV3: true, stage1AfterIntro: true, stage1Retry: true, lazyCutscenes: true, stageIntrosPresent: true, cageRestart: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
+    checks: { started: true, framesAdvanced: true, noErrorCard: true, requestedStage: true, allPlateRuns: true, introV3: true, stage1AfterIntro: true, stage1Retry: true, lazyCutscenes: true, stageIntrosPresent: true, chapter4TitleMusic: true, victoryWait: status.victoryWait, cageRestart: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
     errors, missingMedia,
     screenshots,
   };

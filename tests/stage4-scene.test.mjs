@@ -19,6 +19,7 @@ const { Yetti, laneY } = await import('../src/yettis.js');
 const { registerVoiceLines } = await import('../src/voice-lines.js');
 const { duckStageBed, playTrack, musicState } = await import('../src/audio.js');
 const { createStartupGuard } = await import('../src/startup.js');
+const { q } = await import('../src/config.js');
 registerVoiceLines();
 
 test('restarting from the Stage 3 cage into Stage 4 discards destroyed Claudia views before final victory', () => {
@@ -80,6 +81,47 @@ test('GameScene presents campaign-approved lines immediately and does not own a 
     'Son, sometimes you just need to use the fly swatter to keep the women away!',
     'We love you Papacito! Pick me!',
   ]);
+});
+
+test('a Bouncer defeat flushed in the victory update remains visible through the whole finale', () => {
+  const els = { victory: { hidden: true }, 'victory-score': { textContent: '' }, 'victory-line': { textContent: '' } };
+  const prevGet = document.getElementById;
+  document.getElementById = id => els[id] || null;
+  try {
+    const w = new Campaign({ stage: 4, rng: () => 1 });
+    w.elapsed = 182.7; w.voiceAt = []; w.events = [];
+    w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = ['bouncer_defeat'];
+    const scene = Object.create(GameScene.prototype);
+    scene.game = { runSeq: 0, inp: { clear() {} } };
+    scene.init({ world: w });
+    scene.hud = { say() {} };
+    w.finishStage(); w.update(2.5);
+    assert.deepEqual(w.events.filter(e => ['voice', 'victory'].includes(e.type)).map(e => e.data || e.type), ['bouncer_defeat', 'victory']);
+    scene.handleEvents();
+    assert.equal(els.victory.hidden, false);
+    assert.match(els['victory-line'].textContent, /BOUNCER  \/  Fine\. You're on the list\./);
+    for (let i = 0; i < 70 * 60; i++) { w.update(1 / 60); scene.handleEvents(); }
+    const text = els['victory-line'].textContent;
+    assert.match(text, /Fine\. You're on the list\./);
+    assert.match(text, /good judgment\./);
+    assert.match(text, /Let's leave before they reform\./);
+  } finally { document.getElementById = prevGet; }
+});
+
+test('?nocutscenes=1 presents Dad fallback through the Campaign budget', () => {
+  const prev = q.get('nocutscenes'); q.set('nocutscenes', '1');
+  try {
+    const w = new Campaign({ stage: 2 }); w.elapsed = 30; w.events = [];
+    w.spawnYetti('walker', 500, 630);
+    const scene = Object.create(GameScene.prototype), captions = [];
+    scene.game = { runSeq: 0, inp: { clear() {} } }; scene.init({ world: w });
+    scene.hud = { say(_who, text) { captions.push(text); } };
+    assert.equal(w.useDad(), true); scene.handleEvents(); scene.handleEvents();
+    assert.deepEqual(w.voiceGate.stamps, [0, 30]);
+    assert.deepEqual(captions, ['Bobby! Get behind me, kid!']);
+    w.emit('voice', 'dad_catchphrase');
+    assert.ok(w.voiceGate.queue.includes('dad_catchphrase'));
+  } finally { if (prev == null) q.delete('nocutscenes'); else q.set('nocutscenes', prev); }
 });
 
 test('Stage 4 silent kidnap keeps the chapter bed; Stage 2 keeps its historical stop', () => {

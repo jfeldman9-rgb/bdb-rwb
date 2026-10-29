@@ -121,7 +121,7 @@ export function playDadCall(scene, then) {
   const root = scene?.cutRoot || globalThis;
   if (!cutscenesEnabled(q, root.navigator) || handle?.active || scene.cutscene) return false;
   const id = bagOf(root).next();
-  let once = false;
+  let once = false, played = false;
   const finish = how => {
     if (once) return;
     once = true;
@@ -131,7 +131,7 @@ export function playDadCall(scene, then) {
     unpauseGame?.(); unpauseGame = null;
     scene.cutscene = null;
     scene.setPauseReason?.('cutscene', false);
-    try { then?.(how || 'end'); } catch (e) { root.console?.error?.(e); }
+    try { then?.(how || 'end', { dubbed: played }); } catch (e) { root.console?.error?.(e); }
   };
   scene.setPauseReason?.('cutscene', true);
   unpauseGame = pauseForClip(scene.game);
@@ -144,6 +144,7 @@ export function playDadCall(scene, then) {
     offKeys?.(); offKeys = null;
     offKeys = installDadKeys(root, scene.game?.inp);
     const nextHandle = player.play([id], {
+      progress: () => { played = true; },
       done: how => finish(how),
       touch: !!root.matchMedia?.('(pointer: coarse)')?.matches,
     });
