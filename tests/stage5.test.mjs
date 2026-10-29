@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { STAGE3 } from '../src/stage3-def.js';
 import { STAGE5 } from '../src/stage5-def.js';
@@ -148,6 +149,19 @@ test('Stage 5 plates, atlases and caption-only voice are present', () => {
   for (const key of plateKeys(5)) assert.ok(existsSync(asset(`bg/${key}.webp`)), key);
   const manifest = JSON.parse(readFileSync(asset('bg/MANIFEST.json'), 'utf8'));
   assert.deepEqual(manifest.s5, ['s5-far', ...Array.from({ length: 6 }, (_, i) => `s5-mid${i}`), 's5-floor']);
+  const sizes = spawnSync('python3', ['-c', `
+from PIL import Image
+import json
+print(json.dumps({stage: {
+  'far': Image.open(f'assets/bg/s{stage}-far.webp').size,
+  'floor': Image.open(f'assets/bg/s{stage}-floor.webp').size,
+  'mids': [Image.open(f'assets/bg/s{stage}-mid{i}.webp').size for i in range(6)],
+} for stage in (3, 5, 6, 7)}))
+`], { encoding: 'utf8' });
+  assert.equal(sizes.status, 0, sizes.stderr);
+  const plate = JSON.parse(sizes.stdout);
+  assert.deepEqual(plate[3], { far: [1600, 720], floor: [1280, 220], mids: Array(6).fill([1280, 720]) });
+  for (const stage of [5, 6, 7]) assert.deepEqual(plate[stage], plate[3], `s${stage} plate sizes`);
   assert.deepEqual(STAGE_CHARS[5], [...STAGE_CHARS[1].filter(key => key !== 'interventionist'), 'yetti_salsero', 'yetti_tagger', 'dj']);
   for (const key of STAGE_CHARS[5]) {
     for (const suffix of ['-0.webp', '-0.astc.ktx', '-0.etc2.ktx', '-0.json', '.anims.json']) {

@@ -355,6 +355,35 @@ try {
     await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     await shot(`painted-${type}`);
   }
+  for (const { stage, name, zoneIndex } of [
+    { stage: 5, name: 's5-mid-level', zoneIndex: 2 },
+    { stage: 6, name: 's6-mid-level', zoneIndex: 2 },
+    { stage: 7, name: 's7-mid-level', zoneIndex: 2 },
+    { stage: 7, name: 's7-boss-arena', zoneIndex: 5 },
+  ]) {
+    await send('Page.navigate', { url: `${origin}/?stage=${stage}&demo=1&nocutscenes=1` });
+    await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started');
+    const parked = await evaluate(`(()=>{
+      const s=window.__game.scene.getScene('gameplay');
+      const w=s.world;
+      const zone=${zoneIndex}===5?w.def.boss:w.def.zones[${zoneIndex}];
+      w.paused=false;w.hostile=[];w.pending=[];
+      for(const e of w.enemies)e.alive=false;
+      w.enemies=[];
+      w.bob.x=zone.l+400;w.bob.facing=1;
+      w.zoneIndex=Math.min(${zoneIndex},4);
+      w.locked=true;w.bossActive=${zoneIndex}===5;
+      if(${zoneIndex}===5)w.startBoss(1);
+      else{w.camMax=zone.l;w.camX=zone.l;w.bounds={l:zone.l,r:zone.r};}
+      s.cameras.main.setScroll(Math.round(w.camX),0);
+      s.backdrop?.update(w.camX);
+      return {stage:w.stageNo,camX:w.camX,boss:w.bossActive,enemies:w.enemies.map(e=>e.type)};
+    })()`);
+    assert.equal(parked.stage, stage);
+    await sleep(200);
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    await shot(name);
+  }
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,

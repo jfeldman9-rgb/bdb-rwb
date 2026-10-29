@@ -71,8 +71,8 @@
     {
       "stage": 5,
       "key": "s5-mid5",
-      "alpha": 0.9952760003436746,
-      "camX": 6477.732480164964,
+      "alpha": 0.9980210981775997,
+      "camX": 6479.050127125248,
       "zone": 5
     }
   ],
@@ -166,6 +166,10 @@
     "/workspace/docs/shots/browser-smoke-from-5/painted-minero.png",
     "/workspace/docs/shots/browser-smoke-from-5/painted-celestina.png",
     "/workspace/docs/shots/browser-smoke-from-5/painted-bailiff.png",
-    "/workspace/docs/shots/browser-smoke-from-5/painted-archyetti.png"
+    "/workspace/docs/shots/browser-smoke-from-5/painted-archyetti.png",
+    "/workspace/docs/shots/browser-smoke-from-5/s5-mid-level.png",
+    "/workspace/docs/shots/browser-smoke-from-5/s6-mid-level.png",
+    "/workspace/docs/shots/browser-smoke-from-5/s7-mid-level.png",
+    "/workspace/docs/shots/browser-smoke-from-5/s7-boss-arena.png"
   ]
 }
