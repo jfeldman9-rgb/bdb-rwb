@@ -13,7 +13,7 @@ import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
-import { createVoiceGate, offerVoice, flushVoiceGate, isReservedVoice } from './voice-gate.js';
+import { createVoiceGate, offerVoice, flushVoiceGate, isReservedVoice, expireOptionalVoice, isEndingVoice } from './voice-gate.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -468,7 +468,7 @@ export class Campaign {
     this.barks.open = true;
     const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
     try {
-    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
+    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;expireOptionalVoice(this.voiceGate);if(this.voiceAt)this.voiceAt=this.voiceAt.filter(v=>isReservedVoice(v.id)||isEndingVoice(v.id));this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
       if(this.papiPending){

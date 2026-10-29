@@ -80,11 +80,11 @@ export class HUD {
   this.banner=text(640,148,25).setOrigin(.5).setAlign('center').setWordWrapWidth(1020);
   this.boss=text(640,106,14).setOrigin(.5);this.prompt=text(640,684,16,'#fff0bf').setOrigin(.5);
   this.w1=text(390,60,12,'#d0beff');this.w2=text(650,60,12,'#ffb1d6');
-  this.caption=text(640,225,20).setOrigin(.5).setAlign('center').setWordWrapWidth(1000);this.captionUntil=0;
+  this.caption=text(640,225,20).setOrigin(.5).setAlign('center').setWordWrapWidth(1000);this.captionLeft=0;
   this._bars=[];this._laid=[];
  }
- say(who,line){this.caption.setText(`${who.toUpperCase()}  /  ${line}`).setColor(speakerColor(who));this.captionUntil=performance.now()+Math.max(2800,line.length*65);}
- update(w){
+ say(who,line){this.caption.setText(`${who.toUpperCase()}  /  ${line}`).setColor(speakerColor(who));this.captionLeft=Math.max(2.8,line.length*0.065);}
+ update(w,dt=0){
   this.chapter.setText(`THE LEGEND OF CLAUDIA  /  ${String(w.stageNo).padStart(2,'0')}`);
   this.health.setText('♥ '.repeat(Math.ceil(w.bob.hp))+'♡ '.repeat(Math.max(0,w.bob.maxHp-Math.ceil(w.bob.hp))));
   this.meter.setText(`SHAKES ${'▰'.repeat(w.papi.shakeRemainder)}${'▱'.repeat(3-w.papi.shakeRemainder)}   PAPI ${w.papi.charges}/2   DAD ${w.dadCall.charges? 'READY':w.dadCall.unlocked? `${w.dadCall.kos}/10 · ${Math.max(0,Math.ceil(45-w.dadCall.since))}s`:'ZONE 3'}`);
@@ -92,7 +92,8 @@ export class HUD {
   this.banner.setText(w.paused?'PAUSED':w.victory?'CLAUDIA RESCUED.':w.messageTime>0?w.message:'');
   this.boss.setText(bossLabel(w));
   this.prompt.setText(stagePrompt(w));
-  if(performance.now()>this.captionUntil)this.caption.setText('');
+  if(!w.paused)this.captionLeft=Math.max(0,(this.captionLeft||0)-dt);
+  if(this.captionLeft<=0)this.caption.setText('');
   const g=this.g;g.clear();g.fillStyle(HUD_BAND.color,HUD_BAND.alpha);g.fillRect(0,0,HUD_BAND.w,HUD_BAND.h);g.lineStyle(1,0xbfa875,.55);g.lineBetween(0,116,1280,116);
   const bars=bossBarLayout(bossBars(w,this._bars),this._laid);
   this.w1.setVisible(bars.length>1);this.w2.setVisible(bars.length>1);

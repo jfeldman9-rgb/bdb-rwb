@@ -5,7 +5,7 @@ export class Bob {
   constructor({ x = 180, y = 630, difficulty = 'adventure' } = {}) {
     Object.assign(this, { x, y, z: 0, vz: 0, facing: 1, state: 'idle', stateTime: 0, inv: 0,
       dashTime: 0, dashCooldown: 0, dashStocks: 1, dashDir: 1, jumpBuffer: 0, time: 0, hitTimes: [],
-      grabbedBy: null, grabMash: 0, shootTime: 0, alive: true, difficulty, knockV: 0 });
+      grabbedBy: null, grabMash: 0, shootTime: 0, shootPulse: 0, alive: true, difficulty, knockV: 0 });
     this.maxHp = this.hp = DIFFICULTIES[difficulty].hearts;
   }
   get busy() { return ['hurt','knockdown','getup','grabbed','dead'].includes(this.state); }

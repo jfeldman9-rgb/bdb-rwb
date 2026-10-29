@@ -2,7 +2,7 @@
 import { HITSTOP, SHAKE, VW } from './config.js';
 export class FX {
   constructor(scene) {
-    this.s = scene; this.trauma = 0; this.lightsOn = true; this.quality = 0;
+    this.s = scene; this.trauma = 0; this.lightsOn = true; this.quality = 0; this.paused = false;
     this._sx = 0; this._sy = 0; this._dt = 1 / 60; this._out = [0, 0];
     this.makeTextures();
     const add = scene.add;
@@ -61,7 +61,19 @@ export class FX {
     const L = this.s.lights.addLight(x, y, rad, 0xff9a40, power, 70); this.booms.push({ L, t: 0, power, rad });
     this.embers.emitParticleAt(x, y, this.quality >= 2 ? 20 : 40);
   }
+  setPaused(on) {
+    this.paused = !!on;
+    const emitters = [this.sparksR, this.sparksL, this.dots, this.dust, this.snowPuff, this.embers, this.debris, this.splatP];
+    for (const p of emitters) {
+      if (!p) continue;
+      if (typeof p.pause === 'function' && typeof p.resume === 'function') {
+        if (this.paused) p.pause(); else p.resume();
+      } else if ('paused' in p) p.paused = this.paused;
+    }
+    return this.paused;
+  }
   update(dt) {
+    if (this.paused) { this._dt = 0; return; }
     dt = Number.isFinite(dt) && dt >= 0 ? dt : 0;
     this._dt = dt;
     this.trauma = Math.max(0, this.trauma - dt * 1.8);

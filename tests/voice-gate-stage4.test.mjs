@@ -4,7 +4,7 @@ import { STAGE_CLIPS, INTRO_REV } from '../src/cutscene.js';
 import { Campaign } from '../src/campaign.js';
 import { LINES } from '../src/voice-lines.js';
 import { createVoiceGate, offerVoice, flushVoiceGate, rollingVoiceStats,
-  isReservedVoice, isBossMomentVoice, nextVoiceAt } from '../src/voice-gate.js';
+  isReservedVoice, isBossMomentVoice, nextVoiceAt, isEndingVoice, expireOptionalVoice } from '../src/voice-gate.js';
 import { runVoiceRate } from '../tools/voice-rate.mjs';
 
 const voices = w => w.events.filter(e => e.type === 'voice').map(e => e.data);
@@ -88,7 +88,33 @@ test('stage clear transfers locked bark offers before victory stops the combat s
   assert.equal(w.barks.offers.length, 0);
 });
 
-for (const hz of [30, 60, 120]) test(`Stage 4 victory opens within 3s and drains its backlog/finale at ${hz} Hz`, () => {
+test('ending lines take the earliest legal slots and optional chatter expires', () => {
+  const gate = createVoiceGate();
+  gate.stamps = [0, 8, 16];
+  for (const id of ['bouncer_defeat', 'yetti_porkchop_01', 'bob_hurt_01', 'dad_catchphrase']) {
+    offerVoice(gate, id, 17, () => assert.fail('closed'));
+  }
+  assert.ok(gate.queue.includes('bouncer_defeat'));
+  assert.equal(gate.queue.includes('bob_hurt_01'), false, 'optional flavour never queued');
+  expireOptionalVoice(gate);
+  offerVoice(gate, 'nar_victory', 17, () => assert.fail('closed'));
+  offerVoice(gate, 'claudia_leave', 17, () => assert.fail('closed'));
+  assert.equal(isEndingVoice('nar_victory'), true);
+  assert.deepEqual(gate.queue.slice(0, 2), ['nar_victory', 'claudia_leave']);
+  assert.ok(gate.queue.includes('bouncer_defeat'));
+  assert.ok(gate.queue.includes('yetti_porkchop_01'));
+  const said = [], stamps = [0, 8, 16];
+  for (let t = 18; t < 200; t++) flushVoiceGate(gate, t, id => { said.push(id); stamps.push(t); });
+  assert.equal(said[0], 'nar_victory');
+  assert.equal(said[1], 'claudia_leave');
+  assert.ok(said.includes('bouncer_defeat'));
+  assert.ok(said.includes('yetti_porkchop_01'));
+  assert.equal(rollingVoiceStats(stamps).ok, true);
+  const first = stamps[3];
+  assert.ok(Math.abs(first - nextVoiceAt({ stamps: [0, 8, 16], queue: [], gap: 8, cap: 3, window: 60 }, 17)) < 1e-6);
+});
+
+for (const hz of [30, 60, 120]) test(`Stage 4 victory opening puts ending lines on the first legal beats at ${hz} Hz`, () => {
   const w = new Campaign({ stage: 4, rng: () => 1 });
   w.elapsed = 141.2; w.voiceAt = [];
   w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = []; w.events = [];
@@ -107,6 +133,11 @@ for (const hz of [30, 60, 120]) test(`Stage 4 victory opens within 3s and drains
   }
   assert.ok(victoryAt - clearAt <= 3, `wait ${victoryAt - clearAt}`);
   assert.ok(victoryAt < 150, 'victory does not wait on the saturated window');
+  const endAt = presented.indexOf('nar_victory');
+  const leaveAt = presented.indexOf('claudia_leave');
+  assert.ok(endAt >= 0 && leaveAt === endAt + 1, 'ending pair is adjacent and first of the post-victory drain');
+  const legal = nextVoiceAt({ stamps: [125.2, 133.2, 141.2], queue: [], gap: 8, cap: 3, window: 60 }, victoryAt);
+  assert.ok(stamps[stamps.length - presented.length + endAt] - legal < 1 / hz + 1e-6);
   for (const id of ['bouncer_defeat', ...locked.flatMap(([, ids]) => ids), 'nar_victory', 'claudia_leave']) assert.ok(presented.includes(id), id);
   assert.equal(w.voiceGate.queue.length, 0);
   assert.equal(rollingVoiceStats(stamps).ok, true);

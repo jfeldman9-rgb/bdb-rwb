@@ -1,5 +1,6 @@
 import { actorId } from './actor-id.js';
 import { LANE_TOP, LANE_BOT, clamp } from './config.js';
+import { attackSpec, meleeHits, rushHits } from './attack-geometry.js';
 export const TYPES = Object.freeze({
   walker: { hp: 24, speed: 100, art: 'yetti_walker', tint: 0xffffff },
   guard: { hp: 48, speed: 65, art: 'yetti_guard', tint: 0xffe1a0, shield: true, heavy: true, ranged: true },
@@ -149,12 +150,14 @@ export function rushDuration(e, pace = 1) {
 }
 export function telegraphPlan(e, world) {
   const bounds = world?.bounds || { l: 0, r: 1280 };
+  const spec = attackSpec(e);
   if (e.warnFrom != null && e.warnTo != null) {
     return {
       from: clamp(e.warnFrom, bounds.l, bounds.r),
       to: clamp(e.warnTo, bounds.l, bounds.r),
       y: e.warnY ?? e.attackY ?? e.y,
       dir: e.rushDir || e.facing || -1,
+      halfH: spec.halfH, zMax: spec.zMax, kind: spec.kind, spec,
     };
   }
   const pace = world?.difficulty?.pace || 1, t = TYPES[e.type] || {}, dir = e.rushDir || e.facing || -1;
@@ -164,9 +167,9 @@ export function telegraphPlan(e, world) {
     const speed = (t.lunge ? (t.lunge.speed ?? 640) : 430) * pace;
     rawTo = clamp(e.x + dir * speed * rushDuration(e, pace), bounds.l + 55, bounds.r - 55);
   } else {
-    rawTo = e.x + dir * 120;
+    rawTo = e.x + dir * spec.reach;
   }
-  return { from, to: clamp(rawTo, bounds.l, bounds.r), y, dir };
+  return { from, to: clamp(rawTo, bounds.l, bounds.r), y, dir, halfH: spec.halfH, zMax: spec.zMax, kind: spec.kind, spec };
 }
 export class Yetti {
   constructor(type, x, y, hpScale = 1) {
@@ -254,7 +257,7 @@ export class Yetti {
             for (const band of bands) world.snowball(this.x, laneY(band), this.rushDir, 'halo');
             // Adds come from the roar and the phase timer only; the per-attack
             // telegraph no longer summons or the arena double-fills.
-          } else if (Math.abs(b.x-this.x) < 95 && Math.abs(b.y-this.attackY) < 35 && b.z < 65) {
+          } else if (meleeHits(this, b)) {
             if (t.grab && b.grab(this)) { this.state = 'hold'; world.emit('voice', t.grabVoice || 'lecturer_intervention'); return; }
             world.hurtBob(false, this.x);
           } else if ((this.type === 'interventionist' && this.phase >= 2) || (t.stompPhase && this.phase >= t.stompPhase)) {
@@ -272,10 +275,7 @@ export class Yetti {
     if (this.state === 'rush') {
       const prevX = this.x, stepSpeed = (t.lunge?.speed ?? 430) * pace;
       this.x += this.rushDir * stepSpeed * dt; this.timer -= dt;
-      const hitX = t.lunge
-        ? b.x >= Math.min(prevX, this.x) - 70 && b.x <= Math.max(prevX, this.x) + 70
-        : Math.abs(b.x - this.x) < 70;
-      if (hitX && Math.abs(b.y - this.y) < 34 && b.z < 70) world.hurtBob(true, this.x);
+      if (rushHits(this, b, prevX)) world.hurtBob(true, this.x);
       this.x = clamp(this.x, world.bounds.l+55, world.bounds.r-55);
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = this.boss ? 1 : 2; }
       return;

@@ -1,7 +1,8 @@
 import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
-import { Fighter } from './fighter.js';
+import { Fighter, shootTimeScale, consumeShootRestart } from './fighter.js';
 import { TYPES, laneOf, laneY, LANE_H, choirAura, telegraphPlan } from './yettis.js';
+import { warningRect } from './attack-geometry.js';
 import { queueCharPages,makeCharAnims,makeSockAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES,CAGED } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
@@ -9,7 +10,7 @@ import { HUD } from './hud.js';
 import { PapacitoFX } from './papacito-fx.js';
 import { q } from './config.js';
 import { gameplayWantsPause } from './input.js';
-import { say,sfx,playTrack,duckStageBed,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
+import { say,sfx,playTrack,duckStageBed,preloadClips,releaseClips,stopSceneAudio,presentStage,setGameAudioPaused } from './audio.js';
 import { stageLines } from './voice-lines.js';
 import { STORY } from './story.js';
 import { showStuck } from './recovery.js';
@@ -171,7 +172,22 @@ export class GameScene extends Phaser.Scene {
   if((this.prevZ||0)<1&&b.z>8)sfx.jump();
   this.prevZ=b.z;this.prevBand=band;
  }
- setPauseReason(reason,on){if(on)this.pauseReasons.add(reason);else this.pauseReasons.delete(reason);this.world.paused=this.pauseReasons.size>0;this.game.inp.clear();}
+ setPauseReason(reason,on){if(on)this.pauseReasons.add(reason);else this.pauseReasons.delete(reason);this.world.paused=this.pauseReasons.size>0;this.game.inp.clear();this.syncPausePresentation();}
+ syncPausePresentation(){
+  const paused=!!this.world?.paused;
+  const ts=paused?0:1;
+  const sprites=[];
+  for(const v of this.views?.values?.()||[])if(v.sprite)sprites.push(v.sprite);
+  if(this.dadView?.sprite)sprites.push(this.dadView.sprite);
+  if(this.claudia)sprites.push(this.claudia);
+  for(const s of this.sockViews?.values?.()||[])sprites.push(s);
+  for(const s of this.sockPuffs||[])sprites.push(s);
+  for(const s of sprites){if(s.anims)s.anims.timeScale=ts;if(paused)s.anims?.pause?.();else s.anims?.resume?.();}
+  if(paused){this.anims?.pauseAll?.();this.tweens?.pauseAll?.();}
+  else{this.anims?.resumeAll?.();this.tweens?.resumeAll?.();}
+  this.fx?.setPaused?.(paused);
+  setGameAudioPaused(paused);
+ }
  makeView(model,key,scale,tint=0xffffff){const v=new Fighter(this,{key,prefix:key+'_',native:1,scale,anchorX:.5,hp:1,team:0,shadowW:135},model.x,model.y);v.sprite.setLighting(false).setTint(tint);return v;}
  syncViews(dt=0){
   const w=this.world;this.bounds=w.bounds;this.cameras.main.setScroll(Math.round(w.camX),0);this.backdrop?.update(w.camX);
@@ -186,7 +202,10 @@ export class GameScene extends Phaser.Scene {
    let anim=isBob?(model.state==='dead'?'knockdown':['hurt','knockdown','getup'].includes(model.state)?model.state:model.shootTime>0?'shoot':model.state==='walk'||model.state==='dash'?'walk':'idle'):
     roleAnim(model);
    if(!this.anims.exists(key+'_'+anim)){const m=this.metas[key],map=TYPES[model.type]?.anims;anim=map?(map[model.state]||map.default):model.state==='roar'?'ring':'sing';if(!this.anims.exists(key+'_'+anim))anim=m.anims[0].name.slice(key.length+1);}
-   view.play(anim,1,false);view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
+   const restart=isBob&&consumeShootRestart(view,model,anim);
+   const ts=isBob&&anim==='shoot'?shootTimeScale(this.metas?.bob):1;
+   view.play(anim,ts,restart);if(w.paused&&view.sprite?.anims)view.sprite.anims.timeScale=0;
+   view.sprite.setAlpha(isBob&&model.inv>0&&Math.floor(model.time*12)%2 ? .55 : 1);view.sync();
    if(model.type==='wingman'){view.sprite.setAlpha(WINGMAN_ALPHA);view.sprite.setDepth(fighterDepth(model));}
   }
   for(const [m,v] of this.views){
@@ -259,7 +278,8 @@ export class GameScene extends Phaser.Scene {
     else{
      const plan=telegraphPlan(e,w);
      if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(plan.from,plan.y-75,100,145);}
-     g.fillRect(Math.min(plan.from,plan.to),plan.y-18,Math.abs(plan.to-plan.from),36);
+     const strip=warningRect(plan,w.bounds);
+     g.fillRect(strip.x,strip.y,strip.w,strip.h);
     }
    }
    if(!e.boss&&e.hp<e.maxHp){g.fillStyle(0x201b30);g.fillRect(e.x-30,e.y-215,60,5);g.fillStyle(0xb7dce7);g.fillRect(e.x-30,e.y-215,60*e.hp/e.maxHp,5);}
@@ -395,7 +415,8 @@ export class GameScene extends Phaser.Scene {
   while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
   this.handleEvents();
-  this.syncViews(dt);this.fx?.update(dt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(dt);this.stepDust(dt);}if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);
+  const presentDt=w.paused?0:dt;
+  this.syncViews(presentDt);this.fx?.update(presentDt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(presentDt);this.stepDust(presentDt);}if(!w.paused)this.papiFX.update(dt);this.effects(presentDt);this.hud.update(w,presentDt);
   const perfCtx=this._perfCtx||(this._perfCtx={stage:0,mode:''});
   perfCtx.stage=this.stageNo;perfCtx.mode=w.bossActive?'boss':'stage';
   perf.tick(performance.now(),{active:!w.paused&&!w.victory,inFight:w.locked&&!w.papiTime&&!w.dad,context:perfCtx});

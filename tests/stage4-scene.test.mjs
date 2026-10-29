@@ -339,4 +339,6 @@ test('GameScene.effects draws warning strips from stored telegraphPlan instead o
   assert.equal(rects.length, 1);
   assert.ok(rects[0].w > 500, `expected full arena rush warning > 500px, got ${rects[0].w}`);
   assert.equal(rects[0].x + rects[0].w, 1450);
+  assert.equal(rects[0].h, 68, 'warning height is the rush contact halfH * 2');
+  assert.equal(rects[0].y, laneY(1) - 34);
 });

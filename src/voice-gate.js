@@ -9,6 +9,7 @@ const EPS = 1e-6;
 export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_(?:open|produce)$|yetti_(?:porkchop|colombian_room|purple_car)_|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_(?:catchphrase$|call_|done_)|papi_crowd_|papi_chorus$|bouncer_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;
 export const PRIORITY_VOICE = RESERVED_VOICE;
 export const BOSS_MOMENT_VOICE = /^(?:bouncer|interventionist|choirmaster|wingman)_(?:intro|phase\d+|defeat)$/;
+export const ENDING_VOICE = /^(?:nar_victory|claudia_leave)$/;
 export const DUBBED_DAD_CALL = /^dad_call_0/;
 
 export function isReservedVoice(id) {
@@ -22,6 +23,9 @@ export function isBossMomentVoice(id) {
 }
 export function isDubbedDadCall(id) {
   return DUBBED_DAD_CALL.test(id || '');
+}
+export function isEndingVoice(id) {
+  return ENDING_VOICE.test(id || '');
 }
 
 function bossMomentType(id) {
@@ -37,8 +41,21 @@ function bossMomentRank(id) {
   return +m[2];
 }
 
+function splitEnding(queue) {
+  const endings = [], rest = [];
+  for (const q of queue) (isEndingVoice(q) ? endings : rest).push(q);
+  return { endings, rest };
+}
+
 /** Keep only the latest same-boss moment; older phase/intro lines would play late. */
 function enqueueReserved(gate, id) {
+  if (isEndingVoice(id)) {
+    if (gate.queue.includes(id)) return;
+    const { endings, rest } = splitEnding(gate.queue);
+    endings.push(id);
+    gate.queue = [...endings, ...rest];
+    return;
+  }
   if (isBossMomentVoice(id)) {
     const type = bossMomentType(id);
     const rank = bossMomentRank(id);
@@ -56,10 +73,17 @@ function enqueueReserved(gate, id) {
       }
       rest.push(q);
     }
-    gate.queue = [best, ...rest];
+    const split = splitEnding(rest);
+    gate.queue = [...split.endings, best, ...split.rest];
     return;
   }
   if (!gate.queue.includes(id)) gate.queue.push(id);
+}
+
+/** Optional flavour may expire; reserved/ending lines stay. */
+export function expireOptionalVoice(gate) {
+  if (!gate?.queue) return;
+  gate.queue = gate.queue.filter(id => isReservedVoice(id));
 }
 
 export function createVoiceGate({ gap = BARK.gap, cap = BARK.cap, window = BARK.window } = {}) {

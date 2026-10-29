@@ -13,7 +13,7 @@ let loopSrc = null, loopToken = 0, loopId = null;
 const moreVoice = Object.create(null);
 // Stage lines with no mp3 yet. say() still captions; loadClip does not fetch.
 const voiceOff = new Set();
-let audioHidden = false, audioEpoch = 0;
+let audioHidden = false, gamePaused = false, audioEpoch = 0;
 const audioTimers = new Set();
 export const VOICE = {};
 export const EXTRA_VOICE = {};
@@ -28,19 +28,20 @@ function init() {
     sfxBus = ctx.createGain(); sfxBus.gain.value = 1.05;
     comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 8; comp.ratio.value = 4.5; comp.attack.value = 0.002; comp.release.value = 0.14;
     sfxBus.connect(comp); comp.connect(master);
-    if (audioHidden) suspendAudio();
+    if (audioHidden || gamePaused) suspendAudio();
   } catch (e) { ctx = null; }
 }
+function audioHalted() { return audioHidden || gamePaused; }
 function suspendAudio() {
   // Media elements can keep advancing (or bypass WebAudio in the fallback), so
   // pause them as well as the graph. Do not change the user's music preference.
   for (const T of Object.values(tracks)) if (T.el && T.el.paused !== true) T.el.pause();
   if (ctx && ctx.state !== 'closed' && ctx.state !== 'suspended') {
-    ctx.suspend().then(() => { if (!audioHidden && unlocked) resumeAudio(); }).catch(() => {});
+    ctx.suspend().then(() => { if (!audioHalted() && unlocked) resumeAudio(); }).catch(() => {});
   }
 }
 function resumeAudio() {
-  if (audioHidden || !ctx) return;
+  if (audioHalted() || !ctx) return;
   // iOS Safari also uses 'interrupted' after backgrounding / audio-route changes.
   if (ctx.state !== 'running' && ctx.state !== 'closed') {
     ctx.resume().then(() => { if (audioHidden) suspendAudio(); }).catch(() => {});
@@ -48,6 +49,16 @@ function resumeAudio() {
   if (musicWanted && musicOn) resumeMusic();
 }
 export function unlock() { init(); unlocked = true; resumeAudio(); }
+/** Gameplay pause freezes music, voice, and the audio clock used by the voice gate. */
+export function setGameAudioPaused(on) {
+  const next = !!on;
+  if (gamePaused === next) return gamePaused;
+  gamePaused = next;
+  if (gamePaused) suspendAudio();
+  else if (unlocked) resumeAudio();
+  return gamePaused;
+}
+export function isGameAudioPaused() { return gamePaused; }
 /** One game-wide listener pair; scene restarts must not install extra listeners. */
 export function installAudioLifecycle(game) {
   let disposed = false;
@@ -346,7 +357,7 @@ export function playTrack(id, opts = {}) {
   if (T.M.stream) {
     const el = streamEl(T); el.muted = muted;
     if (T.fallback) { el.volume = 0.34 * target; } else fadeGain(T.gain.gain, target, prev && prev !== id ? fade : 0);
-    if (!audioHidden && (el.paused !== false || !T.playing)) el.play().catch(() => {});
+    if (!audioHalted() && (el.paused !== false || !T.playing)) el.play().catch(() => {});
     T.playing = true;
     return;
   }
@@ -365,7 +376,7 @@ export function musicState() {
 }
 /** after a user gesture: retry a stream element the browser refused to autoplay */
 function resumeMusic() {
-  if (audioHidden) return;
+  if (audioHalted()) return;
   // Include an outgoing streamed track if a crossfade was in progress at hide.
   for (const T of Object.values(tracks)) if (T.playing && T.el && T.el.paused !== false) T.el.play().catch(() => {});
   // A failed fetch/decode leaves the selection intact; retry it on recovery.
