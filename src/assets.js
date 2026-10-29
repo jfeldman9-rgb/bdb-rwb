@@ -9,9 +9,11 @@ export function charPageSources(m,p){const dir='assets/chars/',atlasURL=`${dir}$
   const keyed=String(p).startsWith('papi_stampede');
   if(!keyed)for(const fmt of ['ASTC','ETC'])if(m.gpu?.[fmt])src[fmt]={type:'KTX',textureURL:`${dir}${p}.${m.gpu[fmt]}`,atlasURL};
   src.IMG={textureURL:`${dir}${p}.webp`,atlasURL};return src;}
-export function queueCharPages(scene,keys=CHARS){for(const key of keys){const m=scene.cache.json.get(key+'.A');for(const p of m.pages)if(!scene.textures.exists(p)){
+export function queueCharPages(scene,keys=CHARS){for(const key of keys){const m=scene.cache?.json?.get?.(key+'.A');if(!m?.pages?.length)throw new Error(`Missing character metadata: ${key}`);for(const p of m.pages)if(!scene.textures.exists(p)){
   if(m.gpu)scene.load.texture(p,charPageSources(m,p));else scene.load.atlas(p,`assets/chars/${p}.webp`,`assets/chars/${p}.json`);}}}
-export function makeCharAnims(scene,keys=CHARS){const metas={};for(const key of keys){const m=scene.cache.json.get(key+'.A');metas[key]=m;
+export function makeCharAnims(scene,keys=CHARS){const metas={};for(const key of keys){const m=scene.cache?.json?.get?.(key+'.A');if(!m?.anims?.length||!m?.pages?.length)throw new Error(`Missing character metadata: ${key}`);
+  if(scene.textures?.exists)for(const p of m.pages)if(!scene.textures.exists(p))throw new Error(`Missing character page: ${p}`);
+  metas[key]=m;
   for(const a of m.anims)if(!scene.anims.exists(a.name))scene.anims.create({key:a.name,frames:a.frames.map((frame,i)=>({key:m.pages[a.pages[i]],frame,duration:Math.max(0,a.holds[i]-1)})),frameRate:1000,repeat:a.loop?-1:0});
 }return metas;}
 export function releaseChars(scene,keys){for(const key of keys){const m=scene.cache.json.get(key+'.A');if(!m)continue;for(const a of m.anims)scene.anims.remove(a.name);for(const p of m.pages)if(scene.textures.exists(p))scene.textures.remove(p);}}

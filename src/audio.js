@@ -69,6 +69,7 @@ export function installAudioLifecycle(game) {
 /** Terminal teardown, unlike a temporary hidden-tab suspension. */
 function disposeAudio() {
   audioHidden = true; audioEpoch++; unlocked = false; musicWanted = false; currentTrack = null;
+  bedDuckOwners.clear();
   stopSceneAudio();
   clipDrop.clear(); voiceId = null;
   // Finish old rain/track cleanup immediately, cancelling all wall-clock polling.
@@ -210,6 +211,8 @@ let musicWanted = false, unlocked = false;
 export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3','stage4','boss4'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
 const tracks = Object.create(null), musicBytes = Object.create(null);
 let currentTrack = null, wantedTrack = 'stage1';
+const DEFAULT_DUCK_OWNER = 'default', bedDuckOwners = new Set();
+const targetTrackGain = T => T.M.gain * (bedDuckOwners.size > 0 ? 0.35 : 1);
 /** equal-power fade on a GainNode, built from short linear ramps (works on every WebAudio implementation) */
 function fadeGain(param, to, secs) {
   const t = ctx.currentTime, from = param.value; param.cancelScheduledValues(t); param.setValueAtTime(from, t);
@@ -234,7 +237,7 @@ function streamEl(T) {
   // seamless loop region: jump back one loop length while inside the baked crossfade at the end of the file
   const L = T.M.loopEnd - T.M.loopStart;
   el.ontimeupdate = () => { if (el.currentTime >= T.M.loopEnd - 0.35 && el.currentTime < T.M.loopEnd + 1) el.currentTime -= L; };
-  try { const src = ctx.createMediaElementSource(el); src.connect(T.gain); T.mediaSrc = src; } catch (e) { T.fallback = true; el.volume = 0.34 * T.M.gain; }
+  try { const src = ctx.createMediaElementSource(el); src.connect(T.gain); T.mediaSrc = src; } catch (e) { T.fallback = true; el.volume = 0.34 * targetTrackGain(T); }
   if (T.id === 'stage1') { musicEl = el; musicSrc = T.mediaSrc || null; }
   return el;
 }
@@ -260,7 +263,7 @@ function startBuffer(T, fade) {
   const s = ctx.createBufferSource(); s.buffer = T.buf; s.loop = true; s.loopStart = T.M.loopStart; s.loopEnd = T.M.loopEnd; s.connect(T.gain);
   const off = Math.min(Math.max(T.pos, T.M.loopStart), T.M.loopEnd - 0.01);
   s.start(0, off); T.src = s; T.t0 = ctx.currentTime - off; T.playing = true;
-  fadeGain(T.gain.gain, T.M.gain, fade);
+  fadeGain(T.gain.gain, targetTrackGain(T), fade);
 }
 function trackPos(T) {
   if (T.el) return T.el.currentTime || T.M.loopStart;
@@ -305,13 +308,16 @@ function stopTrack(T, fade) {
   fadeGain(T.gain.gain, 0, fade);
   T.stopTimer = afterAudioTime(fade, halt);
 }
-/** Hold the current stage bed under a silent clip, then restore it. No-op until a track is playing. */
-export function duckStageBed(on) {
+/** Hold the current stage bed under a silent clip, then restore it when all owners release. */
+export function duckStageBed(on, owner = DEFAULT_DUCK_OWNER) {
+  if (on) bedDuckOwners.add(owner);
+  else if (owner === null) bedDuckOwners.clear();
+  else bedDuckOwners.delete(owner);
   init();
   if (!ctx || !currentTrack) return;
   const T = tracks[currentTrack];
   if (!T?.M) return;
-  const target = on ? T.M.gain * 0.35 : T.M.gain;
+  const target = targetTrackGain(T);
   if (T.fallback && T.el) { T.el.volume = 0.34 * target; return; }
   if (T.gain) fadeGain(T.gain.gain, target, 0.4);
 }
@@ -334,18 +340,27 @@ export function playTrack(id, opts = {}) {
     T.playing = false; T.pos = T.M.loopStart || 0;
     if (T.el) T.el.currentTime = 0;
   }
+  const target = targetTrackGain(T);
   if (T.M.stream) {
     const el = streamEl(T); el.muted = muted;
-    if (T.fallback) { el.volume = 0.34 * T.M.gain; } else fadeGain(T.gain.gain, T.M.gain, prev && prev !== id ? fade : 0);
+    if (T.fallback) { el.volume = 0.34 * target; } else fadeGain(T.gain.gain, target, prev && prev !== id ? fade : 0);
     if (!audioHidden && (el.paused !== false || !T.playing)) el.play().catch(() => {});
     T.playing = true;
     return;
   }
-  if (T.playing) { fadeGain(T.gain.gain, T.M.gain, fade); return; }
+  if (T.playing) { fadeGain(T.gain.gain, target, fade); return; }
   loadMusicBuffer(T).then(buf => { if (buf && tracks[id] === T && currentTrack === id && musicOn) startBuffer(T, prev ? fade : 0.4); });
 }
 /** what the backend is playing (or will play once decoded): for tests and the perf panel */
-export function musicState() { return { current: currentTrack, wanted: wantedTrack, on: musicOn, decoded: Object.keys(tracks).filter(k => tracks[k].buf), compressed: Object.keys(musicBytes) }; }
+export function musicState() {
+  const T = currentTrack ? tracks[currentTrack] : null;
+  return {
+    current: currentTrack, wanted: wantedTrack, on: musicOn,
+    ducked: bedDuckOwners.size > 0,
+    gain: T ? (T.fallback && T.el ? T.el.volume / 0.34 : T.gain?.gain?.value ?? null) : null,
+    decoded: Object.keys(tracks).filter(k => tracks[k].buf), compressed: Object.keys(musicBytes),
+  };
+}
 /** after a user gesture: retry a stream element the browser refused to autoplay */
 function resumeMusic() {
   if (audioHidden) return;
@@ -449,7 +464,7 @@ export function presentStage(scene) {
 }
 /** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
-const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_|dad_catchphrase$)/;
+const SCRIPTED_VOICE = /^(?:nar_|bdb_open|bob_s\d+$|claudia_|wingman_|interventionist_|choirmaster_|bouncer_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
   if (/^papi_crowd_/.test(id || '')) return 'interrupt';
   return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;

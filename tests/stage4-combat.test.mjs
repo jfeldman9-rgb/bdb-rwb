@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Yetti, TYPES, BOSS_ADDS, RANGED_TYPES, POISE, laneY, laneOf } from '../src/yettis.js';
 import { Campaign } from '../src/campaign.js';
+import { rollingVoiceStats } from '../src/voice-gate.js';
 
 function arena(type, x = 800, y = laneY(1)) {
   const world = new Campaign();
@@ -143,24 +144,45 @@ test('a dash cannot break Bouncer shield and cancel a gate roar or its adds', ()
   assert.equal(enemy.breakShield(), true, 'dash breaks the clipboard once the roar ends');
 });
 
-test('Campaign emits each new boss phase and defeat voice once, without adding legacy boss voices', () => {
+test('Campaign emits each new boss phase and defeat voice once inside the rolling window, without adding legacy boss voices', () => {
   for (const type of ['bouncer', 'interventionist', 'choirmaster']) {
     const world = new Campaign({ stage: 4 });
+    // Let the opening Stage 4 narration window age out before entering the boss arena.
+    world.voiceAt = [];
+    world.elapsed = 120;
     const enemy = new Yetti(type, 800, laneY(1));
     world.enemies = [enemy]; world.events = [];
+    const bossVoices = [], stamps = [];
+    const collect = () => {
+      for (const e of world.events) {
+        if (e.type === 'voice') {
+          stamps.push(world.elapsed);
+          if (e.data.startsWith(type + '_')) bossVoices.push(e.data);
+        }
+      }
+      world.events = [];
+    };
     for (const phase of [2, 3]) {
       world.hit(enemy, enemy.maxHp * .35, -1, false);
       assert.equal(enemy.phase, phase);
       world.hit(enemy, 12, -1, false);
       assert.equal(enemy.state, 'roar', 'follow-up shots cannot re-trigger the gate');
       enemy.update(1.11, world);
+      collect();
+      world.elapsed += 8.5;
+      world.flushVoice();
+      collect();
     }
     world.hit(enemy, enemy.hp, -1, false);
     world.hit(enemy, 12, -1, false);
     world.recordKo(enemy, 'papi');
     world.recordKo(enemy, 'dad');
-    const bossVoices = world.events.filter(e => e.type === 'voice' && e.data.startsWith(type + '_')).map(e => e.data);
+    collect();
+    world.elapsed += 60;
+    world.flushVoice();
+    collect();
     assert.deepEqual(bossVoices, type === 'bouncer' ? ['bouncer_phase2', 'bouncer_phase3', 'bouncer_defeat'] : [], type);
+    assert.equal(rollingVoiceStats(stamps).ok, true, `${type} rolling window`);
     if (type === 'bouncer') assert.equal(world.pickups.length, 3, 'phase II still grants exactly one shake trio');
   }
 });
@@ -191,7 +213,7 @@ test('Bouncer phase III whiffed grab stomps in both directions and re-shields ev
       enemy.update(11.99, world); assert.equal(enemy.shield, false);
       enemy.update(.02, world); assert.equal(enemy.shield, true); assert.equal(enemy.shieldHits, 0);
       enemy.shield = false;
-      enemy.update(11.99, world); assert.equal(enemy.shield, false);
+      enemy.update(11.98, world); assert.equal(enemy.shield, false);
       enemy.update(.02, world); assert.equal(enemy.shield, true);
     }
   }

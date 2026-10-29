@@ -5,6 +5,7 @@
 import { pathToFileURL } from 'node:url';
 import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
+import { rollingVoiceStats } from '../src/voice-gate.js';
 
 const AMBIENT_GROUP = [
   [/^bdb_produce$/, 'produce'],
@@ -44,22 +45,19 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
   let combat = 0;
   let excluded = 0;
   const ambientAt = [];
+  const voiceAt = [];
   const step = 1 / hz;
   const done = () => stage == null ? w.victory : w.stats.stages.includes(stage);
-  for (let i = 0; i < hz * cap && !done(); i++) {
-    const inPapi = w.papiTime > 0;
-    const inDad = !!w.dad;
-    w.update(step, bot.update(step, w));
-    const setPiece = inPapi || w.papiTime > 0 || inDad || !!w.dad;
-    if (setPiece) excluded += step;
-    else combat += step;
+  const drain = (setPiece) => {
     for (const e of w.events) {
       if (e.type === 'dad_callin') w.finishDadCallin();
       if (e.type !== 'voice') continue;
       const id = e.data;
+      const stamp = +w.elapsed.toFixed(4);
       allCounts[id] = (allCounts[id] || 0) + 1;
+      if (!w.victory) voiceAt.push(stamp);
       const g = ambientGroup(id);
-      if (g) ambientAt.push(+w.elapsed.toFixed(4));
+      if (g) ambientAt.push(stamp);
       if (setPiece) continue;
       counts[id] = (counts[id] || 0) + 1;
       if (g) {
@@ -68,11 +66,22 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
       } else scripted++;
     }
     w.events = [];
+  };
+  drain(false);
+  for (let i = 0; i < hz * cap && !done(); i++) {
+    const inPapi = w.papiTime > 0;
+    const inDad = !!w.dad;
+    w.update(step, bot.update(step, w));
+    const setPiece = inPapi || w.papiTime > 0 || inDad || !!w.dad;
+    if (setPiece) excluded += step;
+    else combat += step;
+    drain(setPiece);
   }
   const minutes = combat / 60;
   const perMin = (n) => minutes > 0 ? n / minutes : 0;
   let minGap = Infinity;
   for (let i = 1; i < ambientAt.length; i++) minGap = Math.min(minGap, ambientAt[i] - ambientAt[i - 1]);
+  const rolling = rollingVoiceStats(voiceAt);
   return {
     hz,
     difficulty,
@@ -89,6 +98,10 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     scriptedPerMin: +perMin(scripted).toFixed(2),
     totalPerMin: +perMin(ambient + scripted).toFixed(2),
     minAmbientGap: ambientAt.length > 1 ? +minGap.toFixed(3) : null,
+    minVoiceGap: rolling.minGap,
+    maxIn60s: rolling.maxInWindow,
+    rollingOk: rolling.ok,
+    voiceAt,
     groups,
     counts,
     allCounts,

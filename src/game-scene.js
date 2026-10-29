@@ -1,7 +1,7 @@
 import { Campaign } from './campaign.js';
 import { Bot } from './bot.js';
 import { Fighter } from './fighter.js';
-import { TYPES, laneOf, laneY, LANE_H, choirAura } from './yettis.js';
+import { TYPES, laneOf, laneY, LANE_H, choirAura, telegraphPlan } from './yettis.js';
 import { queueCharPages,makeCharAnims,releaseChars,residencyDelta } from './assets.js';
 import { STAGE_CHARS,STAGE_TEXTURES,CAGED } from './stages.js';
 import { buildBackdrop } from './backdrop.js';
@@ -11,6 +11,8 @@ import { q } from './config.js';
 import { gameplayWantsPause } from './input.js';
 import { say,sfx,playTrack,duckStageBed,preloadClips,releaseClips,stopSceneAudio,presentStage } from './audio.js';
 import { stageLines, LINES } from './voice-lines.js';
+import { createVoiceGate, offerVoice, flushVoiceGate } from './voice-gate.js';
+import { STORY } from './story.js';
 import { showStuck } from './recovery.js';
 import { persistSave } from './save.js';
 import { perf } from './perf.js';
@@ -53,12 +55,17 @@ export function bootOwnedTextures(scene) {
   return new FX(scene);
 }
 
-/** Map Yetti sim state → atlas anim suffix (FPS.md role sheets). */
-function roleAnim(m) {
-  const t = m.type, s = m.state;
+/** Map Yetti sim state → atlas anim suffix (FPS.md role sheets and explicit TYPES[t].anims). */
+export function roleAnim(m) {
+  const t = m.type, s = m.state, map = TYPES[t]?.anims;
+  if (map) {
+    if (s === 'hurt') return map.hurt || 'hurt';
+    if (s === 'down' || s === 'dead') return map.dead || (TYPES[t]?.boss ? 'down' : 'knockdown');
+    if (m.shield && (s === 'wait' || s === 'recover') && map.block) return map.block;
+    return map[s] || map.default;
+  }
   if (s === 'hurt') return 'hurt';
   if (s === 'down' || s === 'dead') return 'knockdown';
-  if (TYPES[t]?.lunge) return TYPES[t].anims[s] || TYPES[t].anims.default;
   if (t === 'hover') return s === 'telegraph' ? 'throw' : 'fly';
   if (t === 'charger') {
     if (s === 'telegraph') return 'windup';
@@ -79,19 +86,36 @@ function roleAnim(m) {
 
 export class GameScene extends Phaser.Scene {
  constructor(){super('gameplay');}
- init(data){this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;}
+ init(data){
+  this._sceneToken=(this._sceneToken||0)+1;
+  if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}
+  this.world=data.world||new Campaign({...data,onSave:s=>persistSave(s)});this.bot=data.bot||(q.get('demo')==='1'?new Bot():null);this.stageNo=this.world.stageNo;this.started=false;this.loadFailed=false;this.pauseReasons=new Set();this.accumulator=0;this.views=new Map();this.liveSet=new Set();this.particles=[];this.dadView=null;this.claudia=null;this.claudiaCage=null;this.switching=false;this.finished=false;this.rescueBeat=false;this.holdingVoice=false;this.voiceHold=[];this._carryVoice=null;this.voiceClock=0;this.voiceGate=createVoiceGate();this.runId=(this.game.runSeq=(this.game.runSeq||0)+1);this.bloomEnabled=true;this.backdropLit=true;
+ }
+ failChapterLoad(error){
+  this.loadFailed=true;this.started=false;
+  const err=error instanceof Error?error:new Error(String(error||'chapter'));
+  if(!globalThis.__bdbStartup?.fail(err,'assets'))showStuck(globalThis,err,this.game);
+  const boot=globalThis.document?.getElementById?.('boot');
+  if(boot&&!boot.hidden)boot.textContent='Could not load chapter. Reload to retry.';
+ }
  preload(){
-  const prev=this.game.residentChars||[],next=STAGE_CHARS[this.stageNo],delta=residencyDelta(prev,next);
-  releaseChars(this,delta.release);queueCharPages(this,next);this.game.residentChars=next;
-  for(const key of this.game.residentTextures||[])if(!STAGE_TEXTURES[this.stageNo].includes(key)&&this.textures.exists(key))this.textures.remove(key);
-  const keys=STAGE_TEXTURES[this.stageNo]||[];
-  for(const key of keys)if(!this.textures.exists(key))this.load.image(key,`assets/bg/${key}.webp`);
-  this.game.residentTextures=keys;
-  const loadError=file=>{window.__bdbStartup?.fail(`Asset ${file.key}`,'assets');document.getElementById('boot').textContent='Could not load chapter. Reload to retry.';};
-  this.load.once('loaderror',loadError);this.load.once('complete',()=>this.load.off('loaderror',loadError));
+  const loadError=file=>this.failChapterLoad(`Asset ${file?.multiFile?.key||file?.key||'chapter'}`);
+  this.load.on('loaderror',loadError);this.load.once('complete',()=>this.load.off('loaderror',loadError));
+  try{
+   const prev=this.game.residentChars||[],next=STAGE_CHARS[this.stageNo],delta=residencyDelta(prev,next);
+   if(!next?.length)throw new Error(`Missing character list for stage ${this.stageNo}`);
+   releaseChars(this,delta.release);queueCharPages(this,next);this.game.residentChars=next;
+   for(const key of this.game.residentTextures||[])if(!STAGE_TEXTURES[this.stageNo]?.includes(key)&&this.textures.exists(key))this.textures.remove(key);
+   const keys=STAGE_TEXTURES[this.stageNo]||[];
+   for(const key of keys)if(!this.textures.exists(key))this.load.image(key,`assets/bg/${key}.webp`);
+   this.game.residentTextures=keys;
+  }catch(error){
+   this.load.off('loaderror',loadError);
+   this.failChapterLoad(error);
+  }
  }
  create(){
-  if(globalThis.__bdbStartup?.failed)return;
+  if(globalThis.__bdbStartup?.failed||this.loadFailed)return;
   try{
    this.mountTextures();
    this.assemble();
@@ -104,6 +128,7 @@ export class GameScene extends Phaser.Scene {
  }
  mountTextures(){this.fx=bootOwnedTextures(this);}
  assemble(){
+  for(const key of STAGE_TEXTURES[this.stageNo]||[])if(!this.textures.exists(key))throw new Error(`Missing stage texture: ${key}`);
   this.game.campaign=this.world;this.metas=makeCharAnims(this,STAGE_CHARS[this.stageNo]);
   this.backdrop=buildBackdrop(this,this.world.def);
   this.dadLabel=this.add.text(0,0,'BDB',{fontFamily:'Arial',fontSize:20,fontStyle:'bold',color:'#fff0ad',stroke:'#192235',strokeThickness:4}).setDepth(19001).setVisible(false);
@@ -116,7 +141,7 @@ export class GameScene extends Phaser.Scene {
   if(opening)playTrack(opening);
   this.offDadBless=installDadGestureBless(globalThis);
   this.offRotate=bindRotatePause(this);
-  this.events.once('shutdown',()=>{this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
+  this.events.once('shutdown',()=>{this._sceneToken=(this._sceneToken||0)+1;if(this._duckOwner){duckStageBed(false,this._duckOwner);this._duckOwner=null;}this.offRotate?.();this.offRotate=null;this.offDadBless?.();this.offDadBless=null;abortDadCall(this);this.fx?.destroy();this.fx=null;this.backdrop?.destroy();this.backdrop=null;for(const v of this.views.values())v.destroy();this.views.clear();this.papiFX.destroy();this.dadView?.destroy();releaseClips(stageLines(this.stageNo));});
   this.syncViews();presentStage(this);this.hud.update(this.world);
  }
  setBloom(on){this.bloomEnabled=!!on;}
@@ -164,7 +189,7 @@ export class GameScene extends Phaser.Scene {
    if(!v.corpse)v.corpse=beginCorpse(!!m.boss);
    v.corpse=stepCorpse(v.corpse,dt);
    v.state='dead';
-   if(!v.corpsePlayed){const key=v.def.key,down=TYPES[m.type]?.scriptedBossVoices&&TYPES[m.type].anims?.dead;v.play(down&&this.anims.exists(key+'_'+down)?down:this.anims.exists(key+'_knockdown')?'knockdown':'hurt',1,false);v.corpsePlayed=true;}
+   if(!v.corpsePlayed){const key=v.def.key,deadAnim=roleAnim({...m,state:'dead'});v.play(this.anims.exists(key+'_'+deadAnim)?deadAnim:this.anims.exists(key+'_knockdown')?'knockdown':'hurt',1,false);v.corpsePlayed=true;}
    v.sprite.setAlpha(v.corpse.alpha);v.sync();
    if(v.corpse.done){v.destroy();this.views.delete(m);}
   }
@@ -194,10 +219,13 @@ export class GameScene extends Phaser.Scene {
    if(e.shield){const sx=e.x+e.facing*48,sy=e.y-82;g.lineStyle(6,0xffdb77,.9);g.strokeEllipse(sx,sy,34,110);const chips=e.shieldHits||0;if(chips>=1){g.lineStyle(2,0x6a4a12,.95);g.lineBetween(sx-10,sy-28,sx+8,sy+6);}if(chips>=2){g.lineBetween(sx+12,sy-22,sx-6,sy+18);}}
    if(e.state==='telegraph'){
     g.fillStyle(0xff5575,.28);
-    if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(e.x,e.y-75,100,145);}
     if(e.type==='wingman'&&e.phase!==2){for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,1280,LANE_H);}
     else if(e.type==='wingman'){g.fillEllipse(e.attackX,e.attackY,180,60);g.lineStyle(3,0xffccad);g.strokeEllipse(e.attackX,e.attackY,180,60);}
-    else{const reach=TYPES[e.type]?.lunge?.reach||(e.type==='charger'||e.mode==='rush'?400:120);g.fillRect(Math.min(e.x,e.x+e.facing*reach),e.y-18,reach,36);}
+    else{
+     const plan=telegraphPlan(e,w);
+     if(TYPES[e.type]?.lunge){g.fillStyle(0xff69c7,.38);g.lineStyle(4,0xffa3e2,.85);g.strokeEllipse(plan.from,plan.y-75,100,145);}
+     g.fillRect(Math.min(plan.from,plan.to),plan.y-18,Math.abs(plan.to-plan.from),36);
+    }
    }
    if(!e.boss&&e.hp<e.maxHp){g.fillStyle(0x201b30);g.fillRect(e.x-30,e.y-215,60,5);g.fillStyle(0xb7dce7);g.fillRect(e.x-30,e.y-215,60*e.hp/e.maxHp,5);}
   }
@@ -208,11 +236,28 @@ export class GameScene extends Phaser.Scene {
   for(let i=0;i<parts.length;i++){const p=parts[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=110*dt;g.fillStyle(p.color,Math.max(0,p.life));g.fillEllipse(p.x,p.y,9,4);if(p.life>0)parts[kept++]=p;}
   parts.length=kept;
  }
- playHeld(ids){(ids||[]).forEach((id,i)=>{say(id,(who,line)=>this.hud?.say(who,line),true,false,i?{wait:2.5*i}:null);if(id==='wingman_phase3')this.cameras?.main?.flash(300,225,190,255);});}
+ speakNow(id){say(id,(who,line)=>this.hud?.say?.(who,line));}
+ queueSceneVoice(id,{forceQueue=false}={}){
+  if(!id)return false;
+  if(id==='wingman_phase3')this.cameras?.main?.flash?.(300,225,190,255);
+  const gate=this.voiceGate||(this.voiceGate=createVoiceGate());
+  this.voiceClock??=0;
+  return offerVoice(gate,id,this.voiceClock,next=>this.speakNow(next),{forceQueue});
+ }
+ tickVoiceGate(dt){
+  if(!(dt>0)||this.holdingVoice||this.world?.paused)return;
+  this.voiceClock=(this.voiceClock||0)+dt;
+  if(this.voiceGate?.queue.length)flushVoiceGate(this.voiceGate,this.voiceClock,next=>this.speakNow(next));
+ }
+ playHeld(ids){for(const id of ids||[])this.queueSceneVoice(id,{forceQueue:true});}
  /** Silent stage openers duck the bed. Anything with its own soundtrack stops it. */
  stageBedClip(key){
   const keys=Array.isArray(key)?key:[key];
   return keys.length>0&&keys.every(k=>/^stage\d+$/.test(k));
+ }
+ victoryClip(key){
+  const keys=Array.isArray(key)?key:[key];
+  return keys.includes('victory');
  }
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
@@ -221,27 +266,34 @@ export class GameScene extends Phaser.Scene {
   // to the stopSceneAudio that ducks the clip which just took over.
   // A clip that finishes inside play() must not re-arm that hold and swallow the next line.
   // The story player owns pauseForClip, so destroy() can resume the loop it paused.
-  const bed=this.stageBedClip(key);
+  const bed=this.stageBedClip(key),victory=this.victoryClip(key);
+  const sceneToken=this._sceneToken??(this._sceneToken=1),clipOwner=Symbol('clip');
   let finished=false;
   this.game.story.play(key,(how)=>{
-   finished=true;const held=this.voiceHold||[];this.voiceHold=[];this.holdingVoice=false;this.setPauseReason('cutscene',false);
-   if(how==='abort'){if(bed)duckStageBed(false);this._carryVoice=(this._carryVoice||[]).concat(held);return;}
-   if(bed)duckStageBed(false);
-   else if(key!=='victory')playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
+   finished=true;
+   if(bed){duckStageBed(false,clipOwner);if(this._duckOwner===clipOwner)this._duckOwner=null;}
+   if(sceneToken!==this._sceneToken)return;
+   const held=this.voiceHold||[];this.voiceHold=[];this.holdingVoice=false;this.setPauseReason('cutscene',false);
+   if(how==='abort'){this._carryVoice=(this._carryVoice||[]).concat(held);return;}
+   if(!bed&&!victory)playTrack(this.world.bossActive?`boss${this.stageNo}`:`stage${this.stageNo}`,{fade:.4});
    const carry=this._carryVoice||[];this._carryVoice=null;done?.([...carry,...held]);
   });
   if(finished)return;
+  const pending=this.voiceGate?.queue?.length?this.voiceGate.queue.splice(0):[];
   const carried=this._carryVoice||[];this._carryVoice=null;
-  this.voiceHold=carried.slice();this.holdingVoice=true;
-  if(bed)duckStageBed(true);else playTrack(null,{fade:.4});
+  this.voiceHold=[...carried,...pending];this.holdingVoice=true;
+  if(bed){this._duckOwner=clipOwner;duckStageBed(true,clipOwner);}else playTrack(null,{fade:.4});
   stopSceneAudio();this.setPauseReason('cutscene',true);
  }
  freeClaudia(){this.claudiaCage?.destroy();this.claudiaCage=null;this.claudia?.play('claudia_freed');}
  /** Stage 3 still frees Claudia and plays the keep rescue before the campaign continues. */
  presentChapterRescue(){
   if(this.rescueBeat)return;this.rescueBeat=true;this.freeClaudia?.();
+  const runId=this.runId,stageNo=this.stageNo;
   this.startHeldClip('victory',held=>{
+   if(this.runId!==runId||this.stageNo!==stageNo||this.switching)return;
    this.playHeld(held);
+   if(this.world?.nightmareUnlockedPending)this.world.banner?.(`${STORY.victory} · NIGHTMARE UNLOCKED`);
    if(!this.world?.victory)playTrack(`stage${this.stageNo}`,{fade:.4});
   });
  }
@@ -254,7 +306,8 @@ export class GameScene extends Phaser.Scene {
    if(line)line.textContent=LINES.claudia_leave[1];
    this.hud?.caption?.setText?.('');
    const stage=this.stageNo||this.world?.stageNo||1;
-   const flipped=!this.world?.beatenAtStart&&!!this.world?.save?.beaten&&stage<=3;
+   const flipped=!!this.world?.nightmareUnlockedPending||(!this.world?.beatenAtStart&&!!this.world?.save?.beaten&&stage<=3);
+   if(flipped&&this.world)this.world.nightmareUnlockedPending=false;
    if(score)score.textContent=`${Math.floor(this.world.score)} points · ${flipped?'Nightmare unlocked':`Chapter ${stage} complete`}`;
    if(panel)panel.hidden=false;document.body.classList.remove('playing');
   };
@@ -270,7 +323,7 @@ export class GameScene extends Phaser.Scene {
   const bossTrack=bossTrackForBatch(this.stageNo,batch);
   for(let i=0;i<batch.length;i++){
   const {type,data}=batch[i];
-  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else if(!dadCallDubbed(data,this.cutscene)){say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
+  if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else if(!dadCallDubbed(data,this.cutscene))this.queueSceneVoice(data);}
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
   if(type==='hurt'){sfx.hurt();if(data)this.fx?.impact('medium',data.x,data.y-90,-1);}
@@ -296,7 +349,7 @@ export class GameScene extends Phaser.Scene {
   if(this.switching)return;const dt=Math.min(delta/1000,.1),inp=this.game.inp,w=this.world;inp.update(dt);
   if(gameplayWantsPause(inp))this.setPauseReason('manual',!this.pauseReasons.has('manual'));
   this.accumulator+=dt;
-  while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();w.update(1/60,controls);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
+  while(this.accumulator>=1/60){const controls=this.bot?this.bot.update(1/60,w):w.papiTime>0||w.dad||w.paused?{}:inp.snapshot();const prevElapsed=w.elapsed||0;w.update(1/60,controls);const stepped=(w.elapsed||0)>prevElapsed?(w.elapsed-prevElapsed):(!w.paused&&!this.holdingVoice?1/60:0);this.tickVoiceGate(stepped);this.accumulator-=1/60;if(w.stageNo!==this.stageNo)break;}
   if(w.stageNo!==this.stageNo){this.switching=true;document.getElementById('boot').hidden=false;this.scene.restart({world:w,bot:this.bot});return;}
   this.handleEvents();
   this.syncViews(dt);this.fx?.update(dt);if(this.fx){const shake=this.fx.shakeOffset();this.cameras.main.setScroll(Math.round(w.camX+shake[0]),Math.round(shake[1]));this.applyRecoil(dt);this.stepDust(dt);}if(!w.paused)this.papiFX.update(dt);this.effects(w.paused?0:dt);this.hud.update(w);

@@ -13,6 +13,7 @@ import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
+import { createVoiceGate, resetVoiceGate, offerVoice, flushVoiceGate } from './voice-gate.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -72,10 +73,18 @@ export class Campaign {
     this.difficultyKey = difficulty; this.difficulty = DIFFICULTIES[difficulty]; this.onSave = onSave;
     this.save = normalizeSave(save); this.beatenAtStart = !!this.save.beaten; this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
+    this.voiceGate = createVoiceGate();
+    this.nightmareUnlockedPending = false;
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
   }
-  emit(type, data) { this.events.push({ type, data }); }
+  emit(type, data) {
+    if (type === 'voice' && this.stageNo >= 4 && !this.victory) {
+      offerVoice(this.voiceGate, data, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
+      return;
+    }
+    this.events.push({ type, data });
+  }
   get finisher() { return this.wingmen || this.court || null; }
   banner(text) { this.message = text; this.messageTime = 3; this.emit('banner', text); }
   loadStage(stage, { introPlayed = false } = {}) {
@@ -95,6 +104,7 @@ export class Campaign {
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     this.voiceAt = [];
+    if (this.voiceGate) resetVoiceGate(this.voiceGate);
     this.produceSpokeOnce = false;
     if (this.barks) {
       this.clearAmbient();
@@ -113,7 +123,7 @@ export class Campaign {
     // Stage 1 already played these lines in the intro. Do not re-narrate them.
     if (stage === 1) this.armVoice('bdb_open', 4);
     if (stage === 3) this.armVoice('claudia_open', 2);
-    if (stage === 4) { this.armVoice('claudia_s4', 2); this.armVoice('bob_s4', 4.5); }
+    if (stage === 4) { this.armVoice('claudia_s4', 8); this.armVoice('bob_s4', 16); }
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -263,6 +273,7 @@ export class Campaign {
       if (bonk) this.ambient('produce', 'bdb_produce', 12);
     }
     if (result.phase) {
+      if (this.bob.grabbedBy === e) this.bob.releaseGrab();
       this.checkpoint.phase=result.phase; this.stats.phases.push(`${this.stageNo}:${result.phase}`);
       const II=result.phase===2;
       if (e.type==='interventionist') { this.banner(II?'THE INTERVENTIONIST · PHASE II: HE MEANS IT NOW':'THE INTERVENTIONIST · PHASE III: FULL INTERVENTION'); this.emit('voice','lecturer_intervention'); }
@@ -351,6 +362,9 @@ export class Campaign {
   }
   armVoice(id, delay = 0) { if (!id) return; (this.voiceAt ||= []).push({ id, at: this.elapsed + delay }); }
   flushVoice() {
+    if (this.stageNo >= 4 && !this.victory && this.voiceGate?.queue.length) {
+      flushVoiceGate(this.voiceGate, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
+    }
     const list = this.voiceAt;
     if (!list?.length) return;
     let due = false;
@@ -424,7 +438,9 @@ export class Campaign {
   }
   finishStage() {
     if(this.clearTimer)return;
+    const wasBeaten=!!this.save.beaten;
     this.stats.stages.push(this.stageNo);this.stats.stageTimes.push(+(this.elapsed-this.stageStart).toFixed(1));this.save=clearStage(this.save,this.stageNo,this.score);this.onSave(this.save);
+    if(!wasBeaten&&this.save.beaten){this.nightmareUnlockedPending=true;this.emit('unlock','nightmare');}
     this.clearTimer=2.5; this.hostile=[]; this.enemies.forEach(e=>{e.alive=false;});
     this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
   }

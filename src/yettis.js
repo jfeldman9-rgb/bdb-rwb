@@ -14,11 +14,11 @@ export const TYPES = Object.freeze({
   // Wingmen still run through their unchanged controller; only rendering reads this metadata.
   wingman: { art: 'wingman', boss: true, anims: { split: 'split', telegraph: 'telegraph', recover: 'land', default: 'hover' } },
   salsero: { hp: 24, speed: 130, art: 'yetti_salsero', tint: 0xffffff,
-    lunge: { reach: 260, tell: .55, over: 60, min: .3, max: .5 }, laneHop: 1.4,
+    lunge: { reach: 260, tell: .55, over: 60, speed: 640, min: .3, max: .5 }, laneHop: 1.4,
     anims: { telegraph: 'spin', rush: 'lunge', hurt: 'hurt', dead: 'knockdown', wait: 'idle', recover: 'idle', default: 'walk' } },
   bouncer: { hp: 1240, speed: 80, art: 'bouncer', tint: 0xffffff, boss: true, shield: true, grab: true, grabVoice: 'bouncer_grab',
     scriptedBossVoices: true, rushPhase: 2, stompPhase: 3, reshield: 12,
-    anims: { telegraph: 'grab', hold: 'hold', rush: 'rush', slam: 'stomp', roar: 'roar', hurt: 'hurt', dead: 'down', default: 'walk' } },
+    anims: { telegraph: 'grab', hold: 'hold', rush: 'rush', slam: 'stomp', roar: 'roar', hurt: 'hurt', dead: 'down', block: 'block', default: 'walk' } },
 });
 /** RWB boss gates: one long bar, phase 2 under 66%, phase 3 under 33%. */
 export const BOSS_GATES = Object.freeze([1, .66, .33]);
@@ -134,13 +134,54 @@ export function separateEnemies(enemies) {
     }
   }
 }
+const TIMER_EPS = 1e-9;
+function wrapTimer(rem, period) {
+  const next = rem + period;
+  return next > TIMER_EPS ? next : period - ((-rem) % period);
+}
+export function rushDuration(e, pace = 1) {
+  const t = TYPES[e.type];
+  if (t?.lunge) {
+    const speed = (t.lunge.speed ?? 640) * pace;
+    return clamp((Math.abs((e.attackX ?? e.x) - e.x) + t.lunge.over) / speed, t.lunge.min, t.lunge.max / Math.min(1, pace));
+  }
+  return clamp((Math.abs((e.attackX ?? e.x) - e.x) + 140) / (430 * pace), .65, 1.2);
+}
+export function telegraphPlan(e, world) {
+  const bounds = world?.bounds || { l: 0, r: 1280 };
+  if (e.warnFrom != null && e.warnTo != null) {
+    return {
+      from: clamp(e.warnFrom, bounds.l, bounds.r),
+      to: clamp(e.warnTo, bounds.l, bounds.r),
+      y: e.warnY ?? e.attackY ?? e.y,
+      dir: e.rushDir || e.facing || -1,
+    };
+  }
+  const pace = world?.difficulty?.pace || 1, t = TYPES[e.type] || {}, dir = e.rushDir || e.facing || -1;
+  const from = clamp(e.x, bounds.l, bounds.r), y = e.attackY ?? e.y;
+  let rawTo;
+  if (t.lunge || e.type === 'charger' || e.mode === 'rush') {
+    const speed = (t.lunge ? (t.lunge.speed ?? 640) : 430) * pace;
+    rawTo = clamp(e.x + dir * speed * rushDuration(e, pace), bounds.l + 55, bounds.r - 55);
+  } else {
+    rawTo = e.x + dir * 120;
+  }
+  return { from, to: clamp(rawTo, bounds.l, bounds.r), y, dir };
+}
 export class Yetti {
   constructor(type, x, y, hpScale = 1) {
     const t = TYPES[type]; if (!t) throw new Error(`Unknown Yetti: ${type}`);
     const hp = Math.round(t.hp * (t.boss ? 1 : hpScale));
     Object.assign(this, { id: actorId(), type, x, y, z: type === 'hover' ? 65 : 0, hp, maxHp: hp, mode: null, rushCool: 3,
       alive: true, boss: !!t.boss, phase: t.boss ? 1 : 0, facing: -1, state: 'approach', clock: 0, cooldown: 1,
-      stun: 0, shield: !!t.shield, timer: 0, poise: 0, rushDir: -1, attackY: y, attackX: x, volley: 0 });
+      stun: 0, shield: !!t.shield, timer: 0, poise: 0, rushDir: -1, attackY: y, attackX: x, volley: 0,
+      warnFrom: null, warnTo: null, warnY: y });
+  }
+  planTelegraph(b, world) {
+    this.attackX = b.x; this.attackY = this.y; this.rushDir = this.facing;
+    this.warnFrom = null; this.warnTo = null;
+    const plan = telegraphPlan(this, world);
+    this.warnFrom = plan.from; this.warnTo = plan.to; this.warnY = plan.y;
   }
   get canBeHit() { return this.alive && this.state !== 'split' && this.state !== 'roar'; }
   takeHit(damage, dir, bonk = false) {
@@ -161,8 +202,9 @@ export class Yetti {
       if (phase > this.phase) {
         this.phase = phase; this.state = 'roar'; this.timer = ROAR; this.mode = null;
         // A clipboard-break/mash stun can still be running when a shot crosses the gate.
-        // It must not replace the roar with approach or swallow the phase's adds.
-        if (TYPES[this.type].shield) { this.stun = 0; this.shield = true; this.shieldHits = 0; this.reshieldTimer = TYPES[this.type].reshield; }
+        // Clear stun on every boss so it never replaces the roar with approach or swallows adds.
+        this.stun = 0;
+        if (TYPES[this.type].shield) { this.shield = true; this.shieldHits = 0; this.reshieldTimer = TYPES[this.type].reshield; }
         return { accepted: true, phase };
       }
     }
@@ -180,8 +222,8 @@ export class Yetti {
     this.choirBuff = buff;
     this.clock += dt; this.cooldown -= dt * buff; this.poise -= dt;
     if (t.laneHop) this.hopCool = (this.hopCool ?? t.laneHop) - dt;
-    if (t.reshield && this.phase >= 3 && (this.reshieldTimer = (this.reshieldTimer ?? t.reshield) - dt) <= 0) {
-      this.shield = true; this.shieldHits = 0; this.reshieldTimer = t.reshield;
+    if (t.reshield && this.phase >= 3 && (this.reshieldTimer = (this.reshieldTimer ?? t.reshield) - dt) <= TIMER_EPS) {
+      this.shield = true; this.shieldHits = 0; this.reshieldTimer = wrapTimer(this.reshieldTimer, t.reshield);
     }
     if (this.type === 'hover') this.z = 65 + Math.sin(this.clock * 3) * 10;
     if (this.stun > 0) { this.stun -= dt; if (this.stun <= 0) this.state = 'approach'; return; }
@@ -201,9 +243,7 @@ export class Yetti {
         if (this.type === 'charger' || t.lunge || this.mode === 'rush') {
           this.state = 'rush'; this.mode = null;
           // Rush through Bob's telegraphed spot (plus overshoot) so the jump/step lesson is real.
-          this.timer = t.lunge
-            ? clamp((Math.abs(this.attackX - this.x) + t.lunge.over) / (430 * pace), t.lunge.min, t.lunge.max)
-            : clamp((Math.abs(this.attackX - this.x) + 140) / (430 * pace), .65, 1.2);
+          this.timer = rushDuration(this, pace);
         }
         else {
           let slammed = false;
@@ -230,8 +270,12 @@ export class Yetti {
       return;
     }
     if (this.state === 'rush') {
-      this.x += this.rushDir * 430 * pace * dt; this.timer -= dt;
-      if (Math.abs(b.x-this.x)<70 && Math.abs(b.y-this.y)<34 && b.z<70) world.hurtBob(true, this.x);
+      const prevX = this.x, stepSpeed = (t.lunge?.speed ?? 430) * pace;
+      this.x += this.rushDir * stepSpeed * dt; this.timer -= dt;
+      const hitX = t.lunge
+        ? b.x >= Math.min(prevX, this.x) - 70 && b.x <= Math.max(prevX, this.x) + 70
+        : Math.abs(b.x - this.x) < 70;
+      if (hitX && Math.abs(b.y - this.y) < 34 && b.z < 70) world.hurtBob(true, this.x);
       this.x = clamp(this.x, world.bounds.l+55, world.bounds.r-55);
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = this.boss ? 1 : 2; }
       return;
@@ -246,22 +290,30 @@ export class Yetti {
     // Phase III Interventionist charges across the arena when Bob keeps his distance (Chieftain charge).
     if ((boss >= 3 || (t.rushPhase && this.phase >= t.rushPhase)) && this.rushCool <= 0 && Math.abs(dx) > 300 && Math.abs(dx) < 900 && Math.abs(dy) < 40 && this.cooldown <= 0) {
       this.state='telegraph'; this.mode='rush'; this.timer=.8/pace; this.rushCool=5;
-      this.attackX=b.x; this.attackY=this.y; this.rushDir=this.facing; return;
+      this.planTelegraph(b, world); return;
     }
     if (Math.abs(dx)<reach && Math.abs(dy)< (ranged ? 110 : 30) && this.cooldown<=0) {
-      this.state='telegraph'; this.timer=(t.lunge?.tell ?? (this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65)) / pace;
-      this.attackX=b.x; this.attackY=this.y; this.rushDir=this.facing; world.yellYettiAttack?.(); return;
+      this.state='telegraph'; this.mode=null; this.timer=(t.lunge?.tell ?? (this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65)) / pace;
+      this.planTelegraph(b, world); world.yellYettiAttack?.(); return;
     }
     const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff*(boss>=3?1.45:boss===2?1.3:1);
     const oldX=this.x;
     if (Math.abs(dx)>pref) this.x += Math.sign(dx)*speed*dt;
     if (ranged) stepRangedLane(this, world.enemies, dy, speed, dt);
     else if (t.laneHop) {
-      if (this.hopCool <= 0) {
-        const lane = laneOf(this.y), step = Math.sign(laneOf(b.y) - lane);
-        this.hopY = step ? laneY(lane + step) : this.y; this.hopCool = t.laneHop;
+      const lane = laneOf(this.y), step = Math.sign(laneOf(b.y) - lane);
+      if (this.hopCool <= TIMER_EPS) {
+        if (step) this.hopY = laneY(lane + step);
+        this.hopCool = this.hopCool > -dt - 1e-6 ? wrapTimer(this.hopCool, t.laneHop) : t.laneHop;
       }
-      if (this.hopY != null) this.y += clamp(this.hopY - this.y, -220 * dt, 220 * dt);
+      if (this.hopY != null) {
+        this.y += clamp(this.hopY - this.y, -220 * dt, 220 * dt);
+        if (Math.abs(this.hopY - this.y) <= 1e-6) { this.y = this.hopY; this.hopY = null; }
+      } else if (step === 0 && Math.abs(dy) >= 24) {
+        const bandLo = Math.max(LANE_TOP, laneY(lane) - LANE_H * 0.45);
+        const bandHi = Math.min(LANE_BOT, laneY(lane) + LANE_H * 0.45);
+        this.y = clamp(this.y + clamp(dy, -speed * .6 * dt, speed * .6 * dt), bandLo, bandHi);
+      }
     }
     else this.y = clamp(this.y+clamp(dy,-speed*.6*dt,speed*.6*dt),LANE_TOP,LANE_BOT);
     this.x = clamp(this.x,world.bounds.l+55,world.bounds.r-55);

@@ -15,6 +15,7 @@ import { STORY } from '../src/story.js';
 import { normalizeSave } from '../src/save.js';
 import { LINES, PRESENT } from '../src/voice-lines.js';
 import { MUSIC } from '../src/audio.js';
+import { rollingVoiceStats } from '../src/voice-gate.js';
 import { runVoiceRate } from '../tools/voice-rate.mjs';
 
 const sha = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -144,21 +145,27 @@ test('Stage 4 music IDs select supplied music or the existing free fallback', ()
   for (const id of ['stage1', 'boss1', 'stage2', 'boss2', 'stage3', 'boss3']) assert.equal(MUSIC[id].url, 'assets/audio/bdb-rise.mp3');
 });
 
-test('Stage 4 re-kidnap runs once before narration; opening lines fire at 2 and 4.5 seconds', () => {
+test('Stage 4 re-kidnap runs once before narration; opening lines fire at 8 and 16 seconds inside the rolling window', () => {
   const w = new Campaign({ stage: 4, rng: () => 1 });
   const cutscene = w.events.findIndex(e => e.type === 'cutscene' && e.data === 'kidnap');
   const narration = w.events.findIndex(e => e.type === 'voice' && e.data === 'nar_ch4');
   assert.ok(cutscene >= 0 && narration > cutscene);
+  const allStamps = [0];
   const timed = [];
   w.events = [];
-  for (let i = 0; i < 300; i++) {
+  for (let i = 0; i < 17 * 60; i++) {
     w.update(1 / 60);
-    timed.push(...w.events.filter(e => e.type === 'voice' && ['claudia_s4', 'bob_s4'].includes(e.data)).map(e => [e.data, w.elapsed]));
+    for (const e of w.events) {
+      if (e.type !== 'voice') continue;
+      allStamps.push(w.elapsed);
+      if (['claudia_s4', 'bob_s4'].includes(e.data)) timed.push([e.data, w.elapsed]);
+    }
     w.events = [];
   }
   assert.deepEqual(timed.map(([id]) => id), ['claudia_s4', 'bob_s4']);
-  assert.ok(Math.abs(timed[0][1] - 2) < .02);
-  assert.ok(Math.abs(timed[1][1] - 4.5) < .02);
+  assert.ok(Math.abs(timed[0][1] - 8) < .03, `claudia_s4 at ${timed[0][1]}`);
+  assert.ok(Math.abs(timed[1][1] - 16) < .03, `bob_s4 at ${timed[1][1]}`);
+  assert.equal(rollingVoiceStats(allStamps).ok, true);
   w.loadStage(4);
   assert.ok(!w.events.some(e => e.type === 'cutscene' && e.data === 'kidnap'));
   assert.equal(new Campaign({ stage: 4 }).events.filter(e => e.type === 'cutscene' && e.data === 'kidnap').length, 1);
@@ -200,11 +207,16 @@ test('finisher accessor keeps the Stage 3 Wingmen controller and supports a futu
   assert.equal(w.finisher, null);
 });
 
-test('Stage 4 scripted beats fit the unchanged ambient and total voice-rate limits', () => {
-  const report = runVoiceRate({ stage: 4, hz: 60 });
-  assert.equal(report.cleared, true);
-  assert.equal(report.stageTimes.length, 1);
-  assert.ok(report.ambientPerMin <= 4, `ambient ${report.ambientPerMin}/min`);
-  assert.ok(report.totalPerMin <= 7, `total ${report.totalPerMin}/min`);
-  assert.ok(report.minAmbientGap >= 7.95, `gap ${report.minAmbientGap}`);
+test('Stage 4 scripted beats fit the rolling window (<=1/8s, <=3/60s) and voice-rate limits across rates', () => {
+  for (const hz of [30, 60, 120]) {
+    const report = runVoiceRate({ stage: 4, hz });
+    assert.equal(report.cleared, true, `${hz}Hz clear`);
+    assert.equal(report.stageTimes.length, 1);
+    assert.ok(report.ambientPerMin <= 4, `${hz}Hz ambient ${report.ambientPerMin}/min`);
+    assert.ok(report.totalPerMin <= 7, `${hz}Hz total ${report.totalPerMin}/min`);
+    assert.ok(report.minAmbientGap >= 7.95, `${hz}Hz ambient gap ${report.minAmbientGap}`);
+    assert.ok(report.minVoiceGap >= 7.99, `${hz}Hz voice gap ${report.minVoiceGap}`);
+    assert.ok(report.maxIn60s <= 3, `${hz}Hz max in 60s ${report.maxIn60s}`);
+    assert.equal(report.rollingOk, true, `${hz}Hz rolling window`);
+  }
 });

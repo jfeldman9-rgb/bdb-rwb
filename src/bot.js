@@ -19,7 +19,8 @@ export class Bot {
     const dx=e.x-b.x,dy=e.y-b.y,side=Math.sign(dx)||1;
     out.y=Math.abs(dy)>10?Math.sign(dy):0;
     out.x=Math.abs(dx)>(e.shield?65:290)?side:0;
-    if(b.facing!==side)out.x=side;
+    if(b.facing!==side&&Math.abs(dx)<10)this.flipStall=(this.flipStall||0)+1;else this.flipStall=0;
+    if(b.facing!==side)out.x=this.flipStall>=6?(b.x>w.bounds.l+80?b.facing:-b.facing):side;
     out.fire=Math.abs(dy)<35&&b.facing===side;
     if(e.shield&&Math.abs(dx)<160&&Math.abs(dy)<35)out.dash=true;
     if((e.state==='telegraph'||e.state==='rush')&&Math.abs(dx)<200)out.jump=true;

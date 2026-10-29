@@ -25,12 +25,17 @@ export class Bob {
     if (this.inv > 0 || this.z > 24 || this.busy) return false;
     this.grabbedBy = enemy; this.grabMash = 0; this.setState('grabbed', 3); return true;
   }
+  releaseGrab() {
+    if (this.state !== 'grabbed') return false;
+    this.grabbedBy = null; this.grabPunish = null; this.setState('idle');
+    return true;
+  }
   mash(count = 1) {
     if (this.state !== 'grabbed') return false;
     this.grabMash += count;
     if (this.grabMash < MASH_NEED) return false;
     const e = this.grabbedBy; this.grabbedBy = null; this.inv = 1.5; this.setState('idle');
-    if (e) { e.state = 'hurt'; e.stun = 1.2; }
+    if (e && e.alive && e.state !== 'roar') { e.state = 'hurt'; e.stun = 1.2; }
     return true;
   }
   update(dt, input = {}, bounds = { l: 0, r: WORLD_W }) {
@@ -40,13 +45,16 @@ export class Bob {
     if (input.jump) this.jumpBuffer = DIFFICULTIES[this.difficulty].grace;
     else this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
     if (this.state === 'grabbed') {
-      this.stateTime -= dt;
-      if (this.difficulty === 'story') this.mash(3.5 * dt);
-      if (this.state === 'grabbed' && (!this.grabbedBy?.alive || this.stateTime <= 0)) {
-        const grabber = this.grabbedBy;
-        // A dead grabber just lets go. A timeout is punished by the campaign via hurtBob.
-        this.grabPunish = this.stateTime <= 0 && grabber?.alive ? grabber : null;
-        this.grabbedBy = null; this.setState('idle');
+      if (this.grabbedBy?.state === 'roar') this.releaseGrab();
+      else {
+        this.stateTime -= dt;
+        if (this.difficulty === 'story') this.mash(3.5 * dt);
+        if (this.state === 'grabbed' && (!this.grabbedBy?.alive || this.grabbedBy.state === 'roar' || this.stateTime <= 0)) {
+          const grabber = this.grabbedBy;
+          // A dead or roaring grabber just lets go. A live hold timeout is punished by the campaign via hurtBob.
+          this.grabPunish = this.stateTime <= 0 && grabber?.alive && grabber.state !== 'roar' ? grabber : null;
+          this.grabbedBy = null; this.setState('idle');
+        }
       }
     } else if (this.busy) {
       this.stateTime -= dt;
