@@ -2,7 +2,7 @@
 // node tools/browser-smoke.mjs [--from=N]
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { stat, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize } from 'node:path';
 import assert from 'node:assert/strict';
@@ -10,6 +10,7 @@ import { maxStage } from '../src/stages.js';
 import { SAVE_KEY } from '../src/save.js';
 
 const root = process.cwd();
+const optionalMedia = new Set([2, 3, 4].flatMap(stage => ['mp4', 'jpg'].map(ext => `/assets/cutscenes/stage${stage}_intro.${ext}`)).filter(path => !existsSync(join(root, path))));
 const fromArg = process.argv.slice(2).find(arg => arg.startsWith('--from='));
 const fromStage = fromArg ? Number(fromArg.slice('--from='.length)) : 1;
 assert.ok(Number.isInteger(fromStage) && fromStage >= 1 && fromStage <= maxStage, `--from must be an integer from 1 to ${maxStage}`);
@@ -82,14 +83,19 @@ try {
   const tab = await (await fetch(`${base}/json/new?about:blank`, { method: 'PUT' })).json();
   ws = new WebSocket(tab.webSocketDebuggerUrl);
   await new Promise((r) => ws.addEventListener('open', r, { once: true }));
-  let seq = 0; const pending = new Map(), errors = [];
+  let seq = 0; const pending = new Map(), errors = [], missingMedia = [], cutsceneRequests = [];
   ws.addEventListener('message', ({ data }) => {
     const m = JSON.parse(data);
     if (m.id) {
       const p = pending.get(m.id); pending.delete(m.id);
       if (m.error) p.reject(Error(JSON.stringify(m.error))); else p.resolve(m.result);
     } else if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
-    else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) errors.push(`${m.params.response.status} ${m.params.response.url}`);
+    else if (m.method === 'Network.requestWillBeSent' && m.params.request.url.includes('/assets/cutscenes/')) cutsceneRequests.push(m.params.request.url);
+    else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) {
+      const { status, url } = m.params.response;
+      if (status === 404 && optionalMedia.has(new URL(url).pathname)) missingMedia.push(url);
+      else errors.push(`${status} ${url}`);
+    }
   });
   const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
   const evaluate = async (expression) => { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
@@ -111,6 +117,7 @@ try {
   await send('Page.navigate', { url: `${origin}/?nocutscenes=1` });
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
   await shot('title');
+  assert.equal(cutsceneRequests.length, 0, 'cutscene media must stay out of title/pre-fight downloads');
   console.log('Title ready', await evaluate('({canvas:!!document.querySelector("canvas"),version:Phaser.VERSION})'));
   await evaluate(`localStorage.setItem(${JSON.stringify(SAVE_KEY)}, JSON.stringify({unlockedStage:${fromStage},difficulty:'adventure'}))`);
   await send('Page.navigate', { url: `${origin}/?stage=${fromStage}&demo=1&nocutscenes=1` });
@@ -224,7 +231,7 @@ try {
   await waitFor('!window.__game.isPaused && document.getElementById("graphics-notice").hidden');
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setTouchEmulationEnabled', { enabled: false });
-  await send('Page.navigate', { url: `${origin}/?cutscenes=1` });
+  await send('Page.navigate', { url: `${origin}/?cutscenes=1&intro=v3` });
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
   await evaluate('document.getElementById("start").click()');
   await waitFor('!!document.querySelector("#bdb-cutscene video")');
@@ -255,17 +262,49 @@ try {
   assert.equal(playing.started, true);
   assert.equal(playing.stage, 1);
   assert.equal(playing.cardHidden, true);
+  // Default chapter 1 uses the supplied stage opener; the long intro above stays available.
+  await send('Page.navigate', { url: `${origin}/?cutscenes=1` });
+  await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
+  await evaluate('document.getElementById("start").click()');
+  await waitFor('!!document.querySelector("#bdb-cutscene video")');
+  await waitFor('document.querySelector("#bdb-cutscene video")?.currentTime > .5');
+  assert.match(await evaluate('document.querySelector("#bdb-cutscene video").src'), /stage1_intro\.mp4$/);
+  await shot('stage1-intro');
+  const skipVideo = async () => {
+    await sleep(500); // Per-clip input guard.
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  };
+  await skipVideo();
+  await waitFor('window.__game?.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
+  // Exercise real stage restarts, including the S3 cage -> S4 texture release,
+  // with optional intros absent and the existing S2/S4 kidnap media still enabled.
+  for (const stage of [2, 3, 4]) {
+    await evaluate(`window.__game.campaign.loadStage(${stage})`);
+    await waitFor(`window.__game.scene.getScene('gameplay')?.started && window.__game.scene.getScene('gameplay').stageNo === ${stage}`);
+    if (stage === 2 || stage === 4) {
+      await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("kidnap_1.mp4")');
+      await skipVideo();
+    }
+    await waitFor('!document.querySelector("#bdb-cutscene") && !window.__game.isPaused && !window.__game.campaign.paused');
+    assert.equal(await evaluate('window.__game.campaign.stageNo'), stage);
+    const elapsed = await evaluate('window.__game.campaign.elapsed');
+    await sleep(150);
+    assert.ok(await evaluate('window.__game.campaign.elapsed') > elapsed, `stage ${stage} did not resume after its unavailable intro`);
+  }
+  assert.equal(await evaluate('window.__game.scene.getScene("gameplay").claudia'), null);
+  assert.equal(await evaluate('window.__game.scene.getScene("gameplay").claudiaCage'), null);
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,
     fromStage, campaign: status, plates, touch,
-    checks: { started: true, framesAdvanced: true, noErrorCard: true, requestedStage: true, allPlateRuns: true, introV3: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
-    errors,
+    checks: { started: true, framesAdvanced: true, noErrorCard: true, requestedStage: true, allPlateRuns: true, introV3: true, stage1Intro: true, lazyCutscenes: true, missingStageIntrosResume: true, cageRestart: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
+    errors, missingMedia,
     screenshots,
   };
   await writeFile(`${shotDir}/browser-report.json`, JSON.stringify(report, null, 2));
   if (errors.length) throw new Error(errors.join('\n'));
-  console.log('Browser smoke passed, zero runtime/HTTP errors.');
+  console.log('Browser smoke passed, zero unexpected runtime/HTTP errors. Optional missing intro responses:', missingMedia.length);
 } finally {
   try { ws?.close(); } catch { /* already closed */ }
   chrome.kill('SIGKILL');

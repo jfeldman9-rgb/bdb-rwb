@@ -1,11 +1,14 @@
-// Chapter select. The 61s intro is the opening of chapter 1. Later chapters
-// start on their own stage clips instead of replaying it.
-import { INTRO_V2 } from './cutscene.js';
+// Chapter select uses the same stage openers as campaign continuation.
+import { INTRO_V2, STAGE_CLIPS } from './cutscene.js';
 
 /** Clip key for a chapter start, or null when this chapter has no opening intro. */
 export function chapterIntroKey(stage, query) {
-  if ((Number(stage) || 1) > 1) return null;
-  return INTRO_V2.enabled(query) ? 'intro_v2' : 'intro';
+  const no = Number(stage) || 1;
+  // Keep both full-length openings available through an explicit selection.
+  if (no === 1 && INTRO_V2.enabled(query)) return 'intro_v2';
+  if (no === 1 && query?.get?.('intro') === 'v3') return 'intro';
+  const key = `stage${no}`;
+  return STAGE_CLIPS[key] ? key : null;
 }
 
 /**
@@ -14,7 +17,7 @@ export function chapterIntroKey(stage, query) {
  */
 export function beginChapter({ stage, query, play, start }) {
   const key = chapterIntroKey(stage, query);
-  if (!key) { start(); return null; }
-  play(key, () => start());
+  if (!key) { start(null); return null; }
+  play(key, () => start(key));
   return key;
 }

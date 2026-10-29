@@ -244,7 +244,8 @@ export class GameScene extends Phaser.Scene {
   for(let i=0;i<ev.length;i++)batch.push(ev[i]);
   ev.length=0;
   const bossTrack=bossTrackForBatch(this.stageNo,batch);
-  for(const {type,data}of batch){
+  for(let i=0;i<batch.length;i++){
+  const {type,data}=batch[i];
   if(type==='voice'){if(this.holdingVoice)this.voiceHold.push(data);else if(!dadCallDubbed(data,this.cutscene)){say(data,(who,line)=>this.hud.say(who,line));if(data==='wingman_phase3')this.cameras.main.flash(300,225,190,255);}}
   if(type==='fire'){sfx.fire();if(data&&this.fx){this.fx.muzzle(data.x,data.y,data.dir||1);this.recoil=RECOIL_KICK;this.recoilDir=data.dir||1;}}
   if(type==='pickup')sfx.pickup();
@@ -254,7 +255,11 @@ export class GameScene extends Phaser.Scene {
   if(type==='go')this.hud?.flashGo?.(data?.plate);
   if(type==='papi'){this.papiFX.start();sfx.stampede();}
   if(type==='dad_callin'){const go=()=>this.world.finishDadCallin(); if(!playDadCall(this,go)) go();}
-  if(type==='cutscene')this.startHeldClip(data,held=>this.playHeld(held));
+  if(type==='cutscene'){
+   const keys=[data];
+   while(batch[i+1]?.type==='cutscene')keys.push(batch[++i].data);
+   this.startHeldClip(keys.length===1?data:keys,held=>this.playHeld(held));
+  }
   if(type==='victory')this.presentVictory();
   if(type==='dad')sfx.dadHorn();
   if(type==='dadhit'){const cam=this.cameras.main;cam.flash(140,255,250,235,true);this.fx?.impact('finisher',data.x,data.y-40,-1);sfx.hit(true);

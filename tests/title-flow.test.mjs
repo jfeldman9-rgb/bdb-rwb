@@ -3,19 +3,21 @@ import assert from 'node:assert/strict';
 import { beginChapter, chapterIntroKey } from '../src/title-flow.js';
 import { createStoryPlayer } from '../src/cutscene-hooks.js';
 
-test('chapter 1 plays the intro; later chapters skip the 61s opening', () => {
-  assert.equal(chapterIntroKey(1, new URLSearchParams('')), 'intro');
+test('each chapter requests its own opener; full intros remain explicit alternates', () => {
+  assert.equal(chapterIntroKey(1, new URLSearchParams('')), 'stage1');
   assert.equal(chapterIntroKey(1, new URLSearchParams('intro=v2')), 'intro_v2');
-  assert.equal(chapterIntroKey(2, new URLSearchParams('intro=v2')), null);
-  assert.equal(chapterIntroKey(3, new URLSearchParams('')), null);
+  assert.equal(chapterIntroKey(1, new URLSearchParams('intro=v3')), 'intro');
+  assert.equal(chapterIntroKey(2, new URLSearchParams('intro=v2')), 'stage2');
+  assert.equal(chapterIntroKey(3, new URLSearchParams('')), 'stage3');
+  assert.equal(chapterIntroKey(4, new URLSearchParams('')), 'stage4');
 
   const played = [];
   let started = 0;
   assert.equal(beginChapter({
     stage: 2, query: new URLSearchParams(''),
-    play: (key) => played.push(key), start: () => { started++; },
-  }), null);
-  assert.deepEqual(played, []);
+    play: (key, done) => { played.push(key); done(); }, start: () => { started++; },
+  }), 'stage2');
+  assert.deepEqual(played, ['stage2']);
   assert.equal(started, 1);
 
   started = 0;
@@ -23,8 +25,8 @@ test('chapter 1 plays the intro; later chapters skip the 61s opening', () => {
     stage: 1, query: new URLSearchParams(''),
     play: (clip, done) => { played.push(clip); done(); }, start: () => { started++; },
   });
-  assert.equal(key, 'intro');
-  assert.deepEqual(played, ['intro']);
+  assert.equal(key, 'stage1');
+  assert.deepEqual(played, ['stage2', 'stage1']);
   assert.equal(started, 1);
 });
 

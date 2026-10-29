@@ -1,0 +1,30 @@
+{
+  "baseline": "8c06396",
+  "head": "7d42b1916e9767af1a31f821f482a7fb7b927551",
+  "branch": "cursor/bdb-level4",
+  "lockedFiles": [
+    "src/stage1-def.js",
+    "src/stage2-def.js",
+    "src/stage3-def.js",
+    "src/eggplant.js",
+    "src/config.js",
+    "src/camera.js",
+    "src/barks.js",
+    "src/papacito.js",
+    "src/dad-call.js",
+    "src/wingman.js",
+    "src/parallax.js"
+  ],
+  "lockedFileDiff": "",
+  "existingAssetFilesChecked": 122,
+  "changedExistingAssets": [],
+  "stage4AssetsUnchangedFromTip": true,
+  "zoneStreamOnlyAdds4": true,
+  "cutsceneOnlyAddsStage1Through4": true,
+  "choirBlocksUnchanged": true,
+  "nightmareS3AndSnowClearUnchanged": true,
+  "papiTimeAndSummonWalkersUnchanged": true,
+  "lockedQuotesUnchanged": true,
+  "stage1MediaByteIdenticalToSource": true,
+  "stage2Through4MediaAbsent": true
+}

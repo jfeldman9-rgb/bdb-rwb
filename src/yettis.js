@@ -160,7 +160,9 @@ export class Yetti {
       // Crossing a gate: roar (untouchable beat, like RWB's Chieftain) and escalate.
       if (phase > this.phase) {
         this.phase = phase; this.state = 'roar'; this.timer = ROAR; this.mode = null;
-        if (TYPES[this.type].shield) { this.shield = true; this.shieldHits = 0; this.reshieldTimer = TYPES[this.type].reshield; }
+        // A clipboard-break/mash stun can still be running when a shot crosses the gate.
+        // It must not replace the roar with approach or swallow the phase's adds.
+        if (TYPES[this.type].shield) { this.stun = 0; this.shield = true; this.shieldHits = 0; this.reshieldTimer = TYPES[this.type].reshield; }
         return { accepted: true, phase };
       }
     }

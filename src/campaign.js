@@ -68,17 +68,17 @@ export function hitTier({ phase = false, killed = false, bonk = false, shieldBro
 
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
 export class Campaign {
-  constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {}, rng } = {}) {
+  constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {}, rng, stageIntroPlayed = false } = {}) {
     this.difficultyKey = difficulty; this.difficulty = DIFFICULTIES[difficulty]; this.onSave = onSave;
     this.save = normalizeSave(save); this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
-    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage);
+    this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
   }
   emit(type, data) { this.events.push({ type, data }); }
   get finisher() { return this.wingmen || this.court || null; }
   banner(text) { this.message = text; this.messageTime = 3; this.emit('banner', text); }
-  loadStage(stage) {
+  loadStage(stage, { introPlayed = false } = {}) {
     this.stageNo = stage; this.def = resolveStage(stage);
     // Later chapters push Yetti pace (speed, tells, cooldowns, projectiles) on top of the chosen difficulty,
     // capped so Nightmare's own pace doesn't compound into unreadable snowball walls.
@@ -101,6 +101,9 @@ export class Campaign {
       this.barks.attackN = 0; this.barks.porkDue = false; this.barks.tauntId = null; this.barks.lastYetti = null;
     }
     this.banner(this.def.title); this.emit('stage',stage);
+    // Chapter select has already settled its opener (played, skipped or unavailable).
+    // Direct starts and campaign loads request it here, before kidnap/narration.
+    if (!introPlayed) this.emit('cutscene', `stage${stage}`);
     // The kidnap clip stops scene audio. Chapter 2's narration has to be emitted
     // after that event so the new scene holds it instead of starting it and cutting it off.
     const openingKidnap = stage === 2 && !this.kidnapPlayed;

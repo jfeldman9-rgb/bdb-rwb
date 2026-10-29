@@ -1,0 +1,10 @@
+
+> smoke
+> node tools/browser-smoke.mjs --from=4
+
+Title ready { canvas: true, version: '4.2.1' }
+Stampede mid-sweep {"age":0.808,"n":36,"x":612}
+Stage 4 complete {"stage":4,"zone":5,"boss":true,"victory":false,"elapsed":176.76666666669948,"started":true,"cardHidden":true,"stats":{"shots":474,"papi":3,"dad":3,"kos":62,"deaths":0,"hits":7,"stages":[4],"phases":["4:2","4:3"],"stageTimes":[176.8]},"stampede":null,"plate":null}
+Touch layout {"touch":true,"buttons":[{"id":"tbPapi","width":61.6875,"height":51.40625},{"id":"tbDad","width":61.6875,"height":51.40625},{"id":"tbFire","width":61.6875,"height":77.109375},{"id":"tbJump","width":61.6875,"height":51.40625},{"id":"tbDash","width":61.6875,"height":51.40625}],"canvas":{"x":75.328125,"y":0,"width":693.328125,"height":389.984375,"top":0,"right":768.65625,"bottom":389.984375,"left":75.328125}}
+Intro Dad frame at 38
+Browser smoke passed, zero unexpected runtime/HTTP errors. Optional missing intro responses: 6

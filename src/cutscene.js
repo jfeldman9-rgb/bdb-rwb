@@ -30,6 +30,10 @@ export const INTRO_V2 = Object.freeze({
 export const STAGE_CLIPS = Object.freeze({
   intro: ['intro_v3'],
   intro_v2: ['intro_v2'],
+  stage1: ['stage1_intro'],
+  stage2: ['stage2_intro'],
+  stage3: ['stage3_intro'],
+  stage4: ['stage4_intro'],
   kidnap: ['kidnap_1', 'kidnap_2'],
   rescue_pre_boss: ['rescue_1'],
   victory: ['rescue_2'],

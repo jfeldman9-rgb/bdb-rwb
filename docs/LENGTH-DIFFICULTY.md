@@ -125,3 +125,29 @@ All eight plates are newly painted with the built-in image tool; all six zone/bo
 ### Final verification
 
 Final `npm test` on Node 24 after narrow allowlist fixes for stage-finale assumptions: see operator follow-up on `tests/boot.test.mjs` (allow `stage4-def`) and `tests/voice-cues.test.mjs` (S3 continues to S4; final victory after S4). Evidence logs under `logs/pass-a-final-*`.
+
+### Codex gpt-6.1-sol hardening Pass A (2026-10-28)
+
+Started from `7d42b1916e9767af1a31f821f482a7fb7b927551` on `cursor/bdb-level4`, using Node 24.10.0. The starting suite passed 268 tests; the hardened suite passes **283, with 0 failures**.
+
+A shield-break or mash stun could remain active when the Bouncer crossed a phase gate. Its stun update then cancelled the roar and skipped that gate's adds. Shielded bosses now clear stale stun at the gate; a regression covers both gates, both stun sources, and 30/60/120 Hz. No balance values changed. This affects Story at 30 Hz, where the previously skipped roar/adds now occur.
+
+| Difficulty | Hz | S4 fresh (s) | Hits | Deaths | Papi / Dad | S4 continuation (s) | Campaign (s) | Clear |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Adventure | 30 | 175.0 | 8 | 1 | 3 / 3 | 185.2 | 765.5 | Both |
+| Adventure | 60 | 176.8 | 7 | 0 | 3 / 3 | 177.8 | 753.8 | Both |
+| Adventure | 120 | 175.2 | 7 | 1 | 3 / 3 | 171.5 | 747.0 | Both |
+| Story | 30 | 158.5 | 4 | 0 | 3 / 3 | 162.0 | 663.6 | Both |
+| Story | 60 | 162.3 | 8 | 1 | 3 / 3 | 161.2 | 675.9 | Both |
+| Story | 120 | 157.6 | 6 | 1 | 3 / 3 | 157.4 | 660.1 | Both |
+| Nightmare | 30 | 247.8 | 22 | 5 | 3 / 3 | 285.6 | 1103.4 | Both |
+| Nightmare | 60 | 259.6 | 25 | 7 | 3 / 3 | 302.1 | 1161.3 | Both |
+| Nightmare | 120 | 238.8 | 21 | 5 | 3 / 3 | 243.3 | 1102.3 | Both |
+
+Every fresh S1–S3 result object and the campaign's first three stage times match `baseline-8c06396` in all nine difficulty/rate combinations. Adventure meets both the fresh target and continuation hard band. Story remains above the proposed target; Nightmare results are reported without retuning.
+
+Stage intros use additive `stage1`–`stage4` keys. Title/chapter select settles the opener before gameplay and suppresses its initial duplicate; campaign loads emit their stage key before narration. Adjacent intro/kidnap events play as one sequence, retaining both kidnap clips and holding narration until the sequence completes. A synchronous media refusal also releases its input handle. Existing skip, stall, error, pause and decoder cleanup behavior is covered by regressions. The supplied Stage 1 MP4/poster were copied byte-for-byte, including the required `.jpg` alias. Stage 2–4 intro media remain absent and skip safely. Full `intro` / `intro_v2` stay available with `?intro=v3` / `?intro=v2`. No video enters a preloader.
+
+Both `npm run smoke` and `npm run smoke -- --from=4` pass in this worktree: 24 campaign plate captures and six Stage 4 captures, real Stage 1 intro playback/skip, missing Stage 2–4 intro recovery, and S3 cage-to-S4 restart. Each smoke records six expected 404 responses for absent intro media and zero unexpected HTTP/runtime errors. Screenshots/reports: `/workspace/bdb-sol4-run/sol-smoke-campaign/` and `/workspace/bdb-sol4-run/sol-smoke-stage4/`.
+
+S4 voice rate remains **3.28 ambient/min, 6.56 total/min, 8.000 s minimum ambient gap**. GPU residency remains **8.988 MiB ASTC / 35.952 MiB RGBA**. Locked files and 122 existing asset files match the baseline; `cutscene.js` only adds the four authorized keys. Salsero/Bouncer art is still placeholder, new S4 voices remain caption-only, and physical iPhone performance remains unverified. Evidence: `logs/sol-hardening-*`.
