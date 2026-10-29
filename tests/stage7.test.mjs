@@ -228,8 +228,11 @@ test('Stage 7 opener and finale lines respect the locked dialogue cap', () => {
   assert.equal(w.victory, true);
   assert.equal(w.message, STORY.finalVictory);
   assert.ok(OPTIONAL_CLIPS.has('stage7_intro'));
+  assert.ok(OPTIONAL_CLIPS.has('final_victory'));
   assert.deepEqual(STAGE_CLIPS.stage7, ['stage7_intro']);
+  assert.deepEqual(STAGE_CLIPS.final_victory, ['final_victory']);
   assert.deepEqual(clipIdsFor('stage7', () => false), []);
+  assert.deepEqual(clipIdsFor('final_victory', () => false), []);
   assert.equal(rollingVoiceStats(allStamps).ok, true);
 });
 

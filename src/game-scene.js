@@ -344,7 +344,7 @@ export class GameScene extends Phaser.Scene {
  }
  victoryClip(key){
   const keys=Array.isArray(key)?key:[key];
-  return keys.includes('victory');
+  return keys.includes('victory')||keys.includes('final_victory');
  }
  /** Duck music and hold any voice that arrives while the clip is up. A sync done() releases the hold before the next event. */
  startHeldClip(key,done){
@@ -399,11 +399,13 @@ export class GameScene extends Phaser.Scene {
    const flipped=!!this.world?.nightmareUnlockedPending||(!this.world?.beatenAtStart&&!!this.world?.save?.beaten&&stage<=3);
    if(flipped&&this.world)this.world.nightmareUnlockedPending=false;
    if(score)score.textContent=`${Math.floor(this.world.score)} points · ${flipped?'Nightmare unlocked':`Chapter ${stage} complete`}`;
+   const heading=panel?.querySelector?.('h2');
+   if(heading)heading.textContent=stage===7?STORY.finalVictory:'CLAUDIA RESCUED.';
    if(panel)panel.hidden=false;document.body.classList.remove('playing');
   };
-  // S3 keep rescue is presentChapterRescue. The Stage 7 finale plays rescue_2 here.
+  // S3 keep rescue is presentChapterRescue. The Stage 7 finale plays the dedicated ending clip.
   if((this.stageNo||0)===7){
-    if(this.game?.story?.play)this.startHeldClip('victory',show);
+    if(this.game?.story?.play)this.startHeldClip('final_victory',show);
     else show([]);
     return;
   }

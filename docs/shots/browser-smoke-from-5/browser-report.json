@@ -6,8 +6,8 @@
     "stage": 5,
     "zone": 5,
     "boss": true,
-    "victory": true,
-    "elapsed": 197.55000000004935,
+    "victory": false,
+    "elapsed": 195.03333333338068,
     "started": true,
     "cardHidden": true,
     "stats": {
@@ -30,7 +30,7 @@
     },
     "stampede": null,
     "plate": null,
-    "victoryWait": 2.5500000000493515
+    "victoryWait": null
   },
   "plates": [
     {
@@ -71,8 +71,8 @@
     {
       "stage": 5,
       "key": "s5-mid5",
-      "alpha": 0.9956696669817026,
-      "camX": 6477.921440151217,
+      "alpha": 0.9943780499957768,
+      "camX": 6477.301463997973,
       "zone": 5
     }
   ],
@@ -128,7 +128,7 @@
     "lazyCutscenes": true,
     "stageIntrosPresent": true,
     "chapter4TitleMusic": true,
-    "victoryWait": 2.5500000000493515,
+    "victoryWait": null,
     "cageRestart": true,
     "simultaneousTouch": true,
     "touchRelease": true,
@@ -151,10 +151,15 @@
     "/workspace/docs/shots/browser-smoke-from-5/s5-mid4.png",
     "/workspace/docs/shots/browser-smoke-from-5/boss.png",
     "/workspace/docs/shots/browser-smoke-from-5/s5-mid5.png",
-    "/workspace/docs/shots/browser-smoke-from-5/victory.png",
+    "/workspace/docs/shots/browser-smoke-from-5/stage5-clear.png",
     "/workspace/docs/shots/browser-smoke-from-5/touch-stage1.png",
     "/workspace/docs/shots/browser-smoke-from-5/chapter4-title-opener.png",
     "/workspace/docs/shots/browser-smoke-from-5/intro-dad.png",
-    "/workspace/docs/shots/browser-smoke-from-5/stage1-intro.png"
+    "/workspace/docs/shots/browser-smoke-from-5/stage1-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-5/stage5-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-5/stage6-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-5/stage7-intro.png",
+    "/workspace/docs/shots/browser-smoke-from-5/final-victory.png",
+    "/workspace/docs/shots/browser-smoke-from-5/final-victory-panel.png"
   ]
 }

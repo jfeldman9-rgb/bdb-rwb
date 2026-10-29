@@ -88,7 +88,8 @@ try {
     const m = JSON.parse(data);
     if (m.id) {
       const p = pending.get(m.id); pending.delete(m.id);
-      if (m.error) p.reject(Error(JSON.stringify(m.error))); else p.resolve(m.result);
+      if (!p) return;
+      if (m.error) p.reject(Error(`${p.method}: ${JSON.stringify(m.error)}`)); else p.resolve(m.result);
     } else if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
     else if (m.method === 'Network.requestWillBeSent' && m.params.request.url.includes('/assets/cutscenes/')) cutsceneRequests.push(m.params.request.url);
     else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) {
@@ -97,8 +98,13 @@ try {
       else errors.push(`${status} ${url}`);
     }
   });
-  const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
-  const evaluate = async (expression) => { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
+  const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject, method }); ws.send(JSON.stringify({ id, method, params })); });
+  const evaluate = async (expression) => {
+    const wrapped = `(async()=>{const value=await eval(${JSON.stringify(expression)});if(value===undefined)return null;try{return JSON.parse(JSON.stringify(value));}catch(e){return String(value);}})()`;
+    const r = await send('Runtime.evaluate', { expression: wrapped, returnByValue: true, awaitPromise: true });
+    if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+    return r.result.value;
+  };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   async function waitFor(expression, ms = 30000) { const end = Date.now() + ms; while (Date.now() < end) { if (await evaluate(expression)) return; await sleep(100); } throw Error(`Timed out: ${expression}\n${errors.join('\n')}`); }
   const screenshots = [];
@@ -271,7 +277,7 @@ try {
   }))()`);
   await shot('intro-dad');
   console.log('Intro Dad frame at', sought);
-  const video = await evaluate('({inline:document.querySelector("video").playsInline,src:document.querySelector("video").src,time:document.querySelector("video").currentTime})');
+  const video = await evaluate(`(()=>{const v=document.querySelector("#bdb-cutscene video")||document.querySelector("video");return {inline:!!v?.playsInline,src:String(v?.src||""),time:+(v?.currentTime||0)};})()`);
   assert.equal(video.inline, true);
   assert.match(video.src, /intro_v3\.mp4\?v=b67d6176/);
   assert.doesNotMatch(video.src, /opening\.mp4/);
@@ -295,10 +301,14 @@ try {
   await skipVideo();
   await waitFor('window.__game?.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
   // Each later chapter plays its own intro. S2 and S4 then play both kidnap clips.
-  for (const stage of [2, 3, 4]) {
+  for (const stage of [2, 3, 4, 5, 6, 7]) {
     await evaluate(`window.__game.campaign.loadStage(${stage})`);
     await waitFor(`window.__game.scene.getScene('gameplay')?.started && window.__game.scene.getScene('gameplay').stageNo === ${stage}`);
     await waitFor(`!!document.querySelector("#bdb-cutscene video")?.src.includes("stage${stage}_intro.mp4")`);
+    if (stage >= 5) {
+      await waitFor('document.querySelector("#bdb-cutscene video")?.currentTime > .3');
+      await shot(`stage${stage}-intro`);
+    }
     await skipVideo();
     if (stage === 2 || stage === 4) {
       await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("kidnap_1.mp4")');
@@ -312,8 +322,16 @@ try {
     await sleep(150);
     assert.ok(await evaluate('window.__game.campaign.elapsed') > elapsed, `stage ${stage} did not resume after its intro`);
   }
-  assert.equal(await evaluate('window.__game.scene.getScene("gameplay").claudia'), null);
-  assert.equal(await evaluate('window.__game.scene.getScene("gameplay").claudiaCage'), null);
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudia'), true);
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), true);
+  await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');s.presentVictory();})()`);
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("final_victory.mp4")');
+  await shot('final-victory');
+  await skipVideo();
+  await waitFor('!document.getElementById("victory").hidden');
+  assert.equal(await evaluate('document.querySelector("#victory h2")?.textContent'), 'CLAUDIA RESCUED. FOR REAL THIS TIME.');
+  await shot('final-victory-panel');
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), false);
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,

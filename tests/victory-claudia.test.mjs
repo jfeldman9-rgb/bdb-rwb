@@ -95,6 +95,34 @@ test('stage 4 victory names the chapter and does not replay the keep rescue', ()
   assert.equal(score.textContent, '90 points · Chapter 4 complete');
 });
 
+test('stage 7 victory plays the dedicated ending clip and names the real rescue', () => {
+  const line = { textContent: '' };
+  const heading = { textContent: 'CLAUDIA RESCUED.' };
+  const panel = { hidden: true, querySelector(sel) { return sel === 'h2' ? heading : null; } };
+  const score = { textContent: '' };
+  const prev = globalThis.document.getElementById;
+  globalThis.document.getElementById = (id) => id === 'victory-line' ? line : id === 'victory' ? panel : id === 'victory-score' ? score : null;
+  const scene = Object.create(GameScene.prototype);
+  scene.finished = false;
+  scene.stageNo = 7;
+  scene.freed = false;
+  scene.pauseReasons = new Set();
+  scene.voiceHold = [];
+  scene.world = { score: 180, paused: false, bossActive: false, stageNo: 7, beatenAtStart: true, save: { beaten: true } };
+  let played = null;
+  scene.game = { inp: { clear() {} }, story: { play(key, done) { played = key; done(); } } };
+  scene.hud = { caption: { setText() {} } };
+  scene.freeClaudia = () => { scene.freed = true; };
+  scene.playHeld = () => {};
+  try { scene.presentVictory(); }
+  finally { globalThis.document.getElementById = prev; }
+  assert.equal(scene.freed, true);
+  assert.equal(played, 'final_victory');
+  assert.equal(heading.textContent, 'CLAUDIA RESCUED. FOR REAL THIS TIME.');
+  assert.equal(panel.hidden, false);
+  assert.equal(score.textContent, '180 points · Chapter 7 complete');
+});
+
 test('a stage 3 clear frees Claudia and plays the keep rescue without freezing a skipped clip', () => {
   const scene = Object.create(GameScene.prototype);
   let played = null;

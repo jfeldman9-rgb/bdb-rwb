@@ -55,18 +55,19 @@ test('stage intro keys are additive and each poster alias matches its poster byt
     stage1: ['stage1_intro'], stage2: ['stage2_intro'], stage3: ['stage3_intro'], stage4: ['stage4_intro'],
     stage5: ['stage5_intro'], stage6: ['stage6_intro'], stage7: ['stage7_intro'],
     kidnap: ['kidnap_1', 'kidnap_2'], rescue_pre_boss: ['rescue_1'], victory: ['rescue_2'],
+    final_victory: ['final_victory'],
   });
-  for (const stage of [1, 2, 3, 4, 5, 6, 7]) {
-    const jpg = `assets/cutscenes/stage${stage}_intro.jpg`;
-    const poster = `assets/cutscenes/stage${stage}_intro_poster.jpg`;
-    if (!existsSync(jpg) && OPTIONAL_CLIPS.has(`stage${stage}_intro`)) continue;
+  for (const id of ['stage1_intro', 'stage2_intro', 'stage3_intro', 'stage4_intro', 'stage5_intro', 'stage6_intro', 'stage7_intro', 'final_victory']) {
+    const jpg = `assets/cutscenes/${id}.jpg`;
+    const poster = `assets/cutscenes/${id}_poster.jpg`;
+    if (!existsSync(jpg) && OPTIONAL_CLIPS.has(id)) continue;
     assert.deepEqual(readFileSync(jpg), readFileSync(poster));
   }
 });
 
 test('direct and campaign stage loads request each opener before kidnap and narration', () => {
   const w = new Campaign();
-  for (const stage of [1, 2, 3, 4, 5]) {
+  for (const stage of [1, 2, 3, 4, 5, 6, 7]) {
     w.events = [];
     w.loadStage(stage);
     const opening = w.events.filter(e => e.type === 'cutscene').map(e => e.data);
@@ -77,7 +78,7 @@ test('direct and campaign stage loads request each opener before kidnap and narr
 });
 
 test('chapter select plays its opener once; chapter 1 follows intro_v3 with the short clip', () => {
-  for (const stage of [1, 2, 3, 4, 5]) {
+  for (const stage of [1, 2, 3, 4, 5, 6, 7]) {
     let finish, world;
     const opener = stage === 1 ? 'intro' : `stage${stage}`;
     const key = beginChapter({ stage, query: new URLSearchParams(),

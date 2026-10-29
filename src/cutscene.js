@@ -40,9 +40,10 @@ export const STAGE_CLIPS = Object.freeze({
   kidnap: ['kidnap_1', 'kidnap_2'],
   rescue_pre_boss: ['rescue_1'],
   victory: ['rescue_2'],
+  final_victory: ['final_victory'],
 });
-/** Game Art will drop these later. Playback skips a missing optional file instead of stalling. */
-export const OPTIONAL_CLIPS = Object.freeze(new Set(['stage5_intro', 'stage6_intro', 'stage7_intro']));
+/** Playback skips a missing optional file instead of stalling. */
+export const OPTIONAL_CLIPS = Object.freeze(new Set(['stage5_intro', 'stage6_intro', 'stage7_intro', 'final_victory']));
 export function clipIdsFor(keys, exists) {
   const ids = (Array.isArray(keys) ? keys : [keys]).flatMap(key => STAGE_CLIPS[key] || []);
   if (typeof exists !== 'function') return ids;

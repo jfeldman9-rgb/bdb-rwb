@@ -1,5 +1,6 @@
 import { MASH_NEED } from './bob.js';
 import { BOSS_GATES } from './yettis.js';
+import { STORY } from './story.js';
 export { MASH_NEED } from './bob.js';
 export const speakerColor = who => who==='Dad'?'#ffe3a3':who==='Narrator'?'#c8d4ee':'#ffc6df';
 export const HUD_BAND = Object.freeze({ color: 0x101421, alpha: 0.55, w: 1280, h: 116 });
@@ -89,7 +90,7 @@ export class HUD {
   this.health.setText('♥ '.repeat(Math.ceil(w.bob.hp))+'♡ '.repeat(Math.max(0,w.bob.maxHp-Math.ceil(w.bob.hp))));
   this.meter.setText(`SHAKES ${'▰'.repeat(w.papi.shakeRemainder)}${'▱'.repeat(3-w.papi.shakeRemainder)}   PAPI ${w.papi.charges}/2   DAD ${w.dadCall.charges? 'READY':w.dadCall.unlocked? `${w.dadCall.kos}/10 · ${Math.max(0,Math.ceil(45-w.dadCall.since))}s`:'ZONE 3'}`);
   this.score.setText(`${String(Math.floor(w.score)).padStart(6,'0')}  PTS`);this.zone.setText(`${w.difficultyKey.toUpperCase()}  ·  ${w.bossActive?'BOSS':`ZONE ${Math.min(w.def.zones.length,w.zoneIndex+1)}/${w.def.zones.length}`}`);
-  this.banner.setText(w.paused?'PAUSED':w.victory?'CLAUDIA RESCUED.':w.messageTime>0?w.message:'');
+  this.banner.setText(w.paused?'PAUSED':w.victory?(!w.def?.next?STORY.finalVictory:'CLAUDIA RESCUED.'):w.messageTime>0?w.message:'');
   this.boss.setText(bossLabel(w));
   this.prompt.setText(stagePrompt(w));
   if(!w.paused)this.captionLeft=Math.max(0,(this.captionLeft||0)-dt);
