@@ -1,0 +1,201 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "yetti_bailiff-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_bailiff_idle",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04",
+        "choirmaster_sing_05",
+        "choirmaster_sing_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_bailiff_walk",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04",
+        "choirmaster_sing_05",
+        "choirmaster_sing_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_bailiff_block",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04",
+        "choirmaster_sing_05",
+        "choirmaster_sing_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_bailiff_grab",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "yetti_bailiff_hold",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03",
+        "choirmaster_sing_04",
+        "choirmaster_sing_05",
+        "choirmaster_sing_06"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_bailiff_hurt",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "yetti_bailiff_knockdown",
+      "frames": [
+        "choirmaster_sing_01",
+        "choirmaster_sing_02",
+        "choirmaster_sing_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    }
+  ],
+  "placeholder": true,
+  "source": "stand-in cloned from choirmaster",
+  "dedupe": {
+    "logical": 15,
+    "unique": 6,
+    "reused": 9
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

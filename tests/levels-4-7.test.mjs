@@ -8,6 +8,7 @@ import { STAGE3 } from '../src/stage3-def.js';
 import { STAGE4 } from '../src/stage4-def.js';
 import { STAGE5 } from '../src/stage5-def.js';
 import { STAGE6 } from '../src/stage6-def.js';
+import { STAGE7 } from '../src/stage7-def.js';
 import { STAGES, STAGE_CHARS, STAGE_VARIANTS, CAGED, maxStage } from '../src/stages.js';
 import { TYPES, BOSS_ADDS, BOSS_COOL } from '../src/yettis.js';
 import { STREAMS, plateKeys, plateRuns } from '../src/zone-stream.js';
@@ -51,7 +52,7 @@ test('existing boss fallback animation mappings are unchanged', () => {
 });
 
 test('Stage 4 extends the stage chain without changing the raw Stage 3 definition or cage residency', () => {
-  assert.ok(maxStage >= 6);
+  assert.ok(maxStage >= 7);
   assert.equal(STAGE3.next, null);
   assert.deepEqual(STAGES[3], { ...STAGE3, next: 4 });
   assert.ok(Object.isFrozen(STAGES[3]));
@@ -60,10 +61,13 @@ test('Stage 4 extends the stage chain without changing the raw Stage 3 definitio
   assert.equal(STAGES[5], STAGE5);
   assert.equal(STAGE5.next, 6);
   assert.equal(STAGES[6], STAGE6);
-  assert.deepEqual([...CAGED], [3, 6]);
+  assert.equal(STAGE6.next, 7);
+  assert.equal(STAGES[7], STAGE7);
+  assert.deepEqual([...CAGED], [3, 6, 7]);
   assert.deepEqual(STAGE_VARIANTS[4], ['salsero']);
   assert.deepEqual(STAGE_VARIANTS[5], ['salsero', 'tagger']);
   assert.deepEqual(STAGE_VARIANTS[6], ['tagger', 'minero']);
+  assert.deepEqual(STAGE_VARIANTS[7], ['minero', 'bailiff']);
 });
 
 test('Stage 4 retains the shared five-zone geometry and its rooftop boss arena', () => {
@@ -208,6 +212,11 @@ test('Stage 3 still unlocks Nightmare and keeps its rescue banner while continui
   w.update(3);
   assert.equal(w.victory, false);
   assert.equal(w.stageNo, 6);
+  w.finishStage();
+  assert.equal(w.message, STORY.shaft);
+  w.update(3);
+  assert.equal(w.victory, false);
+  assert.equal(w.stageNo, 7);
   w.finishStage();
   assert.equal(w.message, STORY.finalVictory);
   w.update(3);

@@ -105,7 +105,7 @@ test('a Bouncer defeat flushed in the victory update remains visible through the
     const text = els['victory-line'].textContent;
     assert.match(text, /Fine\. You're on the list\./);
     assert.match(text, /good judgment\./);
-    assert.match(text, /Let's leave before they reform\./);
+    assert.match(text, /Took you long enough, Papacito/);
   } finally { document.getElementById = prevGet; }
 });
 

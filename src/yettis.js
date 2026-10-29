@@ -31,6 +31,11 @@ export const TYPES = Object.freeze({
   celestina: { hp: 1300, speed: 85, art: 'celestina', tint: 0xffffff, boss: true, grab: true, grabVoice: false,
     scriptedBossVoices: true, tell: .65, rushPhase: 3, addFromPhase: 1,
     anims: { telegraph: 'toss', blink: 'blink', hold: 'hold', rush: 'rush', roar: 'roar', hurt: 'hurt', dead: 'down', default: 'walk' } },
+  bailiff: { hp: 54, speed: 70, art: 'yetti_bailiff', tint: 0xffffff, shield: true, heavy: true, grab: true, tell: .65,
+    anims: { telegraph: 'grab', hold: 'hold', block: 'block', hurt: 'hurt', dead: 'knockdown', default: 'walk' } },
+  archyetti: { hp: 1320, speed: 70, art: 'archyetti', tint: 0xffffff, boss: true, scriptedBossVoices: true,
+    tell: .65, rushPhase: 2, addFromPhase: 1,
+    anims: { telegraph: 'gavel', rush: 'rush', roar: 'roar', floored: 'floored', hurt: 'hurt', dead: 'down', default: 'walk' } },
 });
 /** RWB boss gates: one long bar, phase 2 under 66%, phase 3 under 33%. */
 export const BOSS_GATES = Object.freeze([1, .66, .33]);
@@ -44,8 +49,9 @@ export const BOSS_ADDS = Object.freeze({
   bouncer: Object.freeze([[], ['salsero', 'walker'], ['guard', 'salsero', 'charger']]),
   dj: Object.freeze([['walker', 'tagger'], ['hover', 'tagger', 'walker'], ['charger', 'salsero', 'hover']]),
   celestina: Object.freeze([['walker', 'tagger'], ['minero', 'guard'], ['charger', 'minero', 'tagger']]),
+  archyetti: Object.freeze([['bailiff', 'walker'], ['minero', 'bailiff', 'hover'], ['bailiff', 'minero', 'charger']]),
 });
-export const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95], bouncer: [1.3, 1.1, .9], dj: [1.5, 1.2, 1.0], celestina: [1.4, 1.15, .95] });
+export const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95], bouncer: [1.3, 1.1, .9], dj: [1.5, 1.2, 1.0], celestina: [1.4, 1.15, .95], archyetti: [1.3, 1.1, .9] });
 /** Ranged roles that stack snowballs when they share a lane. Boss choirmaster counts; melee does not. */
 export const RANGED_TYPES = new Set(Object.keys(TYPES).filter(type => TYPES[type].ranged));
 export const MAX_RANGED_PER_LANE = 2;
@@ -301,6 +307,9 @@ export class Yetti {
             if (next === 'blink' || next === 'hold') return;
             slammed = !!next;
           }
+          else if (this.type === 'archyetti') {
+            slammed = !!this.resolveArchYetti(world);
+          }
           else if (t.lamp) world.snowball(this.x, this.attackY, this.rushDir, 'shockwave');
           else if (t.ranged && this.type !== 'choir' && this.type !== 'choirmaster') world.snowball(this.x, this.attackY, this.rushDir);
           else if (['choir','choirmaster'].includes(this.type)) {
@@ -419,5 +428,19 @@ export class Yetti {
     this.x = clamp(this.x + dir * dist, world.bounds.l + 55, world.bounds.r - 55);
     this.y = laneY(seed % 3);
     this.attackY = this.y;
+  }
+  /** Arch-Yetti gavel / verdict. Wingmen safe-band stays in wingman.js. */
+  resolveArchYetti(world) {
+    if (this.phase >= 2) {
+      this.safeBand = this.volley++ % 3;
+      for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
+      if (this.phase >= 3) {
+        for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, this.attackY ?? this.y, dir, 'shockwave');
+        return true;
+      }
+      return false;
+    }
+    for (const dir of [-1, 1]) world.snowball(this.x, this.attackY ?? this.y, dir, 'shockwave');
+    return true;
   }
 }

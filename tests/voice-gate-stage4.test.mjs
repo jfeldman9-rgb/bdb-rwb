@@ -135,11 +135,13 @@ for (const hz of [30, 60, 120]) test(`final-stage victory opening puts ending li
   assert.ok(victoryAt - clearAt <= 3, `wait ${victoryAt - clearAt}`);
   assert.ok(victoryAt < 150, 'victory does not wait on the saturated window');
   const endAt = presented.indexOf('nar_victory');
-  const leaveAt = presented.indexOf('claudia_leave');
+  const leaveId = w.stageNo === 7 ? 'claudia_s7' : 'claudia_leave';
+  const leaveAt = presented.indexOf(leaveId);
   assert.ok(endAt >= 0 && leaveAt === endAt + 1, 'ending pair is adjacent and first of the post-victory drain');
+  if (w.stageNo === 7) assert.equal(presented[leaveAt + 1], 'dad_s7');
   const legal = nextVoiceAt({ stamps: [125.2, 133.2, 141.2], queue: [], gap: 8, cap: 3, window: 60 }, victoryAt);
   assert.ok(stamps[stamps.length - presented.length + endAt] - legal < 1 / hz + 1e-6);
-  for (const id of ['bouncer_defeat', ...locked.flatMap(([, ids]) => ids), 'nar_victory', 'claudia_leave']) assert.ok(presented.includes(id), id);
+  for (const id of ['bouncer_defeat', ...locked.flatMap(([, ids]) => ids), 'nar_victory', leaveId]) assert.ok(presented.includes(id), id);
   assert.equal(w.voiceGate.queue.length, 0);
   assert.equal(rollingVoiceStats(stamps).ok, true);
 });
@@ -163,8 +165,8 @@ for (const hz of [30, 60, 120]) test(`global Adventure trace includes chapters 1
   const r = runVoiceRate({ hz });
   assert.equal(r.cleared, true);
   assert.equal(r.rollingOk, true, JSON.stringify({ min: r.minVoiceGap, max: r.maxIn60s }));
-  for (const id of ['nar_ch1', 'nar_ch2', 'nar_ch3', 'nar_ch4', 'nar_victory', 'claudia_leave', 'dad_call_01']) assert.ok(r.allCounts[id], id);
+  for (const id of ['nar_ch1', 'nar_ch2', 'nar_ch3', 'nar_ch4', 'nar_victory', 'claudia_s7', 'dad_call_01']) assert.ok(r.allCounts[id], id);
   assert.ok(r.finaleIds.includes('nar_victory'));
-  assert.ok(r.finaleIds.includes('claudia_leave'));
+  assert.ok(r.finaleIds.includes('claudia_s7'));
   assert.ok(r.victoryWait <= 3, `wait ${r.victoryWait}`);
 });

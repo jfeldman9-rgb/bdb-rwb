@@ -1,7 +1,9 @@
 import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
 import { TYPES, Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane, separateEnemies } from './yettis.js';
+import { resetActorIds } from './actor-id.js';
 import { Wingmen, isBossBragging } from './wingman.js';
+import { TribunalCourt } from './archyetti.js';
 import { collectShake, papacitoEffect, papiHitTime } from './papacito.js';
 import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
 import { Dad } from './dad.js';
@@ -70,6 +72,7 @@ export function hitTier({ phase = false, killed = false, bonk = false, shieldBro
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
 export class Campaign {
   constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {}, rng, stageIntroPlayed = false } = {}) {
+    resetActorIds();
     this.difficultyKey = difficulty; this.difficulty = DIFFICULTIES[difficulty]; this.onSave = onSave;
     this.save = normalizeSave(save); this.beatenAtStart = !!this.save.beaten; this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
@@ -131,6 +134,7 @@ export class Campaign {
     if (stage === 4) { this.armVoice('claudia_s4', 8); this.armVoice('bob_s4', 16); }
     if (stage === 5) { this.armVoice('claudia_s5', 8); this.armVoice('bob_s5', 16); }
     if (stage === 6) this.armVoice('bob_s6', 8);
+    if (stage === 7) this.armVoice('bob_s7', 8);
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -221,6 +225,11 @@ export class Campaign {
         });
       }
     }
+    else if (z.type==='archyetti') {
+      this.court=new TribunalCourt();
+      this.enemies=this.court.spawn(z.l+880,630,phase);
+      if (bossHp!=null) this.enemies[0].hp=Math.max(phase>=3?1:0,Math.min(this.enemies[0].maxHp,bossHp));
+    }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; boss.hp=Math.min(bossPhaseHp(boss.maxHp,phase),bossHp??Infinity); this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
     const rescue = this.stageNo === 3 && !this.rescuePreBossPlayed;
@@ -293,6 +302,7 @@ export class Campaign {
       else if (e.type==='bouncer') this.banner(II?'PHASE II: THE ROPE COMES OUT':'PHASE III: LAST CALL');
       else if (e.type==='dj') this.banner(II?'PHASE II: REQUEST DENIED':'PHASE III: WAIT FOR IT…');
       else if (e.type==='celestina') this.banner(II?'PHASE II: SOMETHING BORROWED':'PHASE III: SPEAK NOW OR FOREVER HOLD YOUR EGGPLANT');
+      else if (e.type==='archyetti') this.banner(II?'PHASE II: THE VERDICT':'PHASE III: ORDER IN THE COURT');
       else this.banner(`${this.def.boss.name} · PHASE ${II?'II':'III'}`);
       if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_phase${result.phase}`);
       this.hostile=[];
@@ -477,7 +487,7 @@ export class Campaign {
     this.barks.open = true;
     const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
     try {
-    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;expireOptionalVoice(this.voiceGate);if(this.voiceAt)this.voiceAt=this.voiceAt.filter(v=>isReservedVoice(v.id)||isEndingVoice(v.id));this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
+    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;expireOptionalVoice(this.voiceGate);if(this.voiceAt)this.voiceAt=this.voiceAt.filter(v=>isReservedVoice(v.id)||isEndingVoice(v.id));this.emit('victory');this.emit('voice','nar_victory');if(this.stageNo===7){this.emit('voice','claudia_s7');this.emit('voice','dad_s7');}else this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
       if(this.papiPending){

@@ -31,8 +31,8 @@ function arena(type, x = 800, y = laneY(1)) {
 }
 
 test('Stage 6 is the current campaign tip with the salt-mine geometry', () => {
-  assert.equal(maxStage, 6);
-  assert.equal(STAGE6.next, null);
+  assert.ok(maxStage >= 6);
+  assert.equal(STAGE6.next, 7);
   assert.deepEqual([STAGE6.no, STAGE6.key, STAGE6.title, STAGE6.bg, STAGE6.hpScale, STAGE6.pace],
     [6, 'salt', 'THE SALT MINE AFTERHOURS', 's6-mid5', 2.2, 1.20]);
   const geometry = ({ at, l, r }) => ({ at, l, r });
@@ -132,7 +132,7 @@ test('La Celestina phases: ring grab, bridal-train lanes, and the shaft banner',
   assert.equal(STORY.shaft, 'THE YETTIS GRAB CLAUDIA. UP THE SHAFT!');
   const w = new Campaign({ stage: 6 });
   w.finishStage();
-  assert.equal(w.message, STORY.finalVictory);
+  assert.equal(w.message, STORY.shaft);
 });
 
 test('Stage 6 plates, atlases and caption-only voice are present', () => {

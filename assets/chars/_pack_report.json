@@ -86,19 +86,51 @@
       "astc": 10.273,
       "etc2": 10.273
     },
+    "stage7_keys": [
+      "bob",
+      "yetti_walker",
+      "yetti_guard",
+      "yetti_hover",
+      "yetti_charger",
+      "yetti_choir",
+      "yetti_lecturer",
+      "dad",
+      "papi_stampede",
+      "yetti_minero",
+      "yetti_bailiff",
+      "archyetti",
+      "claudia"
+    ],
+    "stage7_gpu_MiB": {
+      "rgba_webp": 34.899,
+      "astc": 10.273,
+      "etc2": 10.273
+    },
     "all_chars_gpu_MiB": {
-      "rgba_webp": 49.302,
-      "astc": 13.873,
-      "etc2": 13.873
+      "rgba_webp": 50.483,
+      "astc": 14.169,
+      "etc2": 14.169
     },
     "disk_MiB": {
-      "webp": 4.145,
-      "astc_ktx": 12.327,
-      "etc2_ktx": 12.327,
-      "astc_ktx_gzip": 6.838,
-      "etc2_ktx_gzip": 4.052
+      "webp": 4.199,
+      "astc_ktx": 12.623,
+      "etc2_ktx": 12.623,
+      "astc_ktx_gzip": 6.927,
+      "etc2_ktx_gzip": 4.103
     },
     "pages": {
+      "archyetti-0": {
+        "w": 860,
+        "h": 180,
+        "rgba": 619200,
+        "webp_disk": 28280,
+        "astc_gpu": 154800,
+        "astc_disk": 154896,
+        "astc_gzip": 46934,
+        "etc2_gpu": 154800,
+        "etc2_disk": 154896,
+        "etc2_gzip": 26624
+      },
       "bob-0": {
         "w": 976,
         "h": 912,
@@ -230,6 +262,18 @@
         "etc2_gpu": 154800,
         "etc2_disk": 154896,
         "etc2_gzip": 26789
+      },
+      "yetti_bailiff-0": {
+        "w": 860,
+        "h": 180,
+        "rgba": 619200,
+        "webp_disk": 28280,
+        "astc_gpu": 154800,
+        "astc_disk": 154896,
+        "astc_gzip": 46934,
+        "etc2_gpu": 154800,
+        "etc2_disk": 154896,
+        "etc2_gzip": 26624
       },
       "yetti_charger-0": {
         "w": 1708,

@@ -21,4 +21,4 @@ export const STAGE6 = Object.freeze({ no: 6, key: 'salt', title: 'THE SALT MINE 
     [['minero','R',0],['minero','L',.8],['tagger','R',1.6],['charger','L',2.4]],
     [['choir','R',0],['guard','R',.6],['lecturer','L',1.4],['hover','R',2.4]],
     [['guard','R',0],['minero','R',.8],['tagger','L',1.6],['lecturer','R',2.4],['charger','L',3.2],['walker','R',4]] ] },
-], boss: { at: 6700, l: 6480, r: 7760, type: 'celestina', name: 'LA CELESTINA' }, next: null });
+], boss: { at: 6700, l: 6480, r: 7760, type: 'celestina', name: 'LA CELESTINA' }, next: 7 });

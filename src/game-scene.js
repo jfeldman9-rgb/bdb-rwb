@@ -286,7 +286,7 @@ export class GameScene extends Phaser.Scene {
      g.lineStyle(5,0xffdf89,.85);g.strokeCircle(e.x,e.y-90,r);
      g.lineStyle(3,0xff9a3c,.7);g.strokeCircle(e.x,e.y-90,r+18);
     }
-    else if(e.type==='celestina'&&e.phase>=3&&e.safeBand!=null){
+    else if((e.type==='celestina'&&e.phase>=3||e.type==='archyetti'&&e.phase>=2)&&e.safeBand!=null){
      for(let i=0;i<3;i++)if(i!==e.safeBand)g.fillRect(w.bounds.l,laneY(i)-LANE_H/2,w.bounds.r-w.bounds.l,LANE_H);
     }
     else if(TYPES[e.type]?.lamp){
@@ -401,7 +401,12 @@ export class GameScene extends Phaser.Scene {
    if(score)score.textContent=`${Math.floor(this.world.score)} points · ${flipped?'Nightmare unlocked':`Chapter ${stage} complete`}`;
    if(panel)panel.hidden=false;document.body.classList.remove('playing');
   };
-  // rescue_2 was shot for the keep. It plays on the Stage 3 clear, not again over the final panel.
+  // S3 keep rescue is presentChapterRescue. The Stage 7 finale plays rescue_2 here.
+  if((this.stageNo||0)===7){
+    if(this.game?.story?.play)this.startHeldClip('victory',show);
+    else show([]);
+    return;
+  }
   if((this.stageNo||0)>3){show([]);return;}
   this.startHeldClip('victory',show);
  }
