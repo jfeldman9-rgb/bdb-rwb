@@ -181,9 +181,11 @@ print(json.dumps({stage: {
     assert.equal(LINES[id]?.[1], text);
     if (!existsSync(asset(`audio/voice/${id}.mp3`))) assert.ok(!PRESENT.includes(id), `${id} must stay caption-only`);
   }
+  assert.equal(MUSIC.stage5?.url, 'assets/audio/s5-gondola.mp3');
+  assert.equal(MUSIC.boss5?.url, 'assets/audio/s5-boss.mp3');
   for (const id of ['stage5', 'boss5']) {
-    assert.equal(MUSIC[id]?.url, 'assets/audio/bdb-rise.mp3');
     assert.equal(MUSIC[id].stream, true);
+    assert.ok(existsSync(asset(MUSIC[id].url.replace(/^assets\//, ''))));
   }
 });
 

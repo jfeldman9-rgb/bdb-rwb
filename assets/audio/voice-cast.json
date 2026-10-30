@@ -55,7 +55,34 @@
     "Narrator": {
       "voice_id": null,
       "name": "Jason IndexTTS clone",
-      "reason": "Pending; ref /workspace/jasonvoice/ref/jason_ref_nodenoise.wav \u2014 not quick this pass"
+      "reason": "IndexTTS 2.5 CPU; ref jason_ref_nodenoise.wav; emo_vector calm.15 melancholic.05; de-harsh + -16 LUFS; mono 24kHz 64kbps mp3",
+      "engine": "VoiceStudio IndexTTS 2.5",
+      "ref": "/workspace/jasonvoice/ref/jason_ref_nodenoise.wav",
+      "emo_vector": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.05,
+        0,
+        0.15
+      ]
+    },
+    "DJHalo": {
+      "voice_id": "SA7eD52NRr8WAehitVt1",
+      "name": "Tyler Cruz - Cool Energetic DJ",
+      "reason": "Library pick for hype club DJ / radio host; big energy for DJ Halo S5"
+    },
+    "Celestina": {
+      "voice_id": "HRi5Prm2B3PevwpDmVLP",
+      "name": "Mar\u00eda Blanco | Warm Expressive Versatile",
+      "reason": "Colombian middle-aged warm theatrical; distinct from Claudia Maria for La Celestina"
+    },
+    "ArchYetti": {
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "name": "Cornelius - Wise Sage",
+      "reason": "Reuse Wingman Cornelius; heads the same council"
     }
   }
 }

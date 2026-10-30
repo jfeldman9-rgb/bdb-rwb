@@ -177,9 +177,11 @@ test('Stage 7 plates, atlases and caption-only voice are present', () => {
     assert.equal(LINES[id]?.[1], text);
     if (!existsSync(asset(`audio/voice/${id}.mp3`))) assert.ok(!PRESENT.includes(id), `${id} must stay caption-only`);
   }
+  assert.equal(MUSIC.stage7?.url, 'assets/audio/s7-tribunal.mp3');
+  assert.equal(MUSIC.boss7?.url, 'assets/audio/s7-finalboss.mp3');
   for (const id of ['stage7', 'boss7']) {
-    assert.equal(MUSIC[id]?.url, 'assets/audio/bdb-rise.mp3');
     assert.equal(MUSIC[id].stream, true);
+    assert.ok(existsSync(asset(MUSIC[id].url.replace(/^assets\//, ''))));
   }
   assert.equal(isEndingVoice('claudia_s7'), true);
   assert.equal(isEndingVoice('dad_s7'), true);

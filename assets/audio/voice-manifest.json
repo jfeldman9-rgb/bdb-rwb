@@ -1,6 +1,6 @@
 {
   "project": "bdb-rwb",
-  "generated": "2026-10-28 America/Phoenix",
+  "generated": "2026-10-30 America/Phoenix",
   "model": "eleven_v3",
   "format": "mono 24kHz 64kbps mp3 + loudnorm",
   "cast": {
@@ -57,7 +57,7 @@
     "Narrator": {
       "voice_id": null,
       "name": "Jason IndexTTS clone",
-      "reason": "IndexTTS 2.5 CPU; ref jason_ref_nodenoise.wav; emo_vector calm.15 melancholic.05 (US-accent low-emo from AB.md); de-harsh + -16 LUFS; mono 24kHz 64kbps mp3",
+      "reason": "IndexTTS 2.5 CPU; ref jason_ref_nodenoise.wav; emo_vector calm.15 melancholic.05; de-harsh + -16 LUFS; mono 24kHz 64kbps mp3",
       "engine": "VoiceStudio IndexTTS 2.5",
       "ref": "/workspace/jasonvoice/ref/jason_ref_nodenoise.wav",
       "emo_vector": [
@@ -70,6 +70,21 @@
         0,
         0.15
       ]
+    },
+    "DJHalo": {
+      "voice_id": "SA7eD52NRr8WAehitVt1",
+      "name": "Tyler Cruz - Cool Energetic DJ",
+      "reason": "Library pick for hype club DJ / radio host; big energy for DJ Halo S5"
+    },
+    "Celestina": {
+      "voice_id": "HRi5Prm2B3PevwpDmVLP",
+      "name": "Mar\u00eda Blanco | Warm Expressive Versatile",
+      "reason": "Colombian middle-aged warm theatrical; distinct from Claudia Maria for La Celestina"
+    },
+    "ArchYetti": {
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "name": "Cornelius - Wise Sage",
+      "reason": "Reuse Wingman Cornelius; heads the same council"
     }
   },
   "credits": {
@@ -77,61 +92,94 @@
     "samples_pass_est": 280,
     "total_est": 840,
     "note": "Dad+Bob re-render ~572 credits (count=1, eleven_v3); prior cast pass separate",
-    "dad_bob_rerender_est": 572
+    "dad_bob_rerender_est": 572,
+    "s57_caption_voice": {
+      "elevenlabs_charged": 668.93,
+      "first_pass": 585.94,
+      "redos": 82.99,
+      "redo_ids": [
+        "claudia_s7",
+        "celestina_intro"
+      ],
+      "narrator_indextts": 0,
+      "note": "S5-7 caption-only voicing via user-Elevenlabs creative_generate_speech generations_count=1; IndexTTS for nar_ch5-7"
+    }
   },
-  "line_count": 51,
+  "line_count": 73,
   "present": [
-    "bdb_laugh",
     "bdb_open",
     "bdb_produce",
-    "bob_cory_joke_01",
-    "bob_cory_joke_02",
-    "bob_dadwait_01",
-    "bob_hurt_01",
-    "bob_hurt_02",
-    "bob_hurt_03",
-    "bob_papacito_01",
-    "bob_papacito_02",
-    "bob_papi_01",
-    "bob_papiwait_01",
-    "bob_respawn_01",
-    "bob_where_claudia_01",
-    "bob_where_claudia_02",
-    "choir_serious",
-    "choirmaster_intro",
-    "claudia_leave",
+    "bdb_laugh",
     "claudia_open",
     "claudia_question",
+    "claudia_leave",
+    "yetti_turnback",
+    "choir_serious",
+    "lecturer_intervention",
+    "wingman_council",
     "dad_call_01",
     "dad_call_02",
     "dad_call_03",
-    "dad_catchphrase",
     "dad_done_01",
     "dad_done_02",
+    "dad_catchphrase",
+    "papi_chorus",
+    "papi_crowd_01",
+    "papi_crowd_02",
+    "bob_papi_01",
+    "bob_hurt_01",
+    "bob_hurt_02",
+    "bob_hurt_03",
+    "bob_respawn_01",
+    "bob_dadwait_01",
+    "bob_papiwait_01",
+    "wingman_phase2",
+    "wingman_phase3",
+    "wingman_defeat",
     "interventionist_intro",
-    "lecturer_intervention",
-    "nar_ch1",
-    "nar_ch2",
-    "nar_ch3",
+    "choirmaster_intro",
     "nar_intro_01",
     "nar_intro_02",
     "nar_intro_03",
     "nar_kidnap",
+    "nar_ch1",
+    "nar_ch2",
+    "nar_ch3",
     "nar_victory",
-    "papi_chorus",
-    "papi_crowd_01",
-    "papi_crowd_02",
-    "wingman_council",
-    "wingman_defeat",
-    "wingman_phase2",
-    "wingman_phase3",
-    "yetti_colombian_room_01",
-    "yetti_colombian_room_02",
+    "bob_papacito_01",
+    "bob_papacito_02",
+    "bob_where_claudia_01",
+    "bob_where_claudia_02",
+    "bob_cory_joke_01",
+    "bob_cory_joke_02",
     "yetti_porkchop_01",
     "yetti_porkchop_02",
+    "yetti_colombian_room_01",
+    "yetti_colombian_room_02",
     "yetti_purple_car_01",
     "yetti_purple_car_02",
-    "yetti_turnback"
+    "bob_s5",
+    "bob_s6",
+    "bob_s7",
+    "claudia_s5",
+    "claudia_s6",
+    "claudia_s7",
+    "dad_s7",
+    "dj_intro",
+    "dj_phase2",
+    "dj_phase3",
+    "dj_defeat",
+    "celestina_intro",
+    "celestina_phase2",
+    "celestina_phase3",
+    "celestina_defeat",
+    "archyetti_intro",
+    "archyetti_phase2",
+    "archyetti_phase3",
+    "archyetti_defeat",
+    "nar_ch5",
+    "nar_ch6",
+    "nar_ch7"
   ],
   "narrator_pending": [],
   "samples_for_jason": [
@@ -732,6 +780,248 @@
         "Bella"
       ],
       "note": "3 overlapping female layers; offsets ~0-80ms; loudnorm -16 LUFS; <=2.4s"
+    },
+    {
+      "id": "bob_s5",
+      "path": "assets/audio/voice/bob_s5.mp3",
+      "bytes": 10988,
+      "speaker": "Bob",
+      "text": "Going up, Yettis!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "bob_s6",
+      "path": "assets/audio/voice/bob_s6.mp3",
+      "bytes": 12140,
+      "speaker": "Bob",
+      "text": "Down we go.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "bob_s7",
+      "path": "assets/audio/voice/bob_s7.mp3",
+      "bytes": 14060,
+      "speaker": "Bob",
+      "text": "Court's in session, Yetti!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6q6UVsvekS0UjrUXFz79",
+      "voice_name": "Benedict - Premium British (RP) Male",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "claudia_s5",
+      "path": "assets/audio/voice/claudia_s5.mp3",
+      "bytes": 23084,
+      "speaker": "Claudia",
+      "text": "Bob! Up here! The cable car!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "5GR0JTHRVmv00OeaRI9u",
+      "voice_name": "Maria - Playful Colombian Woman",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "claudia_s6",
+      "path": "assets/audio/voice/claudia_s6.mp3",
+      "bytes": 17324,
+      "speaker": "Claudia",
+      "text": "I am NOT marrying a Yetti!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "5GR0JTHRVmv00OeaRI9u",
+      "voice_name": "Maria - Playful Colombian Woman",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "claudia_s7",
+      "path": "assets/audio/voice/claudia_s7.mp3",
+      "bytes": 15980,
+      "speaker": "Claudia",
+      "text": "Took you long enough, Papacito.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "5GR0JTHRVmv00OeaRI9u",
+      "voice_name": "Maria - Playful Colombian Woman",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "dad_s7",
+      "path": "assets/audio/voice/dad_s7.mp3",
+      "bytes": 28844,
+      "speaker": "Dad",
+      "text": "That's my boy! Wicked big Papacito!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "1S9vaAuPfgP7iQzynh4n",
+      "voice_name": "BDB Dad - Southie Boston",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "dj_intro",
+      "path": "assets/audio/voice/dj_intro.mp3",
+      "bytes": 26348,
+      "speaker": "DJ Halo",
+      "text": "Hands up for heaven! Not you, Bob.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "SA7eD52NRr8WAehitVt1",
+      "voice_name": "Tyler Cruz - Cool Energetic DJ",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "dj_phase2",
+      "path": "assets/audio/voice/dj_phase2.mp3",
+      "bytes": 12140,
+      "speaker": "DJ Halo",
+      "text": "Let me scratch that.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "SA7eD52NRr8WAehitVt1",
+      "voice_name": "Tyler Cruz - Cool Energetic DJ",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "dj_phase3",
+      "path": "assets/audio/voice/dj_phase3.mp3",
+      "bytes": 19244,
+      "speaker": "DJ Halo",
+      "text": "Wait for it\u2026 the DROP!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "SA7eD52NRr8WAehitVt1",
+      "voice_name": "Tyler Cruz - Cool Energetic DJ",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "dj_defeat",
+      "path": "assets/audio/voice/dj_defeat.mp3",
+      "bytes": 20588,
+      "speaker": "DJ Halo",
+      "text": "Mic\u2026 dropped.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "SA7eD52NRr8WAehitVt1",
+      "voice_name": "Tyler Cruz - Cool Energetic DJ",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "celestina_intro",
+      "path": "assets/audio/voice/celestina_intro.mp3",
+      "bytes": 31340,
+      "speaker": "Celestina",
+      "text": "Ay, Bob. I found her a nice Yetti husband.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "HRi5Prm2B3PevwpDmVLP",
+      "voice_name": "Mar\u00eda Blanco | Warm Expressive Versatile",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "celestina_phase2",
+      "path": "assets/audio/voice/celestina_phase2.mp3",
+      "bytes": 26348,
+      "speaker": "Celestina",
+      "text": "Something borrowed\u2026 something YOU.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "HRi5Prm2B3PevwpDmVLP",
+      "voice_name": "Mar\u00eda Blanco | Warm Expressive Versatile",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "celestina_phase3",
+      "path": "assets/audio/voice/celestina_phase3.mp3",
+      "bytes": 15404,
+      "speaker": "Celestina",
+      "text": "Everyone! To the altar!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "HRi5Prm2B3PevwpDmVLP",
+      "voice_name": "Mar\u00eda Blanco | Warm Expressive Versatile",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "celestina_defeat",
+      "path": "assets/audio/voice/celestina_defeat.mp3",
+      "bytes": 19820,
+      "speaker": "Celestina",
+      "text": "Fine! Marry the eggplant man!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "HRi5Prm2B3PevwpDmVLP",
+      "voice_name": "Mar\u00eda Blanco | Warm Expressive Versatile",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "archyetti_intro",
+      "path": "assets/audio/voice/archyetti_intro.mp3",
+      "bytes": 46124,
+      "speaker": "Arch-Yetti",
+      "text": "Bob. This court finds you\u2026 not a Papacito.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "voice_name": "Cornelius - Wise Sage",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "archyetti_phase2",
+      "path": "assets/audio/voice/archyetti_phase2.mp3",
+      "bytes": 15404,
+      "speaker": "Arch-Yetti",
+      "text": "The verdict is snow.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "voice_name": "Cornelius - Wise Sage",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "archyetti_phase3",
+      "path": "assets/audio/voice/archyetti_phase3.mp3",
+      "bytes": 22508,
+      "speaker": "Arch-Yetti",
+      "text": "Order! ORDER in my court!",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "voice_name": "Cornelius - Wise Sage",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "archyetti_defeat",
+      "path": "assets/audio/voice/archyetti_defeat.mp3",
+      "bytes": 17324,
+      "speaker": "Arch-Yetti",
+      "text": "The court\u2026 is adjourned.",
+      "source": "elevenlabs_mcp_s57",
+      "voice_id": "6sFKzaJr574YWVu4UuJF",
+      "voice_name": "Cornelius - Wise Sage",
+      "model": "eleven_v3"
+    },
+    {
+      "id": "nar_ch5",
+      "path": "assets/audio/voice/nar_ch5.mp3",
+      "bytes": 25580,
+      "speaker": "Narrator",
+      "text": "Chapter Five. The Gondola of No Return.",
+      "source": "indextts",
+      "voice_id": null,
+      "voice_name": "Jason IndexTTS clone",
+      "model": "IndexTTS 2.5"
+    },
+    {
+      "id": "nar_ch6",
+      "path": "assets/audio/voice/nar_ch6.mp3",
+      "bytes": 27884,
+      "speaker": "Narrator",
+      "text": "Chapter Six. The Salt Mine Afterhours.",
+      "source": "indextts",
+      "voice_id": null,
+      "voice_name": "Jason IndexTTS clone",
+      "model": "IndexTTS 2.5"
+    },
+    {
+      "id": "nar_ch7",
+      "path": "assets/audio/voice/nar_ch7.mp3",
+      "bytes": 29420,
+      "speaker": "Narrator",
+      "text": "Chapter Seven. The Papacito Tribunal.",
+      "source": "indextts",
+      "voice_id": null,
+      "voice_name": "Jason IndexTTS clone",
+      "model": "IndexTTS 2.5"
     }
   ],
   "rerender": {
@@ -782,12 +1072,16 @@
       "nar_ch1",
       "nar_ch2",
       "nar_ch3",
-      "nar_victory"
+      "nar_victory",
+      "nar_ch5",
+      "nar_ch6",
+      "nar_ch7"
     ],
     "cutscene_extra": [
       "nar_rescue"
     ],
-    "cutscene_extra_note": "nar_rescue also rendered for intro-v2 cutscene; lives under /workspace/bdb-art/cutscenes/intro-v2/audio/narrator/ (not in game assets)"
+    "cutscene_extra_note": "nar_rescue also rendered for intro-v2 cutscene; lives under /workspace/bdb-art/cutscenes/intro-v2/audio/narrator/ (not in game assets)",
+    "s57_when": "2026-10-30 America/Phoenix"
   },
   "bark_pass": {
     "flow_id": "xDDPtaXmRsNEVzcluCGR",
@@ -798,6 +1092,43 @@
     "personal_joke": [
       "bob_cory_joke_01",
       "bob_cory_joke_02"
+    ]
+  },
+  "s57_voice_pass": {
+    "when": "2026-10-30 America/Phoenix",
+    "ids": [
+      "bob_s5",
+      "bob_s6",
+      "bob_s7",
+      "claudia_s5",
+      "claudia_s6",
+      "claudia_s7",
+      "dad_s7",
+      "dj_intro",
+      "dj_phase2",
+      "dj_phase3",
+      "dj_defeat",
+      "celestina_intro",
+      "celestina_phase2",
+      "celestina_phase3",
+      "celestina_defeat",
+      "archyetti_intro",
+      "archyetti_phase2",
+      "archyetti_phase3",
+      "archyetti_defeat",
+      "nar_ch5",
+      "nar_ch6",
+      "nar_ch7"
+    ],
+    "redos": [
+      "claudia_s7",
+      "celestina_intro"
+    ],
+    "mispronunciation_notes": [
+      "claudia_s7: Colombian accent may read Took close to Chook/Chucky; one redo kept",
+      "celestina_intro: Yetti may sound like jetty/dirty with Mar\u00eda Blanco; one redo kept",
+      "dj_defeat: Mic may hear as Mike",
+      "nar_ch7: Papacito may whisper-QC as papacy toe (IndexTTS Jason clone, matches prior nar quirks)"
     ]
   }
 }

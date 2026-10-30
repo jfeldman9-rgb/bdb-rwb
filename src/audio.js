@@ -221,7 +221,16 @@ export const sfx = {
   torchIgnite() { if (!gate('torchIgnite', 120)) return; noise({ f0: 280, f1: 1800, dur: 0.45, vol: 0.25, filter: 'bandpass', attack: 0.05 }); tone({ f0: vary(120), f1: 75, dur: 0.3, vol: 0.18, type: 'sine' }); },
 };
 let musicWanted = false, unlocked = false;
-export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3','stage4','boss4','stage5','boss5','stage6','boss6','stage7','boss7'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
+const RISE = { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 };
+const bed = (file, loopEnd) => ({ url: `assets/audio/${file}.mp3`, stream: true, gain: 0.65, loopStart: 0, loopEnd });
+export const MUSIC = {
+  title: RISE, stage1: RISE, boss1: RISE, stage2: RISE, boss2: RISE, stage3: RISE, boss3: RISE, stage4: RISE, boss4: RISE,
+  stage5: bed('s5-gondola', 158.3), boss5: bed('s5-boss', 201.5),
+  stage6: bed('s6-saltmine', 113.1), boss6: bed('s6-boss', 119.5),
+  stage7: bed('s7-tribunal', 167.1), boss7: bed('s7-finalboss', 130.66),
+  // Asset ready; Jason picks the cue — not wired to any stage yet.
+  yetti_anthem: bed('yetti-anthem', 60.06),
+};
 const tracks = Object.create(null), musicBytes = Object.create(null);
 // Placeholder stage/boss ids share a bed. Keep one media element/source per URL.
 const trackFor = id => tracks[MUSIC[id]?.url];
