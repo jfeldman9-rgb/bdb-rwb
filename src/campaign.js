@@ -128,7 +128,13 @@ export class Campaign {
     const openingKidnap = stage === 2 && !this.kidnapPlayed;
     if (openingKidnap) { this.kidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
     if (stage === 4 && !this.rekidnapPlayed) { this.rekidnapPlayed = true; this.emit('cutscene', 'kidnap'); }
-    this.emit('voice',`nar_ch${stage}`);
+    // Stage 2's animated opener already bakes nar_ch2 (+ the muxed council lines).
+    // Do not re-emit them. On a fresh chapter-2 start, reserve the opener budget slot.
+    if (stage === 2) {
+      if (!this.voiceGate.stamps.length) this.voiceGate.stamps.push(this.elapsed);
+    } else {
+      this.emit('voice', `nar_ch${stage}`);
+    }
     // Stage 1 already played these lines in the intro. Do not re-narrate them.
     if (stage === 1) this.armVoice('bdb_open', 4);
     if (stage === 3) this.armVoice('claudia_open', 2);
