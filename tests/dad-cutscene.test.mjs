@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { playDadCall, abortDadCall, installDadKeys, installDadGestureBless, blessDadFromGesture, dadPlayerBlessed, dadVideoElement } from '../src/dad-call-cutscene.js';
+import { playDadCall, abortDadCall, installDadKeys, installDadGestureBless, blessDadFromGesture, dadPlayerBlessed, dadVideoElement, ensureDadPlayer } from '../src/dad-call-cutscene.js';
 
 function fakeVideo(denySound) {
   const video = {
@@ -89,6 +89,23 @@ test('a non-skip key does not end the dad clip', () => {
   root.emit('keydown', { code: 'KeyW', preventDefault() {} });
   assert.equal(done, null);
   abortDadCall(scene);
+});
+
+test('Dad owns the dub only after the movie makes playback progress', () => {
+  for (const progresses of [false, true]) {
+    const root = fakeRoot(), scene = fakeScene(root);
+    let presentation;
+    assert.equal(playDadCall(scene, (_how, result) => { presentation = result; }), true);
+    const player = ensureDadPlayer(root);
+    if (progresses) {
+      player.video.currentTime = .5;
+      root.setNow(500);
+      player.tick(player.run);
+    }
+    root.setNow(2000);
+    root.emit('keydown', { code: 'Space', preventDefault() {} });
+    assert.deepEqual(presentation, { dubbed: progresses });
+  }
 });
 
 test('an idle gesture blesses the dad video before the first call, and abort keeps the element', () => {

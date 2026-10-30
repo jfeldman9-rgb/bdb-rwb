@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STAGES } from '../src/stages.js';
+import { STAGES, STAGE_VARIANTS } from '../src/stages.js';
 import { TYPES } from '../src/yettis.js';
 import { WORLD_W } from '../src/config.js';
 import { Campaign } from '../src/campaign.js';
@@ -42,7 +42,7 @@ test('waves are RWB-style staggered [type, side, delay] lists with a real mix of
       // The opening teaching zone is walkers + the first guard; every later zone mixes 3+ roles.
       if (!(def.no === 1 && i === 0)) assert.ok(zoneTypes.size >= 3, `stage ${def.no} zone ${i + 1}: ${[...zoneTypes]}`);
     }
-    assert.equal(stageTypes.size, minions.length, `stage ${def.no} uses every Yetti role`);
+    assert.deepEqual([...stageTypes].sort(), ['walker', 'guard', 'hover', 'charger', 'choir', 'lecturer', ...STAGE_VARIANTS[def.no]].sort(), `stage ${def.no} uses every core role plus exactly its variants`);
     assert.ok(count >= 45, `stage ${def.no}: ${count} wave Yettis`);
     assert.ok(hp >= 2 * 492, `stage ${def.no}: wave HP pool ${hp} (RWB S1 492)`);
     assert.ok(staggered >= count / 2 && flank >= 8, `stage ${def.no} staggered ${staggered} flank ${flank}`);

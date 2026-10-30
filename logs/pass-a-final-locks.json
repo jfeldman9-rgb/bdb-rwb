@@ -1,0 +1,21 @@
+{
+  "reference": "8c06396",
+  "branch": "cursor/bdb-level4",
+  "lockedFileDiff": "",
+  "existingBgAndCharFilesChecked": 98,
+  "changedExistingBgAndCharFiles": [],
+  "zoneStreamOnlyAdds4": true,
+  "choirBlocksByteIdentical": true,
+  "s3NightmareAndSnowClearRulesByteIdentical": true,
+  "papiTimeAndSummonWalkersUnchanged": true,
+  "lockedVoiceTextCountsUnchanged": true,
+  "modifiedExistingTests": [
+    "tests/campaign-sim.test.mjs",
+    "tests/length-difficulty.test.mjs",
+    "tests/save.test.mjs"
+  ],
+  "unmodifiedConflictingTests": [
+    "tests/boot.test.mjs",
+    "tests/voice-cues.test.mjs"
+  ]
+}

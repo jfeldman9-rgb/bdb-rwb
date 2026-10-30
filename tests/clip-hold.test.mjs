@@ -38,7 +38,7 @@ test('stage 2 narration waits out the kidnap clip instead of being cut off', () 
   let finish = null;
   const scene = sceneWith(w.events, (key, done) => { scene.key = key; finish = done; });
   scene.handleEvents();
-  assert.equal(scene.key, 'kidnap');
+  assert.deepEqual(scene.key, ['stage2', 'kidnap']);
   assert.equal(scene.pauseReasons.has('cutscene'), true);
   assert.equal(scene.voiceHold.includes('nar_ch2'), true);
   assert.equal(scene.captions.some(line => line.includes('Chapter Two')), false, 'nar_ch2 must not start before stopSceneAudio');

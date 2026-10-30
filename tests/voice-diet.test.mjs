@@ -8,7 +8,7 @@ test('stage 1 opening is nar_ch1 and bdb_open, with no intro repeat', () => {
   const w = new Campaign({ rng: () => 1 });
   const said = w.events.filter((e) => e.type === 'voice').map((e) => e.data);
   w.events = [];
-  for (let i = 0; i < 6 * 60; i++) {
+  for (let i = 0; i < 8 * 60 + 1; i++) {
     w.update(1 / 60, {});
     for (const e of w.events) if (e.type === 'voice') said.push(e.data);
     w.events = [];
@@ -36,19 +36,23 @@ test('a seeded Adventure run stays under 4 ambient lines a minute', () => {
   assert.equal(ids.nar_kidnap || 0, 0);
 });
 
-test('Dad call voice is skipped over a D clip and still emitted when cutscenes are off', () => {
-  const w = new Campaign({ stage: 2 });
-  w.spawnYetti('walker', 500, 630);
-  w.events = [];
-  assert.equal(w.useDad(), true);
-  const order = w.events.map((e) => (e.type === 'voice' ? `voice:${e.data}` : e.type));
-  const call = order.indexOf('dad_callin');
-  const line = order.findIndex((item) => item.startsWith('voice:dad_call_'));
-  assert.ok(call >= 0 && call < line, order.join(','));
+test('only a confirmed Dad movie owns the dub; no-movie fallback consumes the global budget', () => {
+  for (const dubbed of [false, true]) {
+    const w = new Campaign({ stage: 2 });
+    w.spawnYetti('walker', 500, 630);
+    w.elapsed = 30; w.events = [];
+    assert.equal(w.useDad(), true);
+    assert.ok(w.events.some(e => e.type === 'dad_callin'));
+    assert.equal(w.events.some(e => e.type === 'voice'), false, 'ownership is unresolved');
+    w.finishDadCallin({ dubbed });
+    assert.equal(w.events.some(e => e.data === 'dad_call_01'), !dubbed);
+    assert.deepEqual(w.voiceGate.stamps, dubbed ? [0] : [0, 30]);
+    w.emit('voice', 'dad_catchphrase');
+    assert.equal(w.voiceGate.queue.includes('dad_catchphrase'), !dubbed);
+  }
   assert.equal(dadCallDubbed('dad_call_01', { dad: true }), true);
   assert.equal(dadCallDubbed('dad_call_02', null), false);
   assert.equal(dadCallDubbed('dad_catchphrase', { dad: true }), false);
-  assert.equal(dadCallDubbed('bdb_open', { dad: true }), false);
 });
 
 // Queue one held line and one same-step offer, then make the gate eligible.
@@ -76,7 +80,8 @@ test('Dad call-in tick cannot flush ambient before finishDadCallin creates Dad',
   assert.equal(w.dad, null, 'call-in cutscene has not finished');
   assert.equal(w.dadCall.on, true);
   assert.equal(flushes, 0);
-  assert.deepEqual(w.events.filter((e) => e.type === 'voice').map((e) => e.data), ['dad_call_01']);
+  assert.deepEqual(w.events.filter((e) => e.type === 'voice'), []);
+  assert.ok(w.voiceGate.queue.includes('bdb_produce'), 'locked ambient transfers before the set-piece');
   assert.equal(Object.keys(w.barks.held).length, 0);
   assert.equal(w.barks.offers.length, 0);
   // The pending cutscene stays guarded on subsequent ticks too.
@@ -129,5 +134,6 @@ test('stage load resets deferred Yetti barks and restarts every-third-attack cad
   w.yellYettiAttack();
   assert.equal(w.events.length, 0, 'the first two telegraphs must stay quiet');
   w.yellYettiAttack();
-  assert.match(w.events[0]?.data, /^yetti_porkchop_/);
+  assert.ok(w.voiceGate.queue.some(id => /^yetti_porkchop_/.test(id)));
+  assert.ok(w.voiceGate.queue.includes('bdb_produce'), 'stage load preserves a held locked quote');
 });

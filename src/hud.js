@@ -1,9 +1,18 @@
 import { MASH_NEED } from './bob.js';
 import { BOSS_GATES } from './yettis.js';
+import { STORY } from './story.js';
+import { DAD } from './dad-call.js';
 export { MASH_NEED } from './bob.js';
 export const speakerColor = who => who==='Dad'?'#ffe3a3':who==='Narrator'?'#c8d4ee':'#ffc6df';
 export const HUD_BAND = Object.freeze({ color: 0x101421, alpha: 0.55, w: 1280, h: 116 });
-export const bossLabel = w => w.bossActive ? `${w.def.boss.name} · PHASE ${w.wingmen?.phase||w.enemies.find(e=>e.boss)?.phase||1}` : '';
+export const bossLabel = w => w.bossActive ? `${w.def.boss.name} · PHASE ${w.finisher?.phase||w.enemies.find(e=>e.boss)?.phase||1}` : '';
+/** A spent campaign allowance cannot recharge; mercy can restore one call. */
+export function dadMeter(st) {
+  if (st.calls >= DAD.maxCalls) return 'SPENT';
+  if (st.charges) return 'READY';
+  if (!st.unlocked) return 'ZONE 3';
+  return `${st.kos}/${DAD.kos} · ${Math.max(0, Math.ceil(DAD.recharge - st.since))}s`;
+}
 /** Boss HP bars: one per Wingman when the pair is out, else the shared bar. `out` is reused by the HUD. */
 export function bossBars(w, out = []){
   let wings = 0;
@@ -55,7 +64,7 @@ export function bossBarLayout(bars, out = []){
 export const mashRing = b => ({visible:b.state==='grabbed',progress:Math.min(1,b.grabMash/MASH_NEED)});
 export function stagePrompt(w){
   if(w.bob.state==='grabbed')return `MASH ANY BUTTON  ${Math.min(6,Math.floor(w.bob.grabMash))}/6`;
-  if(w.wingmen?.ready)return 'PRESS PAPI TO FINISH THE RESCUE';
+  if(w.finisher?.ready)return 'PRESS PAPI TO FINISH THE RESCUE';
   if(w.stageNo===1&&w.locked){
     let n=0, shield=false, rush=false, choir=false;
     const foes=w.enemies;
@@ -80,19 +89,20 @@ export class HUD {
   this.banner=text(640,148,25).setOrigin(.5).setAlign('center').setWordWrapWidth(1020);
   this.boss=text(640,106,14).setOrigin(.5);this.prompt=text(640,684,16,'#fff0bf').setOrigin(.5);
   this.w1=text(390,60,12,'#d0beff');this.w2=text(650,60,12,'#ffb1d6');
-  this.caption=text(640,225,20).setOrigin(.5).setAlign('center').setWordWrapWidth(1000);this.captionUntil=0;
+  this.caption=text(640,225,20).setOrigin(.5).setAlign('center').setWordWrapWidth(1000);this.captionLeft=0;
   this._bars=[];this._laid=[];
  }
- say(who,line){this.caption.setText(`${who.toUpperCase()}  /  ${line}`).setColor(speakerColor(who));this.captionUntil=performance.now()+Math.max(2800,line.length*65);}
- update(w){
+ say(who,line){this.caption.setText(`${who.toUpperCase()}  /  ${line}`).setColor(speakerColor(who));this.captionLeft=Math.max(2.8,line.length*0.065);}
+ update(w,dt=0){
   this.chapter.setText(`THE LEGEND OF CLAUDIA  /  ${String(w.stageNo).padStart(2,'0')}`);
   this.health.setText('♥ '.repeat(Math.ceil(w.bob.hp))+'♡ '.repeat(Math.max(0,w.bob.maxHp-Math.ceil(w.bob.hp))));
-  this.meter.setText(`SHAKES ${'▰'.repeat(w.papi.shakeRemainder)}${'▱'.repeat(3-w.papi.shakeRemainder)}   PAPI ${w.papi.charges}/2   DAD ${w.dadCall.charges? 'READY':w.dadCall.unlocked? `${w.dadCall.kos}/10 · ${Math.max(0,Math.ceil(45-w.dadCall.since))}s`:'ZONE 3'}`);
+  this.meter.setText(`SHAKES ${'▰'.repeat(w.papi.shakeRemainder)}${'▱'.repeat(3-w.papi.shakeRemainder)}   PAPI ${w.papi.charges}/2   DAD ${dadMeter(w.dadCall)}`);
   this.score.setText(`${String(Math.floor(w.score)).padStart(6,'0')}  PTS`);this.zone.setText(`${w.difficultyKey.toUpperCase()}  ·  ${w.bossActive?'BOSS':`ZONE ${Math.min(w.def.zones.length,w.zoneIndex+1)}/${w.def.zones.length}`}`);
-  this.banner.setText(w.paused?'PAUSED':w.victory?'CLAUDIA RESCUED.':w.messageTime>0?w.message:'');
+  this.banner.setText(w.paused?'PAUSED':w.victory?(!w.def?.next?STORY.finalVictory:'CLAUDIA RESCUED.'):w.messageTime>0?w.message:'');
   this.boss.setText(bossLabel(w));
   this.prompt.setText(stagePrompt(w));
-  if(performance.now()>this.captionUntil)this.caption.setText('');
+  if(!w.paused)this.captionLeft=Math.max(0,(this.captionLeft||0)-dt);
+  if(this.captionLeft<=0)this.caption.setText('');
   const g=this.g;g.clear();g.fillStyle(HUD_BAND.color,HUD_BAND.alpha);g.fillRect(0,0,HUD_BAND.w,HUD_BAND.h);g.lineStyle(1,0xbfa875,.55);g.lineBetween(0,116,1280,116);
   const bars=bossBarLayout(bossBars(w,this._bars),this._laid);
   this.w1.setVisible(bars.length>1);this.w2.setVisible(bars.length>1);

@@ -1,0 +1,163 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "yetti_minero-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_minero_idle",
+      "frames": [
+        "yetti_minero_idle_00",
+        "yetti_minero_idle_01",
+        "yetti_minero_idle_02",
+        "yetti_minero_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "yetti_minero_walk",
+      "frames": [
+        "yetti_minero_walk_00",
+        "yetti_minero_walk_01",
+        "yetti_minero_walk_02",
+        "yetti_minero_walk_03",
+        "yetti_minero_walk_04",
+        "yetti_minero_walk_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_minero_lamp",
+      "frames": [
+        "yetti_minero_lamp_00",
+        "yetti_minero_lamp_01",
+        "yetti_minero_lamp_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_minero_slam",
+      "frames": [
+        "yetti_minero_slam_00",
+        "yetti_minero_slam_01",
+        "yetti_minero_slam_02",
+        "yetti_minero_slam_03",
+        "yetti_minero_slam_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_minero_hurt",
+      "frames": [
+        "yetti_minero_hurt_00",
+        "yetti_minero_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_minero_knockdown",
+      "frames": [
+        "yetti_minero_knockdown_00",
+        "yetti_minero_knockdown_01",
+        "yetti_minero_knockdown_02",
+        "yetti_minero_knockdown_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 24,
+    "unique": 24,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

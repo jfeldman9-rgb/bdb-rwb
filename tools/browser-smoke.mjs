@@ -1,13 +1,19 @@
 // Headless Chrome smoke. Launches its own static server and Chrome.
-// node tools/browser-smoke.mjs
+// node tools/browser-smoke.mjs [--from=N]
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { stat, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize } from 'node:path';
 import assert from 'node:assert/strict';
+import { maxStage } from '../src/stages.js';
+import { SAVE_KEY } from '../src/save.js';
 
 const root = process.cwd();
+const optionalMedia = new Set();
+const fromArg = process.argv.slice(2).find(arg => arg.startsWith('--from='));
+const fromStage = fromArg ? Number(fromArg.slice('--from='.length)) : 1;
+assert.ok(Number.isInteger(fromStage) && fromStage >= 1 && fromStage <= maxStage, `--from must be an integer from 1 to ${maxStage}`);
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp',
@@ -15,7 +21,7 @@ const MIME = {
 };
 // BDB_SMOKE_DIR overrides the screenshot directory. The default is repo-local
 // so a laptop without /opt/cursor/artifacts can still run the smoke.
-const shotDir = process.env.BDB_SMOKE_DIR || join(root, 'docs/shots/browser-smoke');
+const shotDir = process.env.BDB_SMOKE_DIR || join(root, 'docs/shots', fromArg ? `browser-smoke-from-${fromStage}` : 'browser-smoke');
 
 function startServer() {
   const server = createServer(async (req, res) => {
@@ -77,23 +83,40 @@ try {
   const tab = await (await fetch(`${base}/json/new?about:blank`, { method: 'PUT' })).json();
   ws = new WebSocket(tab.webSocketDebuggerUrl);
   await new Promise((r) => ws.addEventListener('open', r, { once: true }));
-  let seq = 0; const pending = new Map(), errors = [];
+  let seq = 0; const pending = new Map(), errors = [], missingMedia = [], cutsceneRequests = [];
   ws.addEventListener('message', ({ data }) => {
     const m = JSON.parse(data);
     if (m.id) {
       const p = pending.get(m.id); pending.delete(m.id);
-      if (m.error) p.reject(Error(JSON.stringify(m.error))); else p.resolve(m.result);
+      if (!p) return;
+      if (m.error) p.reject(Error(`${p.method}: ${JSON.stringify(m.error)}`)); else p.resolve(m.result);
     } else if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
-    else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) errors.push(`${m.params.response.status} ${m.params.response.url}`);
+    else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push(m.params.args.map(arg => arg.value ?? arg.description ?? '').join(' '));
+    else if (m.method === 'Network.requestWillBeSent' && m.params.request.url.includes('/assets/cutscenes/')) cutsceneRequests.push(m.params.request.url);
+    else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) {
+      const { status, url } = m.params.response;
+      if (status === 404 && optionalMedia.has(new URL(url).pathname)) missingMedia.push(url);
+      else errors.push(`${status} ${url}`);
+    }
   });
-  const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
-  const evaluate = async (expression) => { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
+  const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject, method }); ws.send(JSON.stringify({ id, method, params })); });
+  const evaluate = async (expression) => {
+    const wrapped = `(async()=>{const value=await eval(${JSON.stringify(expression)});if(value===undefined)return null;try{return JSON.parse(JSON.stringify(value));}catch(e){return String(value);}})()`;
+    const r = await send('Runtime.evaluate', { expression: wrapped, returnByValue: true, awaitPromise: true });
+    if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+    return r.result.value;
+  };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   async function waitFor(expression, ms = 30000) { const end = Date.now() + ms; while (Date.now() < end) { if (await evaluate(expression)) return; await sleep(100); } throw Error(`Timed out: ${expression}\n${errors.join('\n')}`); }
+  const screenshots = [];
   async function shot(name) {
     await sleep(150);
+    // The accelerated sim updates views synchronously; give Chrome two frames
+    // to paint and composite those views before reading the canvas pixels.
+    await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
     const { data } = await send('Page.captureScreenshot', { format: 'png' });
     await writeFile(`${shotDir}/${name}.png`, Buffer.from(data, 'base64'));
+    screenshots.push(`${shotDir}/${name}.png`);
   }
   await mkdir(shotDir, { recursive: true });
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
@@ -101,26 +124,71 @@ try {
   await send('Page.navigate', { url: `${origin}/?nocutscenes=1` });
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
   await shot('title');
+  assert.equal(cutsceneRequests.length, 0, 'cutscene media must stay out of title/pre-fight downloads');
   console.log('Title ready', await evaluate('({canvas:!!document.querySelector("canvas"),version:Phaser.VERSION})'));
-  await send('Page.navigate', { url: `${origin}/?demo=1&nocutscenes=1` });
+  await evaluate(`localStorage.setItem(${JSON.stringify(SAVE_KEY)}, JSON.stringify({unlockedStage:${fromStage},difficulty:'adventure'}))`);
+  await send('Page.navigate', { url: `${origin}/?stage=${fromStage}&demo=1&nocutscenes=1` });
   await waitFor('window.__game?.scene.isActive("gameplay") && !!window.__game.scene.getScene("gameplay").hud');
   const boot = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');const card=document.getElementById('startup-error');return {started:!!s.started,stage:s.world.stageNo,elapsed:s.world.elapsed,cardHidden:!card||card.hidden};})()`);
   assert.equal(boot.started, true);
-  assert.equal(boot.stage, 1);
+  assert.equal(boot.stage, fromStage);
   assert.equal(boot.cardHidden, true);
   await sleep(400);
   const advanced = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');const card=document.getElementById('startup-error');return {started:!!s.started,elapsed:s.world.elapsed,cardHidden:!card||card.hidden,stage:s.world.stageNo};})()`);
   assert.equal(advanced.started, true);
   assert.equal(advanced.cardHidden, true);
-  assert.equal(advanced.stage, 1);
+  assert.equal(advanced.stage, fromStage);
   assert.ok(advanced.elapsed > boot.elapsed, `frames did not advance (${boot.elapsed} -> ${advanced.elapsed})`);
-  await shot('stage1');
+  await shot(`stage${fromStage}`);
   const gameplayShot = process.env.BDB_SMOKE_GAMEPLAY || join(shotDir, 'gameplay.png');
   await mkdir(dirname(gameplayShot), { recursive: true });
-  await copyFile(`${shotDir}/stage1.png`, gameplayShot);
+  await copyFile(`${shotDir}/stage${fromStage}.png`, gameplayShot);
+  await evaluate(`import('/src/zone-stream.js').then(m=>{
+    window.__smokePlate=w=>{
+      const run=m.plateRunForCam(w.camX,w.def);
+      return {key:m.plateKeyForCam(w.camX,w.def),alpha:m.plateAlphas(w.camX,w.def)[run]};
+    };
+    window.__smokePlates=new Set();
+  })`);
+  const plates = [];
+  const done = status => fromArg && fromStage < maxStage ? status?.stats?.stages.includes(fromStage) : status?.victory;
   let bossShot = false, splitShot = false, stampedeShot = false, status;
-  for (let i = 0; i < 600; i++) {
-    status = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};let stampede=null;for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){s.update(0,1000/60);const fx=s.papiFX;if(!window.__stampedeShot&&fx&&fx.runners.length>=14&&fx.age>0.8&&fx.age<1.35){window.__stampedeShot=true;stampede={age:+fx.age.toFixed(3),n:fx.runners.length,x:Math.round(fx.runners[0].x)};break;}}const card=document.getElementById('startup-error');return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.wingmen?.phase,victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede};})()`);
+  for (let i = 0; i < 2400; i++) {
+    status = await evaluate(`(()=>{
+      const s=window.__game.scene.getScene('gameplay');
+      if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};
+      let stampede=null,plate=null,rescue=null;
+      for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){
+        s.update(0,1000/60);
+        const w=s.world,{key,alpha}=window.__smokePlate(w);
+        if(!window.__rescueShot&&w.stageNo===7&&w.clearTimer>0&&s.claudiaFreed){
+          window.__rescueShot=true;rescue={x:s.claudia.x,bobX:w.bob.x,depth:s.claudia.depth,cage:!!s.claudiaCage,clip:!!document.querySelector('#bdb-cutscene')};break;
+        }
+        if(!window.__smokePlates.has(key)&&w.locked&&alpha>=.99){
+          window.__smokePlates.add(key);plate={stage:w.stageNo,key,alpha,camX:w.camX,zone:w.zoneIndex};break;
+        }
+        const fx=s.papiFX;
+        if(!window.__stampedeShot&&fx&&fx.runners.length>=14&&fx.age>0.8&&fx.age<1.35){
+          window.__stampedeShot=true;stampede={age:+fx.age.toFixed(3),n:fx.runners.length,x:Math.round(fx.runners[0].x)};break;
+        }
+        if(${!!fromArg && fromStage < maxStage}&&w.stats.stages.includes(${fromStage}))break;
+      }
+      const card=document.getElementById('startup-error');
+      return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.finisher?.phase,
+        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate,rescue,
+        victoryWait:s.world.victory?s.world.elapsed-s.world.stageStart-s.world.stats.stageTimes.at(-1):null};
+    })()`);
+    if (status.plate) {
+      await shot(status.plate.key);
+      plates.push(status.plate);
+    }
+    if (status.rescue) {
+      assert.equal(status.rescue.cage, false);
+      assert.equal(status.rescue.clip, false);
+      assert.ok(Math.abs(status.rescue.x - status.rescue.bobX) <= 150);
+      assert.ok(status.rescue.depth > 1690);
+      await shot('claudia-freed-before-finale');
+    }
     if (status.stampede && !stampedeShot) {
       await shot('stampede');
       stampedeShot = true;
@@ -129,14 +197,20 @@ try {
     if (status.cardHidden === false || status.started === false) throw new Error('gameplay dropped: ' + JSON.stringify(status));
     if (status.boss && !bossShot) { await shot('boss'); bossShot = true; }
     if (status.stage === 3 && status.phase === 3 && !splitShot) { await shot('wingmen'); splitShot = true; }
-    if (status.victory) break;
+    if (done(status)) break;
     await sleep(30);
   }
-  if (!status?.victory) throw new Error('Browser demo failed to clear: ' + JSON.stringify(status));
+  if (!done(status)) throw new Error('Browser demo failed to clear: ' + JSON.stringify(status));
+  for (const stage of fromArg ? [fromStage] : status.stats.stages) {
+    assert.equal(plates.filter(plate => plate.stage === stage).length, 6, `stage ${stage} must show all six plate runs`);
+  }
   if (!stampedeShot) throw new Error('Papacito stampede was not on screen mid-sweep');
-  await waitFor('!document.getElementById("victory").hidden');
-  await shot('victory');
-  console.log('Campaign complete', JSON.stringify(status));
+  if (status.victory) {
+    assert.ok(status.victoryWait <= 3, `clear-to-victory wait ${status.victoryWait}`);
+    await waitFor('!document.getElementById("victory").hidden');
+    await shot('victory');
+  } else await shot(`stage${fromStage}-clear`);
+  console.log(fromArg ? `Stage ${fromStage} complete` : 'Campaign complete', JSON.stringify(status));
   await send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
   await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await send('Storage.clearDataForOrigin', { origin, storageTypes: 'local_storage' });
@@ -176,6 +250,25 @@ try {
   await waitFor('!window.__game.isPaused && document.getElementById("graphics-notice").hidden');
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
   await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  const skipVideo = async () => {
+    await sleep(500); // Per-clip input guard. Space skips this clip; Escape would skip the rest of the sequence.
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+  };
+  // Direct Chapter 4 selection owns a music bed before its silent title opener.
+  await send('Page.navigate', { url: `${origin}/?cutscenes=1&demo=1&stage=4` });
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("stage4_intro.mp4")');
+  const openerMusic = await evaluate(`import('/src/audio.js').then(m=>m.musicState())`);
+  assert.equal(openerMusic.wanted, 'stage4');
+  assert.equal(openerMusic.ducked, true);
+  await shot('chapter4-title-opener');
+  await skipVideo();
+  for (const clip of ['kidnap_1.mp4', 'kidnap_2.mp4']) {
+    await waitFor(`!!document.querySelector("#bdb-cutscene video")?.src.includes("${clip}")`);
+    await skipVideo();
+  }
+  await waitFor('window.__game.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
+  // Default new game: full intro_v3, then the short stage-1 clip.
   await send('Page.navigate', { url: `${origin}/?cutscenes=1` });
   await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
   await evaluate('document.getElementById("start").click()');
@@ -195,29 +288,139 @@ try {
   }))()`);
   await shot('intro-dad');
   console.log('Intro Dad frame at', sought);
-  const video = await evaluate('({inline:document.querySelector("video").playsInline,src:document.querySelector("video").src,time:document.querySelector("video").currentTime})');
+  const video = await evaluate(`(()=>{const v=document.querySelector("#bdb-cutscene video")||document.querySelector("video");return {inline:!!v?.playsInline,src:String(v?.src||""),time:+(v?.currentTime||0)};})()`);
   assert.equal(video.inline, true);
   assert.match(video.src, /intro_v3\.mp4\?v=b67d6176/);
   assert.doesNotMatch(video.src, /opening\.mp4/);
   assert.ok(video.time > 30, `intro did not seek to Dad (${video.time})`);
-  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
-  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
-  await waitFor('window.__game?.scene.isActive("gameplay") && !document.querySelector("#bdb-cutscene")');
+  await skipVideo();
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("stage1_intro.mp4")');
+  await waitFor('document.querySelector("#bdb-cutscene video")?.currentTime > .5');
+  await shot('stage1-intro');
+  await skipVideo();
+  await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
   const playing = await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');const card=document.getElementById('startup-error');return {started:!!s?.started,stage:s?.world?.stageNo,cardHidden:!card||card.hidden};})()`);
   assert.equal(playing.started, true);
   assert.equal(playing.stage, 1);
   assert.equal(playing.cardHidden, true);
+  // A stage-1 retry plays only the short clip.
+  await send('Page.navigate', { url: `${origin}/?cutscenes=1&resume=1` });
+  await waitFor('window.__game?.scene.isActive("title") && !document.getElementById("title").hidden');
+  await evaluate('document.getElementById("start").click()');
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("stage1_intro.mp4")');
+  assert.doesNotMatch(await evaluate('document.querySelector("#bdb-cutscene video").src'), /intro_v3/);
+  await skipVideo();
+  await waitFor('window.__game?.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
+  // Each later chapter plays its own intro. S2 and S4 then play both kidnap clips.
+  for (const stage of [2, 3, 4, 5, 6, 7]) {
+    await evaluate(`window.__game.campaign.loadStage(${stage})`);
+    await waitFor(`window.__game.scene.getScene('gameplay')?.started && window.__game.scene.getScene('gameplay').stageNo === ${stage}`);
+    await waitFor(`!!document.querySelector("#bdb-cutscene video")?.src.includes("stage${stage}_intro.mp4")`);
+    if (stage >= 5) {
+      await waitFor('document.querySelector("#bdb-cutscene video")?.currentTime > .3');
+      await shot(`stage${stage}-intro`);
+    }
+    await skipVideo();
+    if (stage === 2 || stage === 4) {
+      await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("kidnap_1.mp4")');
+      await skipVideo();
+      await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("kidnap_2.mp4")');
+      await skipVideo();
+    }
+    await waitFor('!document.querySelector("#bdb-cutscene") && !window.__game.isPaused && !window.__game.campaign.paused');
+    assert.equal(await evaluate('window.__game.campaign.stageNo'), stage);
+    const elapsed = await evaluate('window.__game.campaign.elapsed');
+    await sleep(150);
+    assert.ok(await evaluate('window.__game.campaign.elapsed') > elapsed, `stage ${stage} did not resume after its intro`);
+  }
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudia'), true);
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), true);
+  await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');s.presentVictory();})()`);
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("final_victory.mp4")');
+  await shot('final-victory');
+  await skipVideo();
+  await waitFor('!document.getElementById("victory").hidden');
+  assert.equal(await evaluate('document.querySelector("#victory h2")?.textContent'), 'CLAUDIA RESCUED. FOR REAL THIS TIME.');
+  await shot('final-victory-panel');
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), false);
+  for (const { stage, type } of [
+    { stage: 5, type: 'tagger' }, { stage: 5, type: 'dj' },
+    { stage: 6, type: 'minero' }, { stage: 6, type: 'celestina' },
+    { stage: 7, type: 'bailiff' }, { stage: 7, type: 'archyetti' },
+  ]) {
+    await send('Page.navigate', { url: `${origin}/?stage=${stage}&demo=1&nocutscenes=1` });
+    await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started');
+    const placed = await evaluate(`(async()=>{
+      const [{Yetti,laneY},{ArchYetti}]=await Promise.all([import('/src/yettis.js'),import('/src/archyetti.js')]);
+      const w=window.__game.campaign;
+      w.paused=false;w.hostile=[];w.pending=[];
+      for(const e of w.enemies)e.alive=false;
+      const x=w.bob.x+240,y=laneY(1);
+      w.bob.x=x-240;w.bob.y=y;w.camX=w.bob.x-180;
+      const enemy=${JSON.stringify(type)}==='archyetti'?new ArchYetti(x,y):new Yetti(${JSON.stringify(type)},x,y);
+      enemy.facing=-1;w.enemies=[enemy];
+      return {type:enemy.type,x:enemy.x};
+    })()`);
+    assert.equal(placed.type, type);
+    await sleep(200);
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    await shot(`painted-${type}`);
+    if (['dj', 'celestina', 'archyetti'].includes(type)) {
+      const flash = await evaluate(`(()=>{
+        const s=window.__game.scene.getScene('gameplay'),w=s.world,e=w.enemies.find(e=>e.type===${JSON.stringify(type)});
+        w.paused=true;e.state='approach';e.takeHit(1,1);s.syncViews();
+        return {mode:s.views.get(e).sprite.tintMode,fill:Phaser.TintModes.FILL,anim:s.views.get(e).cur};
+      })()`);
+      assert.equal(flash.mode, flash.fill, `${type} uses Phaser 4's actual fill tint`);
+      assert.match(flash.anim, /hurt$/);
+      await shot(`hit-flash-${type}`);
+      const restored = await evaluate(`(()=>{
+        const s=window.__game.scene.getScene('gameplay'),w=s.world,e=w.enemies.find(e=>e.type===${JSON.stringify(type)});
+        e.flashT=0;e.hurtT=0;s.syncViews();return s.views.get(e).sprite.tintMode===Phaser.TintModes.MULTIPLY;
+      })()`);
+      assert.equal(restored, true);
+    }
+  }
+  for (const { stage, name, zoneIndex } of [
+    { stage: 5, name: 's5-mid-level', zoneIndex: 2 },
+    { stage: 6, name: 's6-mid-level', zoneIndex: 2 },
+    { stage: 7, name: 's7-mid-level', zoneIndex: 2 },
+    { stage: 7, name: 's7-boss-arena', zoneIndex: 5 },
+  ]) {
+    await send('Page.navigate', { url: `${origin}/?stage=${stage}&demo=1&nocutscenes=1` });
+    await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started');
+    const parked = await evaluate(`(()=>{
+      const s=window.__game.scene.getScene('gameplay');
+      const w=s.world;
+      const zone=${zoneIndex}===5?w.def.boss:w.def.zones[${zoneIndex}];
+      w.paused=false;w.hostile=[];w.pending=[];
+      for(const e of w.enemies)e.alive=false;
+      w.enemies=[];
+      w.bob.x=zone.l+400;w.bob.facing=1;
+      w.zoneIndex=Math.min(${zoneIndex},4);
+      w.locked=true;w.bossActive=${zoneIndex}===5;
+      if(${zoneIndex}===5)w.startBoss(1);
+      else{w.camMax=zone.l;w.camX=zone.l;w.bounds={l:zone.l,r:zone.r};}
+      s.cameras.main.setScroll(Math.round(w.camX),0);
+      s.backdrop?.update(w.camX);
+      return {stage:w.stageNo,camX:w.camX,boss:w.bossActive,enemies:w.enemies.map(e=>e.type)};
+    })()`);
+    assert.equal(parked.stage, stage);
+    await sleep(200);
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    await shot(name);
+  }
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,
-    campaign: status, touch,
-    checks: { started: true, framesAdvanced: true, noErrorCard: true, stage1: true, introV3: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
-    errors,
-    screenshots: ['title', 'stage1', 'boss', 'wingmen', 'victory', 'touch-stage1', 'stampede', 'intro-dad'].map((x) => `${shotDir}/${x}.png`),
+    fromStage, campaign: status, plates, touch,
+    checks: { started: true, framesAdvanced: true, noErrorCard: true, requestedStage: true, allPlateRuns: true, introV3: true, stage1AfterIntro: true, stage1Retry: true, lazyCutscenes: true, stageIntrosPresent: true, chapter4TitleMusic: true, victoryWait: status.victoryWait, cageRestart: true, simultaneousTouch: true, touchRelease: true, storyDefault: true, pauseFreezes: true, portraitRotate: true, graphicsRecovery: true, keyboardVideoSkip: true },
+    errors, missingMedia,
+    screenshots,
   };
   await writeFile(`${shotDir}/browser-report.json`, JSON.stringify(report, null, 2));
   if (errors.length) throw new Error(errors.join('\n'));
-  console.log('Browser smoke passed, zero runtime/HTTP errors.');
+  console.log('Browser smoke passed, zero unexpected runtime/HTTP errors. Unexpected missing media:', missingMedia.length);
 } finally {
   try { ws?.close(); } catch { /* already closed */ }
   chrome.kill('SIGKILL');

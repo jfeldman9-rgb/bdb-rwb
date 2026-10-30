@@ -45,7 +45,7 @@ h1 span{color:#ddabec;font-size:1.25em}
 body.playing #rotate-start{display:none}
 @media (orientation:portrait) and (hover:none) and (pointer:coarse){#rotate{display:flex}}
 #victory{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0e1722e8;text-align:center}
-#victory .rescue-line{font-size:clamp(16px,2.4vw,28px);color:#ffc6df;max-width:920px;line-height:1.35;margin:0 0 22px;padding:0 8%}
+#victory .rescue-line{font-size:clamp(16px,2.4vw,28px);color:#ffc6df;max-width:920px;max-height:38vh;overflow-y:auto;white-space:pre-line;line-height:1.35;margin:0 0 22px;padding:0 8%}
 #victory h2{font-size:clamp(24px,4vw,50px);color:#f0c993}
 #graphics-notice{position:fixed;inset:0;z-index:120;background:#101421ee;display:grid;place-content:center;text-align:center;padding:10%}
 #startup-error{position:fixed;inset:0;z-index:110;background:#121b2b;padding:10%;text-align:center}
@@ -64,16 +64,16 @@ body.playing #rotate-start{display:none}
   <div class="eyebrow">A rescue. A bad idea. A lot of protein.</div>
   <h1>The Legend<br>of <span>Claudia</span></h1>
   <div class="eyebrow">BDB's Awakening</div>
-  <p>Heaven has opinions. Bob brought options.<br>Three chapters. One very questionable rescue.</p>
+  <p>Heaven has opinions. Bob brought options.<br>Seven chapters. One very questionable rescue.</p>
  </div>
- <div class="settings"><label>Difficulty <select id="difficulty"><option value="story">Story</option><option value="adventure">Adventure</option><option value="nightmare">Nightmare</option></select></label><label>Chapter <select id="chapter"><option value="1">01 · Boulevard</option><option value="2">02 · Celestial</option><option value="3">03 · Moonlit Keep</option></select></label></div>
+ <div class="settings"><label>Difficulty <select id="difficulty"><option value="story">Story</option><option value="adventure">Adventure</option><option value="nightmare">Nightmare</option></select></label><label>Chapter <select id="chapter"><option value="1">01 · Boulevard</option><option value="2">02 · Celestial</option><option value="3">03 · Moonlit Keep</option><option value="4">04 · Afterparty</option><option value="5">05 · Gondola</option><option value="6">06 · Salt Mine</option><option value="7">07 · Tribunal</option></select></label></div>
  <div class="settings"><label><input type="checkbox" id="auto-fire"> Auto-fire</label></div>
  <div class="start-wrap"><button type="button" class="start" id="start">TAP TO START</button>
  <div class="footnote">WASD / ARROWS · J fire · SPACE jump · SHIFT dash · Q Papi · R Dad<br>Or tap anywhere on this screen</div></div>
 </section>
 <div id="top-buttons"><button id="pause">Pause</button><button id="mute">Sound on</button></div>
 <div id="touch"><div id="stick" aria-label="Movement stick"><div id="knob"></div></div><div class="buttons"><button class="tb" id="tbPapi">PAPI</button><button class="tb" id="tbDad">DAD</button><button class="tb" id="tbFire">FIRE</button><button class="tb" id="tbJump">JUMP</button><button class="tb" id="tbDash">DASH</button></div></div>
-<section id="victory" hidden><p id="victory-line" class="rescue-line"></p><div class="eyebrow">Boundaries successfully mashed.</div><h2>CLAUDIA RESCUED.</h2><p id="victory-score"></p><button id="replay">Back to title</button></section>
+<section id="victory" hidden><p id="victory-line" class="rescue-line" role="log" aria-live="polite"></p><div class="eyebrow">Case closed. Claudia chooses Bob.</div><h2>CLAUDIA RESCUED.</h2><p id="victory-score"></p><button id="replay">Back to title</button></section>
 </div></div>
 <div id="boot">LOADING THE RESCUE…</div><div id="rotate" role="dialog" aria-label="Rotate or start">
 <p>Turn your phone sideways.<br>The rescue needs elbow room.</p>

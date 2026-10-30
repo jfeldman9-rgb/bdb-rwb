@@ -83,10 +83,11 @@ test('queueCharPages asks Phaser for ASTC, then ETC2, then the webp atlas',async
  const plain={...m};delete plain.gpu;assert.deepEqual(Object.keys(charPageSources(plain,'dad-0')),['IMG']);
  calls.length=0;queueCharPages({...scene,cache:{json:{get:()=>plain}}},['dad']);assert.deepEqual(calls[0],['atlas','dad-0','assets/chars/dad-0.webp','assets/chars/dad-0.json']);
 });
-test('Stage 1 kit on-device estimate with ASTC/ETC2 is a quarter of the RGBA webp path',async()=>{
+test('Stage 1 device estimate follows the loader, including the keyed IMG-only stampede',async()=>{
+ const {charPageSources}=await import('../src/assets.js');
  const keys=['bob','yetti_walker','yetti_guard','yetti_hover','yetti_charger','yetti_choir','yetti_lecturer','interventionist','dad','papi_stampede'];let rgba=0,astc=0;
- for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}}
- assert.equal(astc*4,rgba);assert.ok(astc/2**20<60,`stage1 ASTC MiB ${astc/2**20}`);
+ for(const key of keys){const m=await json(`assets/chars/${key}.anims.json`);for(const p of m.pages){const s=(await json(`assets/chars/${p}.json`)).meta.size;rgba+=s.w*s.h*4;if(charPageSources(m,p).ASTC){const b=await readFile(`assets/chars/${p}.${m.gpu.ASTC}`);astc+=b.readUInt32LE(64+b.readUInt32LE(60));}else astc+=s.w*s.h*4;}}
+ assert.ok(astc<rgba/3);assert.ok(astc/2**20<60,`stage1 ASTC+IMG MiB ${astc/2**20}`);
  const r=await json('assets/chars/_pack_report.json');assert.ok(Math.abs(r.compressed.stage1_gpu_MiB.astc-astc/2**20)<.01);
 });
 
@@ -104,6 +105,54 @@ test('painted role Yettis ship FPS.md anims and are not placeholders',async()=>{
       const a=m.anims.find(x=>x.name===`${key}_${name}`);
       assert.ok(a,`${key}_${name}`);
       assert.equal(a.frames.length,n);assert.equal(a.holds[0],hold(fps));
+    }
+  }
+});
+
+test('painted Stage 4 Salsero and Bouncer are not placeholders', async () => {
+  const expect = {
+    yetti_salsero: [['idle', 6, 12], ['walk', 8, 12], ['spin', 4, 16], ['lunge', 6, 16], ['hurt', 3, 14], ['knockdown', 5, 14]],
+    bouncer: [['walk', 8, 12], ['block', 2, 10], ['grab', 4, 16], ['hold', 2, 8], ['rush', 6, 16], ['stomp', 4, 14], ['roar', 4, 12], ['hurt', 3, 14], ['down', 5, 14]],
+  };
+  for (const [key, anims] of Object.entries(expect)) {
+    const m = await json(`assets/chars/${key}.anims.json`);
+    assert.equal(m.placeholder, false, key);
+    assert.equal(m.baseline, 570);
+    assert.equal(m.scale, 0.38);
+    for (const [name, n, fps] of anims) {
+      const a = m.anims.find((x) => x.name === `${key}_${name}`);
+      assert.ok(a, `${key}_${name}`);
+      assert.equal(a.frames.length, n, `${key}_${name}`);
+      assert.equal(a.holds[0], hold(fps));
+    }
+    if (key === 'yetti_salsero') {
+      assert.equal(m.anims.find((x) => x.name === 'yetti_salsero_spin').loop, true, 'spin loops so the 0.55s tell does not freeze');
+    }
+    if (key === 'bouncer') {
+      assert.equal(m.anims.find((x) => x.name === 'bouncer_grab').loop, true, 'grab loops so the 0.65s tell does not freeze');
+    }
+  }
+});
+
+test('painted Stage 5–7 cast ships SPEC.md anims and is not a placeholder', async () => {
+  const expect = {
+    yetti_tagger: [['idle', 4, 8], ['walk', 6, 10], ['shake', 4, 12], ['throw', 4, 12], ['hurt', 2, 12], ['knockdown', 4, 12]],
+    yetti_minero: [['idle', 4, 8], ['walk', 6, 10], ['lamp', 3, 12], ['slam', 5, 12], ['hurt', 2, 12], ['knockdown', 4, 12]],
+    yetti_bailiff: [['walk', 6, 10], ['block', 2, 8], ['raise', 3, 12], ['grab', 4, 12], ['hold', 2, 8], ['hurt', 2, 12], ['knockdown', 4, 12]],
+    dj: [['idle', 4, 8], ['walk', 6, 10], ['cast', 4, 12], ['drop', 5, 12], ['hurt', 2, 12], ['down', 4, 12]],
+    celestina: [['idle', 4, 8], ['walk', 6, 10], ['flutter', 3, 12], ['toss', 4, 12], ['blink', 3, 12], ['hurt', 2, 12], ['down', 4, 12]],
+    archyetti: [['idle', 4, 8], ['walk', 6, 10], ['slam', 5, 12], ['verdict', 3, 12], ['roar', 3, 12], ['hurt', 2, 12], ['down', 5, 12]],
+  };
+  for (const [key, anims] of Object.entries(expect)) {
+    const m = await json(`assets/chars/${key}.anims.json`);
+    assert.equal(m.placeholder, false, key);
+    assert.equal(m.baseline, 570);
+    assert.equal(m.scale, 0.38);
+    for (const [name, n, fps] of anims) {
+      const a = m.anims.find((x) => x.name === `${key}_${name}`);
+      assert.ok(a, `${key}_${name}`);
+      assert.equal(a.frames.length, n, `${key}_${name}`);
+      assert.equal(a.holds[0], hold(fps));
     }
   }
 });

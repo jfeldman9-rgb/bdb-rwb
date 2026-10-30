@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir,readFile,access } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import path from 'node:path';
 
 const noop=()=>{};
@@ -22,15 +23,16 @@ test('no excluded engine content or modules in gameplay imports',async()=>{
  for(const file of (await readdir('src')).filter(f=>f.endsWith('.js'))){
   const source=await readFile(`src/${file}`,'utf8');
   for(const [,ref]of source.matchAll(/(?:from\s*|import\s*\()\s*['"]([^'"]+)['"]/g)){
-   assert.doesNotMatch(ref,/(?:loial|rand-call|balefire|riley3|twix|stage[4-8]|stage[23](?!-def))/i,`${file}: ${ref}`);
+   assert.doesNotMatch(ref,/(?:loial|rand-call|balefire|riley3|twix|stage8|stage[2-7](?!-def))/i,`${file}: ${ref}`);
   }
  }
 });
 test('title, HUD, story and voice registry contain only BDB player-facing text',async()=>{
  for(const file of ['index.html','src/hud.js','src/story.js','src/voice-lines.js','src/audio.js','src/main.js'])assert.doesNotMatch(await readFile(file,'utf8'),/Riley|Loial|Twix|Trolloc|Moiraine|Winternight|balefire|elon-console/i,file);
 });
-test('git remotes stay private (none, or only origin→jfeldman9-rgb/bdb-rwb)',()=>{
- const out=execFileSync('git',['remote','-v'],{encoding:'utf8'}).trim();
+test('git remotes stay private (none, or only origin→jfeldman9-rgb/bdb-rwb)',async()=>{
+ const {stdout}=await promisify(execFile)('git',['remote','-v'],{encoding:'utf8'});
+ const out=stdout.trim();
  if(!out) return;
  const lines=out.split(/\n/).filter(Boolean);
  const repo='https://github.com/jfeldman9-rgb/bdb-rwb';

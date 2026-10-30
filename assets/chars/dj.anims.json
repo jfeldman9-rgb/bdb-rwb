@@ -1,0 +1,166 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "dj-0"
+  ],
+  "anims": [
+    {
+      "name": "dj_idle",
+      "frames": [
+        "dj_idle_00",
+        "dj_idle_01",
+        "dj_idle_02",
+        "dj_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "dj_walk",
+      "frames": [
+        "dj_walk_00",
+        "dj_walk_01",
+        "dj_walk_02",
+        "dj_walk_03",
+        "dj_walk_04",
+        "dj_walk_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "dj_cast",
+      "frames": [
+        "dj_cast_00",
+        "dj_cast_01",
+        "dj_cast_02",
+        "dj_cast_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "dj_drop",
+      "frames": [
+        "dj_drop_00",
+        "dj_drop_01",
+        "dj_drop_02",
+        "dj_drop_03",
+        "dj_drop_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "dj_hurt",
+      "frames": [
+        "dj_hurt_00",
+        "dj_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "dj_down",
+      "frames": [
+        "dj_down_00",
+        "dj_down_01",
+        "dj_down_02",
+        "dj_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 25,
+    "unique": 25,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

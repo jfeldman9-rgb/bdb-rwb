@@ -1,0 +1,306 @@
+{
+  "browser": "Chromium, SwiftShader (not hardware performance evidence)",
+  "httpStatus": 200,
+  "fromStage": 1,
+  "campaign": {
+    "stage": 4,
+    "zone": 5,
+    "boss": true,
+    "victory": true,
+    "elapsed": 753.7666666663098,
+    "started": true,
+    "cardHidden": true,
+    "stats": {
+      "shots": 2034,
+      "papi": 17,
+      "dad": 3,
+      "kos": 245,
+      "deaths": 5,
+      "hits": 40,
+      "stages": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "phases": [
+        "1:2",
+        "1:3",
+        "2:2",
+        "2:3",
+        "3:2",
+        "3:3",
+        "4:2",
+        "4:3"
+      ],
+      "stageTimes": [
+        165.1,
+        187.5,
+        213.3,
+        177.8
+      ]
+    },
+    "stampede": null,
+    "plate": null
+  },
+  "plates": [
+    {
+      "stage": 1,
+      "key": "s1-mid0",
+      "alpha": 1,
+      "camX": 0,
+      "zone": 0
+    },
+    {
+      "stage": 1,
+      "key": "s1-mid1",
+      "alpha": 0.990716435931013,
+      "camX": 1275.5438892468862,
+      "zone": 1
+    },
+    {
+      "stage": 1,
+      "key": "s1-mid2",
+      "alpha": 0.9902966716131734,
+      "camX": 2555.3424023743232,
+      "zone": 2
+    },
+    {
+      "stage": 1,
+      "key": "s1-mid4",
+      "alpha": 0.9904413189725062,
+      "camX": 3835.411833106803,
+      "zone": 3
+    },
+    {
+      "stage": 1,
+      "key": "s1-mid5",
+      "alpha": 0.9905066270249525,
+      "camX": 5115.443180971977,
+      "zone": 4
+    },
+    {
+      "stage": 1,
+      "key": "s1-mid3",
+      "alpha": 0.9906601145224992,
+      "camX": 6475.5168549708,
+      "zone": 5
+    },
+    {
+      "stage": 2,
+      "key": "s2-mid0",
+      "alpha": 1,
+      "camX": 0,
+      "zone": 0
+    },
+    {
+      "stage": 2,
+      "key": "s2-mid1",
+      "alpha": 0.9905808457767852,
+      "camX": 1275.478805972857,
+      "zone": 1
+    },
+    {
+      "stage": 2,
+      "key": "s2-mid3",
+      "alpha": 0.9903881599228082,
+      "camX": 2555.386316762948,
+      "zone": 2
+    },
+    {
+      "stage": 2,
+      "key": "s2-mid4",
+      "alpha": 0.9905598426017558,
+      "camX": 3835.4687244488427,
+      "zone": 3
+    },
+    {
+      "stage": 2,
+      "key": "s2-mid5",
+      "alpha": 0.9902544426930301,
+      "camX": 5115.322132492654,
+      "zone": 4
+    },
+    {
+      "stage": 2,
+      "key": "s2-mid2",
+      "alpha": 0.9905934947496462,
+      "camX": 6475.48487747983,
+      "zone": 5
+    },
+    {
+      "stage": 3,
+      "key": "s3-mid0",
+      "alpha": 1,
+      "camX": 0,
+      "zone": 0
+    },
+    {
+      "stage": 3,
+      "key": "s3-mid1",
+      "alpha": 0.9907270035656656,
+      "camX": 1275.5489617115195,
+      "zone": 1
+    },
+    {
+      "stage": 3,
+      "key": "s3-mid3",
+      "alpha": 0.9919461052456587,
+      "camX": 2556.134130517916,
+      "zone": 2
+    },
+    {
+      "stage": 3,
+      "key": "s3-mid4",
+      "alpha": 0.9903798075831465,
+      "camX": 3835.3823076399103,
+      "zone": 3
+    },
+    {
+      "stage": 3,
+      "key": "s3-mid5",
+      "alpha": 0.9904491799298645,
+      "camX": 5115.415606366335,
+      "zone": 4
+    },
+    {
+      "stage": 3,
+      "key": "s3-mid2",
+      "alpha": 0.9905479127762097,
+      "camX": 6475.462998132581,
+      "zone": 5
+    },
+    {
+      "stage": 4,
+      "key": "s4-mid0",
+      "alpha": 1,
+      "camX": 0,
+      "zone": 0
+    },
+    {
+      "stage": 4,
+      "key": "s4-mid1",
+      "alpha": 0.9905967329474161,
+      "camX": 1275.4864318147597,
+      "zone": 1
+    },
+    {
+      "stage": 4,
+      "key": "s4-mid2",
+      "alpha": 0.990498561835029,
+      "camX": 2555.439309680814,
+      "zone": 2
+    },
+    {
+      "stage": 4,
+      "key": "s4-mid3",
+      "alpha": 0.9904451664656373,
+      "camX": 3835.413679903506,
+      "zone": 3
+    },
+    {
+      "stage": 4,
+      "key": "s4-mid4",
+      "alpha": 0.9905002205152565,
+      "camX": 5115.440105847323,
+      "zone": 4
+    },
+    {
+      "stage": 4,
+      "key": "s4-mid5",
+      "alpha": 0.9905974930610664,
+      "camX": 6475.486796669312,
+      "zone": 5
+    }
+  ],
+  "touch": {
+    "touch": true,
+    "buttons": [
+      {
+        "id": "tbPapi",
+        "width": 61.6875,
+        "height": 51.40625
+      },
+      {
+        "id": "tbDad",
+        "width": 61.6875,
+        "height": 51.40625
+      },
+      {
+        "id": "tbFire",
+        "width": 61.6875,
+        "height": 77.109375
+      },
+      {
+        "id": "tbJump",
+        "width": 61.6875,
+        "height": 51.40625
+      },
+      {
+        "id": "tbDash",
+        "width": 61.6875,
+        "height": 51.40625
+      }
+    ],
+    "canvas": {
+      "x": 75.328125,
+      "y": 0,
+      "width": 693.328125,
+      "height": 389.984375,
+      "top": 0,
+      "right": 768.65625,
+      "bottom": 389.984375,
+      "left": 75.328125
+    }
+  },
+  "checks": {
+    "started": true,
+    "framesAdvanced": true,
+    "noErrorCard": true,
+    "requestedStage": true,
+    "allPlateRuns": true,
+    "introV3": true,
+    "simultaneousTouch": true,
+    "touchRelease": true,
+    "storyDefault": true,
+    "pauseFreezes": true,
+    "portraitRotate": true,
+    "graphicsRecovery": true,
+    "keyboardVideoSkip": true
+  },
+  "errors": [],
+  "screenshots": [
+    "docs/shots/pass-a-campaign/title.png",
+    "docs/shots/pass-a-campaign/stage1.png",
+    "docs/shots/pass-a-campaign/s1-mid0.png",
+    "docs/shots/pass-a-campaign/s1-mid1.png",
+    "docs/shots/pass-a-campaign/stampede.png",
+    "docs/shots/pass-a-campaign/s1-mid2.png",
+    "docs/shots/pass-a-campaign/s1-mid4.png",
+    "docs/shots/pass-a-campaign/s1-mid5.png",
+    "docs/shots/pass-a-campaign/s1-mid3.png",
+    "docs/shots/pass-a-campaign/boss.png",
+    "docs/shots/pass-a-campaign/s2-mid0.png",
+    "docs/shots/pass-a-campaign/s2-mid1.png",
+    "docs/shots/pass-a-campaign/s2-mid3.png",
+    "docs/shots/pass-a-campaign/s2-mid4.png",
+    "docs/shots/pass-a-campaign/s2-mid5.png",
+    "docs/shots/pass-a-campaign/s2-mid2.png",
+    "docs/shots/pass-a-campaign/s3-mid0.png",
+    "docs/shots/pass-a-campaign/s3-mid1.png",
+    "docs/shots/pass-a-campaign/s3-mid3.png",
+    "docs/shots/pass-a-campaign/s3-mid4.png",
+    "docs/shots/pass-a-campaign/s3-mid5.png",
+    "docs/shots/pass-a-campaign/s3-mid2.png",
+    "docs/shots/pass-a-campaign/wingmen.png",
+    "docs/shots/pass-a-campaign/s4-mid0.png",
+    "docs/shots/pass-a-campaign/s4-mid1.png",
+    "docs/shots/pass-a-campaign/s4-mid2.png",
+    "docs/shots/pass-a-campaign/s4-mid3.png",
+    "docs/shots/pass-a-campaign/s4-mid4.png",
+    "docs/shots/pass-a-campaign/s4-mid5.png",
+    "docs/shots/pass-a-campaign/victory.png",
+    "docs/shots/pass-a-campaign/touch-stage1.png",
+    "docs/shots/pass-a-campaign/intro-dad.png"
+  ]
+}

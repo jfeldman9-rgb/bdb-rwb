@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Derive preview plates for new stages from existing art. Never rewrites s1–s4."""
+from pathlib import Path
+from PIL import Image, ImageEnhance
+
+BG = Path(__file__).resolve().parent.parent / 'assets' / 'bg'
+
+# key: (source, (r,g,b) gain, lift, saturation, brightness)
+PLATES = {
+    's5-far': ('s4-far', (0.82, 0.92, 1.18), (0, 10, 22), 1.12, 0.88),
+    's5-floor': ('s4-floor', (1.12, 0.88, 0.78), (18, 8, 0), 0.92, 1.02),
+    's5-mid0': ('s4-mid0', (0.88, 0.96, 1.12), (4, 8, 16), 1.08, 0.94),
+    's5-mid1': ('s4-mid1', (1.05, 0.86, 1.10), (12, 0, 18), 1.18, 0.96),
+    's5-mid2': ('s4-mid2', (0.92, 1.00, 1.08), (6, 10, 8), 1.04, 0.93),
+    's5-mid3': ('s4-mid3', (0.86, 0.94, 1.16), (0, 6, 20), 1.10, 0.90),
+    's5-mid4': ('s4-mid4', (1.10, 0.90, 0.86), (16, 4, 6), 1.12, 0.95),
+    's5-mid5': ('s4-mid5', (0.90, 0.84, 1.20), (8, 0, 24), 1.16, 0.92),
+    's6-far': ('s4-far', (0.72, 1.08, 1.16), (0, 18, 22), 1.05, 0.78),
+    's6-floor': ('s4-floor', (1.18, 1.10, 0.92), (22, 18, 8), 0.88, 1.08),
+    's6-mid0': ('s4-mid0', (0.78, 1.04, 1.10), (4, 16, 14), 1.02, 0.86),
+    's6-mid1': ('s4-mid1', (0.80, 1.10, 1.14), (0, 20, 18), 1.08, 0.82),
+    's6-mid2': ('s4-mid2', (0.88, 0.92, 1.18), (10, 4, 22), 1.14, 0.88),
+    's6-mid3': ('s4-mid3', (0.74, 1.12, 1.20), (0, 16, 24), 1.10, 0.80),
+    's6-mid4': ('s4-mid4', (1.08, 0.88, 1.06), (18, 8, 16), 1.16, 0.90),
+    's6-mid5': ('s4-mid5', (0.92, 1.02, 1.18), (12, 10, 20), 1.12, 0.86),
+    's7-far': ('s4-far', (1.12, 0.88, 0.78), (22, 8, 0), 1.08, 1.05),
+    's7-floor': ('s4-floor', (0.96, 0.94, 1.04), (8, 6, 10), 0.90, 1.04),
+    's7-mid0': ('s4-mid0', (1.10, 0.92, 0.82), (18, 6, 4), 1.04, 1.02),
+    's7-mid1': ('s4-mid1', (0.88, 0.86, 1.08), (6, 4, 16), 1.02, 0.92),
+    's7-mid2': ('s4-mid2', (0.90, 0.88, 1.10), (4, 4, 14), 1.00, 0.94),
+    's7-mid3': ('s4-mid3', (1.06, 0.84, 1.12), (14, 0, 16), 1.10, 0.96),
+    's7-mid4': ('s4-mid4', (1.08, 0.90, 0.80), (16, 8, 4), 1.06, 1.00),
+    's7-mid5': ('s4-mid5', (1.14, 0.92, 0.76), (20, 8, 0), 1.08, 1.04),
+}
+
+
+def grade(im, gain, lift, sat, bright):
+    r, g, b = im.split()
+    r, g, b = (c.point(lambda v, k=k, l=l: min(255, round(v * k + l))) for c, k, l in zip((r, g, b), gain, lift))
+    im = Image.merge('RGB', (r, g, b))
+    im = ImageEnhance.Color(im).enhance(sat)
+    return ImageEnhance.Brightness(im).enhance(bright)
+
+
+def main(only=None):
+    for key, (src, gain, lift, sat, bright) in PLATES.items():
+        if only and not key.startswith(only):
+            continue
+        im = Image.open(BG / f'{src}.webp').convert('RGB')
+        im = grade(im, gain, lift, sat, bright)
+        im.save(BG / f'{key}.webp', 'WEBP', quality=80, method=6)
+        print(key, '<-', src, im.size)
+
+
+if __name__ == '__main__':
+    import sys
+    only = None
+    if '--only' in sys.argv:
+        only = sys.argv[sys.argv.index('--only') + 1]
+    main(only)

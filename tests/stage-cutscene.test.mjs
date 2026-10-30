@@ -91,6 +91,9 @@ test('stage music waits when a cutscene is already queued', () => {
   assert.equal(trackForStageStart(2, [{ type: 'cutscene', data: 'kidnap' }]), null);
   assert.equal(trackForStageStart(2, [{ type: 'voice', data: 'nar_ch2' }]), 'stage2');
   assert.equal(trackForStageStart(1, []), 'stage1');
+  assert.equal(trackForStageStart(3, [{ type: 'cutscene', data: 'stage3' }]), 'stage3');
+  assert.equal(trackForStageStart(1, [{ type: 'cutscene', data: 'stage1' }]), 'stage1');
+  assert.equal(trackForStageStart(4, [{ type: 'cutscene', data: 'stage4' }, { type: 'cutscene', data: 'kidnap' }]), 'stage4');
 });
 
 test('boss music waits when the same batch opens a cutscene', async () => {

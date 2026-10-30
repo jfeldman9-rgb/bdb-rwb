@@ -1,0 +1,171 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "yetti_bailiff-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_bailiff_walk",
+      "frames": [
+        "yetti_bailiff_walk_00",
+        "yetti_bailiff_walk_01",
+        "yetti_bailiff_walk_02",
+        "yetti_bailiff_walk_03",
+        "yetti_bailiff_walk_04",
+        "yetti_bailiff_walk_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_bailiff_block",
+      "frames": [
+        "yetti_bailiff_block_00",
+        "yetti_bailiff_block_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "yetti_bailiff_raise",
+      "frames": [
+        "yetti_bailiff_raise_00",
+        "yetti_bailiff_raise_01",
+        "yetti_bailiff_raise_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_bailiff_grab",
+      "frames": [
+        "yetti_bailiff_grab_00",
+        "yetti_bailiff_grab_01",
+        "yetti_bailiff_grab_02",
+        "yetti_bailiff_grab_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_bailiff_hold",
+      "frames": [
+        "yetti_bailiff_hold_00",
+        "yetti_bailiff_hold_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "yetti_bailiff_hurt",
+      "frames": [
+        "yetti_bailiff_hurt_00",
+        "yetti_bailiff_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_bailiff_knockdown",
+      "frames": [
+        "yetti_bailiff_knockdown_00",
+        "yetti_bailiff_knockdown_01",
+        "yetti_bailiff_knockdown_02",
+        "yetti_bailiff_knockdown_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 23,
+    "unique": 23,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

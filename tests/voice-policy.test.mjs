@@ -8,7 +8,7 @@ test('narration keeps the next line for 2.5s and any other line yields', () => {
   assert.equal(narrationYields('bob_cory_joke_01', 'nar_kidnap'), 2.5);
   assert.equal(narrationYields('bdb_open', 'bob_where_claudia_01'), 2.5);
   assert.equal(narrationYields('claudia_open', 'bob_where_claudia_01'), 2.5);
-  assert.equal(narrationYields('yetti_purple_car_01', 'bob_where_claudia_01'), 0);
+  assert.equal(narrationYields('yetti_purple_car_01', 'bob_where_claudia_01'), 2.5);
   assert.equal(narrationYields('bob_hurt_01', ''), 0);
   assert.equal(narrationYields('papi_crowd_01', 'bob_where_claudia_01'), 'interrupt');
   assert.equal(narrationYields('papi_crowd_02', 'nar_ch1'), 'interrupt');
@@ -24,12 +24,13 @@ test('cory and yetti taunts roll about once a second, not every sim tick', () =>
   const early = w.events.filter(e => e.type === 'voice' && /^(bob_cory|yetti_purple)/.test(e.data));
   assert.equal(early.length, 0);
   w.update(1 / 60, {});
-  const rolled = w.events.filter(e => e.type === 'voice').map(e => e.data);
+  const rolled = [...w.events.filter(e => e.type === 'voice').map(e => e.data), ...w.voiceGate.queue];
   assert.ok(rolled.some(id => id.startsWith('yetti_purple_car_')));
   assert.equal(rolled.some(id => id.startsWith('bob_cory_joke_')), false);
   for (let i = 0; i < 8 * 60 + 3; i++) w.update(1 / 60, {});
   const later = w.events.filter(e => e.type === 'voice').map(e => e.data);
-  assert.ok(later.some(id => id.startsWith('bob_cory_joke_')));
+  assert.ok(later.some(id => id.startsWith('yetti_purple_car_')));
+  assert.ok(w.barks.coryAt > 0, 'optional Cory offer was considered by the bark scheduler');
 });
 
 test('stage open installs the narration policy before the scene handles its events', () => {

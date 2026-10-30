@@ -1,0 +1,90 @@
+{
+ "stage1": {
+  "seconds": 235.5,
+  "cleared": true,
+  "hurts": 21,
+  "deaths": 6,
+  "papi": 5,
+  "dad": 3,
+  "kos": 65,
+  "shots": 639,
+  "stages": [
+   1
+  ],
+  "stageTimes": [
+   235.5
+  ],
+  "phases": [
+   "1:2",
+   "1:3"
+  ]
+ },
+ "stage2": {
+  "seconds": 285.7,
+  "cleared": true,
+  "hurts": 31,
+  "deaths": 9,
+  "papi": 4,
+  "dad": 4,
+  "kos": 73,
+  "shots": 788,
+  "stages": [
+   2
+  ],
+  "stageTimes": [
+   285.7
+  ],
+  "phases": [
+   "2:2",
+   "2:3"
+  ]
+ },
+ "stage3": {
+  "seconds": 283.1,
+  "cleared": true,
+  "hurts": 32,
+  "deaths": 9,
+  "papi": 5,
+  "dad": 4,
+  "kos": 64,
+  "shots": 742,
+  "stages": [
+   3
+  ],
+  "stageTimes": [
+   283.1
+  ],
+  "phases": [
+   "3:2",
+   "3:3"
+  ]
+ },
+ "campaign": {
+  "seconds": 856.5,
+  "cleared": true,
+  "hurts": 92,
+  "deaths": 27,
+  "papi": 14,
+  "dad": 6,
+  "kos": 211,
+  "shots": 2335,
+  "stages": [
+   1,
+   2,
+   3
+  ],
+  "stageTimes": [
+   235.5,
+   291.5,
+   322.1
+  ],
+  "phases": [
+   "1:2",
+   "1:3",
+   "2:2",
+   "2:3",
+   "3:2",
+   "3:3"
+  ]
+ }
+}

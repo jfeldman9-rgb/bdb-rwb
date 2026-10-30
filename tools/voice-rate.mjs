@@ -1,10 +1,12 @@
 // Ambient vs scripted voice rates for an Adventure bot run.
-// node tools/voice-rate.mjs [hz]
+// node tools/voice-rate.mjs [hz] [--stage=N]
 // Same loop as tools/bot-sim.mjs. Rates use combat time: frames spent in
 // Papacito, Dad's swat, or a cutscene pause are left out of the denominator.
 import { pathToFileURL } from 'node:url';
 import { Campaign } from '../src/campaign.js';
 import { Bot } from '../src/bot.js';
+import { rollingVoiceStats } from '../src/voice-gate.js';
+import { maxStage } from '../src/stages.js';
 
 const AMBIENT_GROUP = [
   [/^bdb_produce$/, 'produce'],
@@ -32,9 +34,9 @@ function mulberry32(seed) {
   };
 }
 
-export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28, cap = 1800 } = {}) {
+export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28, cap = 1800, stage } = {}) {
   const rng = mulberry32(seed);
-  const w = new Campaign({ difficulty, rng });
+  const w = new Campaign({ difficulty, rng, ...(stage == null ? {} : { stage }) });
   const bot = new Bot();
   const counts = Object.create(null);
   const allCounts = Object.create(null);
@@ -43,24 +45,30 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
   let scripted = 0;
   let combat = 0;
   let excluded = 0;
+  let panel = 0;
   const ambientAt = [];
+  const voiceAt = [];
   const step = 1 / hz;
-  const done = () => w.victory;
-  for (let i = 0; i < hz * cap && !done(); i++) {
-    const inPapi = w.papiTime > 0;
-    const inDad = !!w.dad;
-    w.update(step, bot.update(step, w));
-    const setPiece = inPapi || w.papiTime > 0 || inDad || !!w.dad;
-    if (setPiece) excluded += step;
-    else combat += step;
+  // Final-stage/full runs include the panel and every queued finale/locked line.
+  const done = () => stage != null && stage < maxStage
+    ? w.stats.stages.includes(stage)
+    : w.victory && !w.voiceGate.queue.length && !w.voiceAt.length;
+  let clearAt = null, victoryAt = null;
+  const finaleIds = [];
+  const drain = (setPiece) => {
     for (const e of w.events) {
       if (e.type === 'dad_callin') w.finishDadCallin();
+      if (e.type === 'clear' && e.data === maxStage) clearAt = w.elapsed;
+      if (e.type === 'victory') victoryAt = w.elapsed;
       if (e.type !== 'voice') continue;
       const id = e.data;
+      const stamp = +w.elapsed.toFixed(4);
       allCounts[id] = (allCounts[id] || 0) + 1;
+      voiceAt.push(stamp);
+      if (w.victory) finaleIds.push(id);
       const g = ambientGroup(id);
-      if (g) ambientAt.push(+w.elapsed.toFixed(4));
-      if (setPiece) continue;
+      if (g) ambientAt.push(stamp);
+      if (setPiece || w.victory) continue;
       counts[id] = (counts[id] || 0) + 1;
       if (g) {
         ambient++;
@@ -68,18 +76,32 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
       } else scripted++;
     }
     w.events = [];
+  };
+  drain(false);
+  for (let i = 0; i < hz * cap && !done(); i++) {
+    const inPapi = w.papiTime > 0;
+    const inDad = !!w.dad;
+    w.update(step, bot.update(step, w));
+    const setPiece = inPapi || w.papiTime > 0 || inDad || !!w.dad;
+    if (w.victory) panel += step;
+    else if (setPiece) excluded += step;
+    else combat += step;
+    drain(setPiece);
   }
   const minutes = combat / 60;
   const perMin = (n) => minutes > 0 ? n / minutes : 0;
   let minGap = Infinity;
   for (let i = 1; i < ambientAt.length; i++) minGap = Math.min(minGap, ambientAt[i] - ambientAt[i - 1]);
+  const rolling = rollingVoiceStats(voiceAt);
   return {
     hz,
     difficulty,
-    cleared: !!w.victory,
+    ...(stage == null ? {} : { stage }),
+    cleared: !!done(),
     elapsed: +w.elapsed.toFixed(1),
     combat: +combat.toFixed(1),
     excluded: +excluded.toFixed(1),
+    panel: +panel.toFixed(1),
     minutes: +minutes.toFixed(3),
     ambient,
     scripted,
@@ -88,16 +110,25 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     scriptedPerMin: +perMin(scripted).toFixed(2),
     totalPerMin: +perMin(ambient + scripted).toFixed(2),
     minAmbientGap: ambientAt.length > 1 ? +minGap.toFixed(3) : null,
+    minVoiceGap: rolling.minGap,
+    maxIn60s: rolling.maxInWindow,
+    rollingOk: rolling.ok,
+    victoryWait: victoryAt == null ? null : +(victoryAt - clearAt).toFixed(4),
+    finaleIds,
+    voiceAt,
     groups,
     counts,
     allCounts,
+    queued: [...(w.voiceGate?.queue || [])],
     stageTimes: w.stats.stageTimes,
   };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const hzArg = process.argv[2];
+  const hzArg = process.argv.slice(2).find(arg => !arg.startsWith('--'));
+  const stageArg = process.argv.slice(2).find(arg => arg.startsWith('--stage='));
+  const stage = stageArg == null ? undefined : +stageArg.slice('--stage='.length);
   const rates = hzArg ? [+hzArg] : [30, 60, 120];
-  const table = rates.map((hz) => runVoiceRate({ hz }));
+  const table = rates.map((hz) => runVoiceRate({ hz, stage }));
   console.log(JSON.stringify(table, null, 1));
 }

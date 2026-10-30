@@ -1,14 +1,15 @@
 import { VW,VH,RS0,q,coarsePointer } from './config.js';
 import { Input, titleWantsBegin } from './input.js';
 import { installViewportFit } from './viewport.js';
-import { queueCharJson,queueCharPages,makeCharAnims } from './assets.js';
+import { queueCharJson,queueCharPages,makeCharAnims,queueSockAtlas } from './assets.js';
 import { GameScene } from './game-scene.js';
 import { loadSave,persistSave } from './save.js';
 import { resolveDifficulty } from './difficulty.js';
 import { createStoryPlayer } from './cutscene-hooks.js';
-import { beginChapter } from './title-flow.js';
+import { beginChapter, stageIntroAlreadyPlayed } from './title-flow.js';
 import { registerVoiceLines } from './voice-lines.js';
-import { installAudioLifecycle,unlock,toggleMute,isMuted } from './audio.js';
+import { maxStage } from './stages.js';
+import { installAudioLifecycle,unlock,toggleMute,isMuted,playTrack,duckStageBed } from './audio.js';
 import { installGraphicsLifecycle } from './graphics-lifecycle.js';
 import { perf, noteRenderer } from './perf.js';
 import { wireTitleStart } from './title-start.js';
@@ -19,7 +20,7 @@ import { blessDadFromGesture } from './dad-call-cutscene.js';
 
 class Boot extends Phaser.Scene {
  constructor(){super('boot');}
- preload(){window.__bdbStartup?.watchLoader(this.load);queueCharJson(this);this.load.image('chapter1-boulevard','assets/bg/chapter1-boulevard.webp');}
+ preload(){window.__bdbStartup?.watchLoader(this.load);queueCharJson(this);queueSockAtlas(this);this.load.image('chapter1-boulevard','assets/bg/chapter1-boulevard.webp');}
  create(){this.scene.start('title');}
 }
 class Title extends Phaser.Scene {
@@ -39,13 +40,18 @@ class Title extends Phaser.Scene {
    this.save={...this.save,difficulty:resolveDifficulty(difficulty.value,this.save.beaten,coarsePointer()),autoFire:doc.getElementById('auto-fire').checked};persistSave(this.save);
    doc.getElementById('title').hidden=true;this.game.inp.clear();
    const stage=Number(chapter.value);
-   beginChapter({stage,query:q,play:(key,done)=>this.game.story.play(key,done),start:()=>this.scene.start('gameplay',{stage,difficulty:this.save.difficulty,save:this.save})});
+   const openerBed=Symbol('title-opener');
+   this.events.once('shutdown',()=>duckStageBed(false,openerBed));
+   beginChapter({stage,query:q,play:(key,done)=>{
+    if(/^stage\d+$/.test(key)){playTrack(key);duckStageBed(true,openerBed);}
+    this.game.story.play(key,()=>{duckStageBed(false,openerBed);done();});
+   },start:introKey=>this.scene.start('gameplay',{stage,difficulty:this.save.difficulty,save:this.save,stageIntroPlayed:stageIntroAlreadyPlayed(introKey)})});
   };
   this.disposeTitleStart=wireTitleStart({doc,begin:()=>this.begin(),coarse:coarsePointer()});
   this.events.once('shutdown',()=>this.disposeTitleStart?.());
   if(q.get('demo')==='1'||q.get('autostart')==='1'){
    // Demo can exercise any chapter without changing saved unlocks.
-   if(q.get('demo')==='1'){chapter.value=String(Math.max(1,Math.min(3,Number(q.get('stage'))||1)));difficulty.value='adventure';}
+   if(q.get('demo')==='1'){chapter.value=String(Math.max(1,Math.min(maxStage,Number(q.get('stage'))||1)));difficulty.value='adventure';}
    this.begin();
   }
  }

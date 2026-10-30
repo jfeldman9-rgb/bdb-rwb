@@ -1,3 +1,5 @@
+import { isReservedVoice } from './voice-gate.js';
+
 let ctx = null, master, music, sfxBus, voiceBus, duckG, comp, noiseBuf;
 let muted = false, musicOn = true, musicEl = null, musicSrc = null;
 const clips = Object.create(null), gates = Object.create(null), oneShots = new Map();
@@ -11,7 +13,7 @@ let loopSrc = null, loopToken = 0, loopId = null;
 const moreVoice = Object.create(null);
 // Stage lines with no mp3 yet. say() still captions; loadClip does not fetch.
 const voiceOff = new Set();
-let audioHidden = false, audioEpoch = 0;
+let audioHidden = false, gamePaused = false, audioEpoch = 0;
 const audioTimers = new Set();
 export const VOICE = {};
 export const EXTRA_VOICE = {};
@@ -26,19 +28,20 @@ function init() {
     sfxBus = ctx.createGain(); sfxBus.gain.value = 1.05;
     comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 8; comp.ratio.value = 4.5; comp.attack.value = 0.002; comp.release.value = 0.14;
     sfxBus.connect(comp); comp.connect(master);
-    if (audioHidden) suspendAudio();
+    if (audioHidden || gamePaused) suspendAudio();
   } catch (e) { ctx = null; }
 }
+function audioHalted() { return audioHidden || gamePaused; }
 function suspendAudio() {
   // Media elements can keep advancing (or bypass WebAudio in the fallback), so
   // pause them as well as the graph. Do not change the user's music preference.
   for (const T of Object.values(tracks)) if (T.el && T.el.paused !== true) T.el.pause();
   if (ctx && ctx.state !== 'closed' && ctx.state !== 'suspended') {
-    ctx.suspend().then(() => { if (!audioHidden && unlocked) resumeAudio(); }).catch(() => {});
+    ctx.suspend().then(() => { if (!audioHalted() && unlocked) resumeAudio(); }).catch(() => {});
   }
 }
 function resumeAudio() {
-  if (audioHidden || !ctx) return;
+  if (audioHalted() || !ctx) return;
   // iOS Safari also uses 'interrupted' after backgrounding / audio-route changes.
   if (ctx.state !== 'running' && ctx.state !== 'closed') {
     ctx.resume().then(() => { if (audioHidden) suspendAudio(); }).catch(() => {});
@@ -46,6 +49,16 @@ function resumeAudio() {
   if (musicWanted && musicOn) resumeMusic();
 }
 export function unlock() { init(); unlocked = true; resumeAudio(); }
+/** Gameplay pause freezes music, voice, and the audio clock used by the voice gate. */
+export function setGameAudioPaused(on) {
+  const next = !!on;
+  if (gamePaused === next) return gamePaused;
+  gamePaused = next;
+  if (gamePaused) suspendAudio();
+  else if (unlocked) resumeAudio();
+  return gamePaused;
+}
+export function isGameAudioPaused() { return gamePaused; }
 /** One game-wide listener pair; scene restarts must not install extra listeners. */
 export function installAudioLifecycle(game) {
   let disposed = false;
@@ -69,6 +82,7 @@ export function installAudioLifecycle(game) {
 /** Terminal teardown, unlike a temporary hidden-tab suspension. */
 function disposeAudio() {
   audioHidden = true; audioEpoch++; unlocked = false; musicWanted = false; currentTrack = null;
+  bedDuckOwners.clear();
   stopSceneAudio();
   clipDrop.clear(); voiceId = null;
   // Finish old rain/track cleanup immediately, cancelling all wall-clock polling.
@@ -77,7 +91,7 @@ function disposeAudio() {
   for (const T of Object.values(tracks)) {
     stopTrack(T, 0); T.gain.disconnect(); T.mediaSrc?.disconnect(); T.buf = null;
     if (T.el) { T.el.removeAttribute?.('src'); T.el.load?.(); }
-    delete tracks[T.id];
+    delete tracks[T.M.url];
   }
   for (const cache of [clips, musicBytes]) for (const key of Object.keys(cache)) delete cache[key];
   for (const node of [master, music, sfxBus, voiceBus, duckG, comp]) node?.disconnect();
@@ -207,9 +221,22 @@ export const sfx = {
   torchIgnite() { if (!gate('torchIgnite', 120)) return; noise({ f0: 280, f1: 1800, dur: 0.45, vol: 0.25, filter: 'bandpass', attack: 0.05 }); tone({ f0: vary(120), f1: 75, dur: 0.3, vol: 0.18, type: 'sine' }); },
 };
 let musicWanted = false, unlocked = false;
-export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
+const RISE = { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 };
+const bed = (file, loopEnd) => ({ url: `assets/audio/${file}.mp3`, stream: true, gain: 0.65, loopStart: 0, loopEnd });
+export const MUSIC = {
+  title: RISE, stage1: RISE, boss1: RISE, stage2: RISE, boss2: RISE, stage3: RISE, boss3: RISE, stage4: RISE, boss4: RISE,
+  stage5: bed('s5-gondola', 158.3), boss5: bed('s5-boss', 201.5),
+  stage6: bed('s6-saltmine', 113.1), boss6: bed('s6-boss', 119.5),
+  stage7: bed('s7-tribunal', 167.1), boss7: bed('s7-finalboss', 130.66),
+  // Asset ready; Jason picks the cue — not wired to any stage yet.
+  yetti_anthem: bed('yetti-anthem', 60.06),
+};
 const tracks = Object.create(null), musicBytes = Object.create(null);
+// Placeholder stage/boss ids share a bed. Keep one media element/source per URL.
+const trackFor = id => tracks[MUSIC[id]?.url];
 let currentTrack = null, wantedTrack = 'stage1';
+const DEFAULT_DUCK_OWNER = 'default', bedDuckOwners = new Set();
+const targetTrackGain = T => T.M.gain * (bedDuckOwners.size > 0 ? 0.35 : 1);
 /** equal-power fade on a GainNode, built from short linear ramps (works on every WebAudio implementation) */
 function fadeGain(param, to, secs) {
   const t = ctx.currentTime, from = param.value; param.cancelScheduledValues(t); param.setValueAtTime(from, t);
@@ -223,8 +250,8 @@ function fadeGain(param, to, secs) {
   // the fade start, making the curve jump before it reaches the first ramp.
 }
 function trackNode(id) {
-  let T = tracks[id]; if (T) return T;
-  const M = MUSIC[id]; T = tracks[id] = { id, M, gain: ctx.createGain(), el: null, src: null, buf: null, t0: 0, pos: M.loopStart || 0, playing: false, fallback: false, stopTimer: null };
+  let T = trackFor(id); if (T) return T;
+  const M = MUSIC[id]; T = tracks[M.url] = { id, M, gain: ctx.createGain(), el: null, src: null, buf: null, t0: 0, pos: M.loopStart || 0, playing: false, fallback: false, stopTimer: null };
   T.gain.gain.value = 0; T.gain.connect(music);
   return T;
 }
@@ -234,23 +261,23 @@ function streamEl(T) {
   // seamless loop region: jump back one loop length while inside the baked crossfade at the end of the file
   const L = T.M.loopEnd - T.M.loopStart;
   el.ontimeupdate = () => { if (el.currentTime >= T.M.loopEnd - 0.35 && el.currentTime < T.M.loopEnd + 1) el.currentTime -= L; };
-  try { const src = ctx.createMediaElementSource(el); src.connect(T.gain); T.mediaSrc = src; } catch (e) { T.fallback = true; el.volume = 0.34 * T.M.gain; }
+  try { const src = ctx.createMediaElementSource(el); src.connect(T.gain); T.mediaSrc = src; } catch (e) { T.fallback = true; el.volume = 0.34 * targetTrackGain(T); }
   if (T.id === 'stage1') { musicEl = el; musicSrc = T.mediaSrc || null; }
   return el;
 }
 function loadMusicBuffer(T) {
   if (T.buf) return Promise.resolve(T.buf);
   if (T.loading) return T.loading;
-  const audioContext = ctx, epoch = audioEpoch;
+  const audioContext = ctx, epoch = audioEpoch, id = T.id;
   // musicBytes: in-flight fetch only; drop it once decoded, but never a newer one or across audioEpoch.
-  const compressed = musicBytes[T.id] || (musicBytes[T.id] = fetch(T.M.url).then(r => r.ok ? r.arrayBuffer() : null).catch(() => null));
+  const compressed = musicBytes[id] || (musicBytes[id] = fetch(T.M.url).then(r => r.ok ? r.arrayBuffer() : null).catch(() => null));
   return (T.loading = compressed
     .then(b => b ? new Promise(res => { const p = audioContext.decodeAudioData(b.slice ? b.slice(0) : b, res, () => res(null)); if (p && p.catch) p.catch(() => res(null)); }) : null)
     .catch(() => null).then(buf => {
       T.loading = null;
       if (epoch !== audioEpoch) return null;
-      if (buf && (currentTrack === T.id || T.playing)) T.buf = buf;
-      if (musicBytes[T.id] === compressed) delete musicBytes[T.id];
+      if (buf && (trackFor(currentTrack) === T || T.playing)) T.buf = buf;
+      if (musicBytes[id] === compressed) delete musicBytes[id];
       return buf;
     }));
 }
@@ -260,7 +287,7 @@ function startBuffer(T, fade) {
   const s = ctx.createBufferSource(); s.buffer = T.buf; s.loop = true; s.loopStart = T.M.loopStart; s.loopEnd = T.M.loopEnd; s.connect(T.gain);
   const off = Math.min(Math.max(T.pos, T.M.loopStart), T.M.loopEnd - 0.01);
   s.start(0, off); T.src = s; T.t0 = ctx.currentTime - off; T.playing = true;
-  fadeGain(T.gain.gain, T.M.gain, fade);
+  fadeGain(T.gain.gain, targetTrackGain(T), fade);
 }
 function trackPos(T) {
   if (T.el) return T.el.currentTime || T.M.loopStart;
@@ -292,57 +319,80 @@ function stopTrack(T, fade) {
   if (T.stopTimer) T.stopTimer.cancel();
   T.pos = trackPos(T);
   const halt = () => {
-    T.stopTimer = null; if (currentTrack === T.id) return;
+    T.stopTimer = null; if (trackFor(currentTrack) === T) return;
     if (T.el) T.el.pause();
     if (T.src) { try { T.src.stop(); } catch (e) { } T.src.disconnect(); T.src = null; }
     T.playing = false;
     // The source has stopped, so this buffer is no longer playing. Drop every
     // decoded track except the one that is current or still sounding. The next
     // play of a dropped track decodes again from the HTTP cache.
-    for (const k in tracks) if (k !== currentTrack && tracks[k].buf && !tracks[k].playing) tracks[k].buf = null;
+    for (const other of Object.values(tracks)) if (other !== trackFor(currentTrack) && other.buf && !other.playing) other.buf = null;
   };
   if (T.fallback || !(fade > 0)) { if (!T.fallback) fadeGain(T.gain.gain, 0, 0); halt(); return; }
   fadeGain(T.gain.gain, 0, fade);
   T.stopTimer = afterAudioTime(fade, halt);
+}
+/** Hold the current stage bed under a silent clip, then restore it when all owners release. */
+export function duckStageBed(on, owner = DEFAULT_DUCK_OWNER) {
+  if (on) bedDuckOwners.add(owner);
+  else if (owner === null) bedDuckOwners.clear();
+  else bedDuckOwners.delete(owner);
+  init();
+  if (!ctx || !currentTrack) return;
+  const T = trackFor(currentTrack);
+  if (!T?.M) return;
+  const target = targetTrackGain(T);
+  if (T.fallback && T.el) { T.el.volume = 0.34 * target; return; }
+  if (T.gain) fadeGain(T.gain.gain, target, 0.4);
 }
 /** Fade to music. fade defaults to 1.5s; restart starts at loop top. */
 export function playTrack(id, opts = {}) {
   if (id !== null && !MUSIC[id]) return;
   musicWanted = true; wantedTrack = id; init(); if (!ctx || !musicOn) return;
   const fade = opts.fade === undefined ? 1.5 : opts.fade, prev = currentTrack;
+  const previous = trackFor(prev), T = id === null ? null : trackNode(id);
   currentTrack = id;
-  if (prev && prev !== id) stopTrack(tracks[prev], fade);
+  if (previous && previous !== T) stopTrack(previous, fade);
   if (id === null) {
     // Immediate scene/video exits also own any outgoing crossfade sources.
     if (!(fade > 0)) for (const T of Object.values(tracks)) stopTrack(T, 0);
     return;
   }
-  const T = trackNode(id);
+  T.id = id; T.M = MUSIC[id];
   if (T.stopTimer) { T.stopTimer.cancel(); T.stopTimer = null; }
   if (opts.restart) {
     if (T.src) { try { T.src.stop(); } catch (e) { } T.src.disconnect(); T.src = null; }
     T.playing = false; T.pos = T.M.loopStart || 0;
     if (T.el) T.el.currentTime = 0;
   }
+  const target = targetTrackGain(T);
   if (T.M.stream) {
     const el = streamEl(T); el.muted = muted;
-    if (T.fallback) { el.volume = 0.34 * T.M.gain; } else fadeGain(T.gain.gain, T.M.gain, prev && prev !== id ? fade : 0);
-    if (!audioHidden && (el.paused !== false || !T.playing)) el.play().catch(() => {});
+    if (T.fallback) { el.volume = 0.34 * target; } else fadeGain(T.gain.gain, target, previous && previous !== T ? fade : 0);
+    if (!audioHalted() && (el.paused !== false || !T.playing)) el.play().catch(() => {});
     T.playing = true;
     return;
   }
-  if (T.playing) { fadeGain(T.gain.gain, T.M.gain, fade); return; }
-  loadMusicBuffer(T).then(buf => { if (buf && tracks[id] === T && currentTrack === id && musicOn) startBuffer(T, prev ? fade : 0.4); });
+  if (T.playing) { fadeGain(T.gain.gain, target, fade); return; }
+  loadMusicBuffer(T).then(buf => { if (buf && trackFor(id) === T && currentTrack === id && musicOn) startBuffer(T, prev ? fade : 0.4); });
 }
 /** what the backend is playing (or will play once decoded): for tests and the perf panel */
-export function musicState() { return { current: currentTrack, wanted: wantedTrack, on: musicOn, decoded: Object.keys(tracks).filter(k => tracks[k].buf), compressed: Object.keys(musicBytes) }; }
+export function musicState() {
+  const T = trackFor(currentTrack);
+  return {
+    current: currentTrack, wanted: wantedTrack, on: musicOn,
+    ducked: bedDuckOwners.size > 0,
+    gain: T ? (T.fallback && T.el ? T.el.volume / 0.34 : T.gain?.gain?.value ?? null) : null,
+    decoded: Object.values(tracks).filter(T => T.buf).map(T => T.id), compressed: Object.keys(musicBytes),
+  };
+}
 /** after a user gesture: retry a stream element the browser refused to autoplay */
 function resumeMusic() {
-  if (audioHidden) return;
+  if (audioHalted()) return;
   // Include an outgoing streamed track if a crossfade was in progress at hide.
   for (const T of Object.values(tracks)) if (T.playing && T.el && T.el.paused !== false) T.el.play().catch(() => {});
   // A failed fetch/decode leaves the selection intact; retry it on recovery.
-  const T = tracks[currentTrack];
+  const T = trackFor(currentTrack);
   if (T && !T.M.stream && !T.playing && !T.loading) playTrack(T.id, { fade: 0.4 });
   if (!currentTrack && wantedTrack !== null) playMusic();
 }
@@ -439,10 +489,10 @@ export function presentStage(scene) {
 }
 /** Scripted lines (chapter VO, mandated opens, boss intros) wait behind whatever is sounding.
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
-const SCRIPTED_VOICE = /^(?:nar_|bdb_open|claudia_|wingman_|interventionist_|choirmaster_|dad_catchphrase$)/;
+const SCRIPTED_VOICE = /^(?:nar_|bdb_open|bob_s\d+$|claudia_|wingman_|interventionist_|choirmaster_|bouncer_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
   if (/^papi_crowd_/.test(id || '')) return 'interrupt';
-  return SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
+  return isReservedVoice(id) || SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
 }
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';
 const pendingStale = () => voicePending && audioNow() - voicePendingAt > 3;

@@ -1,6 +1,21 @@
 // Base fighter: position on the ground plane (x, y = depth lane) plus height z for jumps and launches.
 import { LANE_TOP, LANE_BOT, WORLD_W, clamp } from './config.js';
 import { ANIM_PIVOT_X } from './anim-pivot.js';
+/** Fit the authored shoot clip to the gun cadence so each discharge is one visible cycle. */
+export function shootTimeScale(meta, interval = 0.2) {
+  const a = meta?.anims?.find(anim => anim.name === 'bob_shoot' || String(anim.name || '').endsWith('_shoot'));
+  if (!a) return 2.5;
+  const ms = (a.holds || []).reduce((sum, hold) => sum + Math.max(0, hold - 1), 0);
+  const dur = ms > 0 ? ms / 1000 : (a.frames?.length || 8) / (a.fps || 16);
+  return dur > 0 ? dur / interval : 1;
+}
+export function consumeShootRestart(view, model, anim) {
+  if (anim !== 'shoot') return false;
+  const pulse = model.shootPulse || 0;
+  const restart = pulse !== (view.shootPulse || 0);
+  view.shootPulse = pulse;
+  return restart;
+}
 export class Fighter {
   constructor(scene, def, x, y) {
     this.scene = scene; this.def = def; this.meta = scene.metas[def.key];

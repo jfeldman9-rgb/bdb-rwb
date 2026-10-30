@@ -1,4 +1,4 @@
-import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
+import { CutscenePlayer, clipIdsFor, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
 import { KEYS } from './input.js';
 import { consumePress } from './press-ownership.js';
 /**
@@ -23,12 +23,18 @@ export function createStoryPlayer(query, root=globalThis, input=null, game=null)
     resume=()=>{};
     prevDone?.('abort');
    }
-   if(!cutscenesEnabled(query,root.navigator)||!STAGE_CLIPS[clipKey]){done();return;}
+   // Adjacent stage-open/kidnap requests share one pause and one held narration.
+   const keys=Array.isArray(clipKey)?clipKey:[clipKey];
+   const ids=clipIdsFor(keys);
+   if(!cutscenesEnabled(query,root.navigator)||!ids.length){done();return;}
    // Park the Phaser loop for the intro as well as the stage clips. A caller
    // that already paused (startHeldClip) keeps the resume; this one no-ops.
    const unpause=pauseForClip(game); resume=unpause; settle=done;
    try{
-    handle=player.play(STAGE_CLIPS[clipKey],{done:(how)=>{handle=null;unpause();if(resume===unpause)resume=()=>{};if(settle===done)settle=null;done(how);},touch:root.matchMedia?.('(pointer: coarse)').matches});
+    const next=player.play(ids,{done:(how)=>{handle=null;unpause();if(resume===unpause)resume=()=>{};if(settle===done)settle=null;done(how);},touch:root.matchMedia?.('(pointer: coarse)').matches});
+    // play() can finish synchronously when media is unavailable. Do not leave an
+    // inactive handle consuming gameplay keys after that failure.
+    handle=next.active?next:null;
    }catch(e){handle=null;unpause();if(resume===unpause)resume=()=>{};if(settle===done)settle=null;done();}
  },destroy(){handle?.abort();handle=null;settle=null;resume();resume=()=>{};root.removeEventListener?.('keydown',key);} };
 }

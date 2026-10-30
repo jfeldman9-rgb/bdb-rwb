@@ -1,0 +1,238 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "bouncer-0"
+  ],
+  "anims": [
+    {
+      "name": "bouncer_walk",
+      "frames": [
+        "bouncer_walk_00",
+        "bouncer_walk_01",
+        "bouncer_walk_02",
+        "bouncer_walk_03",
+        "bouncer_walk_04",
+        "bouncer_walk_05",
+        "bouncer_walk_06",
+        "bouncer_walk_07"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "bouncer_block",
+      "frames": [
+        "bouncer_block_00",
+        "bouncer_block_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100
+      ],
+      "loop": false,
+      "fps": 10
+    },
+    {
+      "name": "bouncer_grab",
+      "frames": [
+        "bouncer_grab_00",
+        "bouncer_grab_01",
+        "bouncer_grab_02",
+        "bouncer_grab_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": true,
+      "fps": 16
+    },
+    {
+      "name": "bouncer_hold",
+      "frames": [
+        "bouncer_hold_00",
+        "bouncer_hold_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125
+      ],
+      "loop": false,
+      "fps": 8
+    },
+    {
+      "name": "bouncer_rush",
+      "frames": [
+        "bouncer_rush_00",
+        "bouncer_rush_01",
+        "bouncer_rush_02",
+        "bouncer_rush_03",
+        "bouncer_rush_04",
+        "bouncer_rush_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        63,
+        63,
+        63,
+        63,
+        63,
+        63
+      ],
+      "loop": true,
+      "fps": 16
+    },
+    {
+      "name": "bouncer_stomp",
+      "frames": [
+        "bouncer_stomp_00",
+        "bouncer_stomp_01",
+        "bouncer_stomp_02",
+        "bouncer_stomp_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "bouncer_roar",
+      "frames": [
+        "bouncer_roar_00",
+        "bouncer_roar_01",
+        "bouncer_roar_02",
+        "bouncer_roar_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "bouncer_hurt",
+      "frames": [
+        "bouncer_hurt_00",
+        "bouncer_hurt_01",
+        "bouncer_hurt_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    },
+    {
+      "name": "bouncer_down",
+      "frames": [
+        "bouncer_down_00",
+        "bouncer_down_01",
+        "bouncer_down_02",
+        "bouncer_down_03",
+        "bouncer_down_04"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        71,
+        71,
+        71,
+        71,
+        71
+      ],
+      "loop": false,
+      "fps": 14
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 38,
+    "unique": 38,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}
