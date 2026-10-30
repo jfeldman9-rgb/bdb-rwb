@@ -15,7 +15,7 @@ import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
 import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
-import { createVoiceGate, offerVoice, flushVoiceGate, isReservedVoice, expireOptionalVoice, isEndingVoice } from './voice-gate.js';
+import { createVoiceGate, offerVoice, flushVoiceGate, canSpeakVoice, nextVoiceAt, isReservedVoice, expireOptionalVoice, isEndingVoice } from './voice-gate.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
 export const PACE_CAP = 1.25;
@@ -81,6 +81,8 @@ export class Campaign {
     this.celestinaLinePlayed = false;
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
+    this.barks.canSpeak = now => !this.voiceGate.queue.length && canSpeakVoice(this.voiceGate, now);
+    this.barks.canRequest = now => !this.voiceGate.queue.length && nextVoiceAt(this.voiceGate, now) - now <= this.voiceGate.gap;
   }
   /** Every chapter and the finale share this.elapsed and one uninterrupted budget. */
   gatesVoice() { return true; }
@@ -112,8 +114,8 @@ export class Campaign {
     this.barkAcc = 0;
     this.shieldHintShown = false; this.papiHintShown = false; this.zoneDeaths = Object.create(null);
     // A chapter transition cannot erase a reserved line or reset the global budget.
-    for (const v of this.voiceAt || []) if (isReservedVoice(v.id)) this.emit('voice', v.id);
-    this.voiceAt = [];
+    for (const v of this.voiceAt || []) if (!v.papacito && isReservedVoice(v.id)) this.emit('voice', v.id);
+    this.voiceAt = (this.voiceAt || []).filter(v => v.papacito);
     this.produceSpokeOnce = false;
     if (this.barks) {
       this.clearAmbient();
@@ -320,8 +322,8 @@ export class Campaign {
       dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,hitTime:e=>papiHitTime(e.x-this.camX)});
     if (!result.allowed) {
       this.banner(result.reason==='weaken'?(this.court?'FLOOR THE ARCH-YETTI FIRST':'WEAKEN BOTH WINGMEN FIRST'):result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
-      if (result.reason==='protein') this.speak('bob_papiwait_01', 2.5);
-      else if (result.reason==='empty' || result.reason==='weaken') this.speak('bob_papi_01', 2.5);
+      if (result.reason==='protein') this.papiVoice('bob_papiwait_01');
+      else if (result.reason==='empty' || result.reason==='weaken') this.papiVoice('bob_papi_01');
       return false;
     }
     this.papiTime=2.5; this.stats.papi++;
@@ -331,8 +333,9 @@ export class Campaign {
     this.papiCrowdN++;
     this.banner(result.finisher?'PAPACITO! COUNCIL ADJOURNED.':'PAPACITO STAMPEDE!');
     this.emit('papi',result.finisher);
-    this.emit('voice', this.papiCrowdN % 2 ? 'papi_crowd_01' : 'papi_crowd_02');
-    if (result.finisher) this.emit('voice', barkPapacito(this.barks));
+    const cheers = ['papi_crowd_01', 'papi_crowd_02', 'papi_chorus'];
+    this.papiVoice(cheers[(this.papiCrowdN - 1) % cheers.length]);
+    if (result.finisher) this.armVoice(barkPapacito(this.barks), 2.5, { papacito: true });
     return true;
   }
   useDad() {
@@ -394,21 +397,23 @@ export class Campaign {
     else if (mercy === 'breath') { this.dropTrio(this.bob.x + 40); this.banner(`${STORY.checkpoint} · MERCY. CATCH YOUR BREATH.`); }
     else this.banner(STORY.checkpoint);
   }
-  armVoice(id, delay = 0) { if (!id) return; (this.voiceAt ||= []).push({ id, at: this.elapsed + delay }); }
+  /** Button callouts still use scene say()/music ducking, but never offerVoice. */
+  papiVoice(id) {
+    this.events.push({ type: 'voice', data: id, bypass: 'papacito' });
+  }
+  armVoice(id, delay = 0, { papacito = false } = {}) { if (!id) return; (this.voiceAt ||= []).push({ id, at: this.elapsed + delay, ...(papacito ? { papacito } : {}) }); }
   flushVoice() {
+    const list = this.voiceAt;
+    const ready = [];
+    if (list?.length) keep(list, (v) => { if (v.at > this.elapsed + 1e-6) return true; ready.push(v); return false; });
+    // A due finisher brag protects its clip before the ordinary queue can drain.
+    for (const v of ready) if (v.papacito) this.papiVoice(v.id);
     if (this.gatesVoice() && this.voiceGate?.queue.length) {
       flushVoiceGate(this.voiceGate, this.elapsed, id => this.events.push({ type: 'voice', data: id }));
     }
-    const list = this.voiceAt;
-    if (!list?.length) return;
-    let due = false;
-    for (let i = 0; i < list.length; i++) if (list[i].at <= this.elapsed) { due = true; break; }
-    if (!due) return;
-    const ready = [];
-    keep(list, (v) => { if (v.at > this.elapsed) return true; ready.push(v); return false; });
-    for (let i = 0; i < ready.length; i++) this.emit('voice', ready[i].id);
+    for (const v of ready) if (!v.papacito) this.emit('voice', v.id);
   }
-  /** Ambient ids share the bark gate. Scripted ids still speak on their own cooldown. */
+  /** Ambient ids share the campaign budget; scripted requests retain their cooldown. */
   speak(id, cd = 0) {
     if (!id) return false;
     const group = AMBIENT_VOICE[id];
@@ -551,6 +556,7 @@ export class Campaign {
     if (this.barkAcc >= 1) {
       this.barkAcc -= 1;
       const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
+      const where=barkWhere(this.barks,this.elapsed); if(where)this.emit('voice',where);
       const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
     }
     for(const p of this.hostile){

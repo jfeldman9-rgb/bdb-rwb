@@ -30,6 +30,10 @@ test('a seeded Adventure run stays under 4 ambient lines a minute', () => {
   assert.ok(count(/^yetti_colombian_room_/) >= 1);
   assert.ok(count(/^yetti_purple_car_/) >= 1);
   assert.ok(ids.dad_catchphrase >= 1);
+  assert.ok(count(/^bob_where_claudia_/) >= 1);
+  assert.ok(count(/^bob_cory_joke_/) >= 1);
+  assert.ok(r.playerCounts.papi_chorus >= 1);
+  assert.equal(r.rollingOk, true);
   assert.equal(ids.nar_intro_01 || 0, 0);
   assert.equal(ids.nar_intro_02 || 0, 0);
   assert.equal(ids.nar_intro_03 || 0, 0);
@@ -57,12 +61,10 @@ test('only a confirmed Dad movie owns the dub; no-movie fallback consumes the gl
 
 // Queue one held line and one same-step offer, then make the gate eligible.
 function queueAmbient(w) {
-  w.barks.ambientAt = w.elapsed;
-  w.ambient('where', 'bob_where_claudia_01');
-  w.barks.open = true;
-  w.ambient('produce', 'bdb_produce');
-  w.barks.open = false;
-  w.barks.ambientAt = -1e9;
+  // Inject already-admitted requests: new requests are now suppressed while
+  // the shared gate is busy, but old locked offers still have to survive.
+  w.barks.held.where = { group: 'where', id: 'bob_where_claudia_01' };
+  w.barks.offers.push({ group: 'produce', id: 'bdb_produce' });
   assert.ok(w.barks.held.where);
   assert.equal(w.barks.offers.length, 1);
 }
@@ -111,6 +113,8 @@ for (const setPiece of ['papi', 'dad']) {
     assert.equal(w.dad, null);
     w.flushAmbient();
     assert.ok(!w.events.some((e) => e.type === 'voice' && ['bob_where_claudia_01', 'bdb_produce'].includes(e.data)));
+    while (w.voiceGate.queue.length) { w.elapsed += 60; w.flushVoice(); }
+    w.elapsed += 60;
     assert.equal(w.ambient('produce', 'bdb_produce'), true, 'fresh combat barks still work');
   });
 }
@@ -134,6 +138,26 @@ test('stage load resets deferred Yetti barks and restarts every-third-attack cad
   w.yellYettiAttack();
   assert.equal(w.events.length, 0, 'the first two telegraphs must stay quiet');
   w.yellYettiAttack();
-  assert.ok(w.voiceGate.queue.some(id => /^yetti_porkchop_/.test(id)));
+  assert.equal(w.barks.porkDue, true, 'telegraph stays due while scripted queue is busy');
+  assert.equal(w.voiceGate.queue.some(id => /^yetti_porkchop_/.test(id)), false);
   assert.ok(w.voiceGate.queue.includes('bdb_produce'), 'stage load preserves a held locked quote');
+  while (w.voiceGate.queue.length) { w.elapsed += 60; w.flushVoice(); }
+  w.elapsed += 60; w.yellYettiAttack();
+  assert.ok(w.events.some(e => e.type === 'voice' && /^yetti_porkchop_/.test(e.data)));
+});
+
+for (let stage = 1; stage <= 7; stage++) test(`stage ${stage} fills legal slots without an ambient backlog`, () => {
+  const r = runVoiceRate({ hz: 60, stage });
+  assert.equal(r.cleared, true);
+  assert.equal(r.rollingOk, true);
+  assert.equal(r.maxIn60s, 3);
+  assert.ok(r.minVoiceGap >= 8);
+  assert.ok(r.queued.length <= 5, JSON.stringify(r.queued));
+  // A fresh stage reaches the maximal 0/8/16, 60/68/76... schedule;
+  // player callouts do not reset or postpone the budget clock.
+  const end = r.stageTimes[0];
+  const legalSlots = Array.from({ length: Math.ceil(end / 60) }, (_, m) => [m * 60, m * 60 + 8, m * 60 + 16])
+    .flat().filter(t => t <= end + 1e-6).length;
+  assert.equal(r.voiceAt.filter(t => t <= end + 1e-6).length, legalSlots);
+  assert.ok(r.playerTriggered >= 3);
 });
