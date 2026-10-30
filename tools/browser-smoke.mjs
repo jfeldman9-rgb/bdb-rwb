@@ -91,6 +91,7 @@ try {
       if (!p) return;
       if (m.error) p.reject(Error(`${p.method}: ${JSON.stringify(m.error)}`)); else p.resolve(m.result);
     } else if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
+    else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push(m.params.args.map(arg => arg.value ?? arg.description ?? '').join(' '));
     else if (m.method === 'Network.requestWillBeSent' && m.params.request.url.includes('/assets/cutscenes/')) cutsceneRequests.push(m.params.request.url);
     else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) {
       const { status, url } = m.params.response;
@@ -156,10 +157,13 @@ try {
     status = await evaluate(`(()=>{
       const s=window.__game.scene.getScene('gameplay');
       if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};
-      let stampede=null,plate=null;
+      let stampede=null,plate=null,rescue=null;
       for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){
         s.update(0,1000/60);
         const w=s.world,{key,alpha}=window.__smokePlate(w);
+        if(!window.__rescueShot&&w.stageNo===7&&w.clearTimer>0&&s.claudiaFreed){
+          window.__rescueShot=true;rescue={x:s.claudia.x,bobX:w.bob.x,depth:s.claudia.depth,cage:!!s.claudiaCage,clip:!!document.querySelector('#bdb-cutscene')};break;
+        }
         if(!window.__smokePlates.has(key)&&w.locked&&alpha>=.99){
           window.__smokePlates.add(key);plate={stage:w.stageNo,key,alpha,camX:w.camX,zone:w.zoneIndex};break;
         }
@@ -171,12 +175,19 @@ try {
       }
       const card=document.getElementById('startup-error');
       return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.finisher?.phase,
-        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate,
+        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate,rescue,
         victoryWait:s.world.victory?s.world.elapsed-s.world.stageStart-s.world.stats.stageTimes.at(-1):null};
     })()`);
     if (status.plate) {
       await shot(status.plate.key);
       plates.push(status.plate);
+    }
+    if (status.rescue) {
+      assert.equal(status.rescue.cage, false);
+      assert.equal(status.rescue.clip, false);
+      assert.ok(Math.abs(status.rescue.x - status.rescue.bobX) <= 150);
+      assert.ok(status.rescue.depth > 1690);
+      await shot('claudia-freed-before-finale');
     }
     if (status.stampede && !stampedeShot) {
       await shot('stampede');
@@ -354,6 +365,21 @@ try {
     await sleep(200);
     await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     await shot(`painted-${type}`);
+    if (['dj', 'celestina', 'archyetti'].includes(type)) {
+      const flash = await evaluate(`(()=>{
+        const s=window.__game.scene.getScene('gameplay'),w=s.world,e=w.enemies.find(e=>e.type===${JSON.stringify(type)});
+        w.paused=true;e.state='approach';e.takeHit(1,1);s.syncViews();
+        return {mode:s.views.get(e).sprite.tintMode,fill:Phaser.TintModes.FILL,anim:s.views.get(e).cur};
+      })()`);
+      assert.equal(flash.mode, flash.fill, `${type} uses Phaser 4's actual fill tint`);
+      assert.match(flash.anim, /hurt$/);
+      await shot(`hit-flash-${type}`);
+      const restored = await evaluate(`(()=>{
+        const s=window.__game.scene.getScene('gameplay'),w=s.world,e=w.enemies.find(e=>e.type===${JSON.stringify(type)});
+        e.flashT=0;e.hurtT=0;s.syncViews();return s.views.get(e).sprite.tintMode===Phaser.TintModes.MULTIPLY;
+      })()`);
+      assert.equal(restored, true);
+    }
   }
   for (const { stage, name, zoneIndex } of [
     { stage: 5, name: 's5-mid-level', zoneIndex: 2 },

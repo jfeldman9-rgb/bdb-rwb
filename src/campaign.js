@@ -78,6 +78,7 @@ export class Campaign {
     this.seenTutorials = new Set();
     this.voiceGate = createVoiceGate();
     this.nightmareUnlockedPending = false;
+    this.celestinaLinePlayed = false;
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
   }
@@ -200,7 +201,10 @@ export class Campaign {
     if(!this.pending.length)return;
     // An empty arena pulls the next straggler in quickly instead of leaving dead air.
     if(!this.enemies.some(e=>e.alive))this.pending[0].t=Math.min(this.pending[0].t,.5);
-    for(const p of this.pending)if((p.t-=dt)<=0)this.spawnYetti(p.type,p.x,p.y);
+    for(const p of this.pending)if((p.t-=dt)<=0){
+      const e=this.spawnYetti(p.type,p.x,p.y);
+      if(p.bossAdd)this.emit('spawn',{x:e.x,y:e.y,type:e.type});
+    }
     keep(this.pending, p => p.t > 0);
   }
   startBoss(phase = 1) {
@@ -234,15 +238,15 @@ export class Campaign {
     this.banner(z.name); this.emit('boss',z.type);
     const rescue = this.stageNo === 3 && !this.rescuePreBossPlayed;
     if (rescue) { this.rescuePreBossPlayed = true; this.emit('cutscene', 'rescue_pre_boss'); }
-    this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
+    if (phase === 1) this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
     if (rescue) this.armVoice('claudia_question', 3.5);
-    if (z.type==='celestina') this.armVoice('claudia_s6', 3.5);
+    if (z.type==='celestina' && !this.celestinaLinePlayed) { this.celestinaLinePlayed=true; this.armVoice('claudia_s6', 3.5); }
     if (z.type==='choirmaster') this.summonWalkers();
   }
-  /** Top the arena's minions up to `types.length`, stepping in from alternating screen edges. */
+  /** Top up living + arriving minions, with a short entrance beat on the three lanes. */
   summonAdds(types = []) {
-    const count=this.enemies.filter(e=>!e.boss&&e.alive).length;
-    for (let i=count;i<types.length;i++) this.spawnYetti(types[i],i%2?this.bounds.l+70:this.bounds.r-70,clamp(600+i*30,LANE_TOP,LANE_BOT));
+    const count=this.enemies.filter(e=>!e.boss&&e.alive).length+this.pending.filter(p=>p.bossAdd).length;
+    for (let i=count;i<types.length;i++) this.pending.push({type:types[i],x:i%2?this.bounds.l+70:this.bounds.r-70,y:laneY(i%3),t:.6,bossAdd:true});
   }
   summonWalkers() { this.summonAdds(['walker','walker']); }
   snowball(x,y,dir,kind='snowball', extra) {
@@ -275,6 +279,7 @@ export class Campaign {
     this.emit('ko',{x:e.x,y:e.y,source});
   }
   hit(e,damage,dir,bonk) {
+    if (e.alive && e.boss && e.canBeHit === false) { this.emit('shield',{x:e.x,y:e.y,chips:1}); return; }
     const result=e.takeHit(damage,dir,bonk);
     if (result.blocked) {
       this.emit('shield',{x:e.x,y:e.y,chips:result.shieldBroke?3:(e.shieldHits||0)});
@@ -314,7 +319,7 @@ export class Campaign {
     const result=papacitoEffect(this.papi,this.enemies,{phase:this.finisher?.phase||0,camX:this.camX,paused:this.paused,
       dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,hitTime:e=>papiHitTime(e.x-this.camX)});
     if (!result.allowed) {
-      this.banner(result.reason==='weaken'?(this.court?'WEAKEN THE ARCH-YETTI FIRST':'WEAKEN BOTH WINGMEN FIRST'):result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
+      this.banner(result.reason==='weaken'?(this.court?'FLOOR THE ARCH-YETTI FIRST':'WEAKEN BOTH WINGMEN FIRST'):result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
       if (result.reason==='protein') this.speak('bob_papiwait_01', 2.5);
       else if (result.reason==='empty' || result.reason==='weaken') this.speak('bob_papi_01', 2.5);
       return false;
@@ -558,7 +563,7 @@ export class Campaign {
         continue;
       }
       const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
-      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
+      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&laneOf(this.bob.y)===laneOf(p.y)&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
     keep(this.hostile, p => p.alive);

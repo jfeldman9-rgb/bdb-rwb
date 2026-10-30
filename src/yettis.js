@@ -31,7 +31,7 @@ export const TYPES = Object.freeze({
   celestina: { hp: 1300, speed: 85, art: 'celestina', tint: 0xffffff, boss: true, grab: true, grabVoice: false,
     scriptedBossVoices: true, tell: .65, rushPhase: 3, addFromPhase: 1,
     anims: { telegraph: 'toss', blink: 'blink', hold: 'flutter', rush: 'flutter', roar: 'flutter', hurt: 'hurt', dead: 'down', wait: 'idle', default: 'walk' } },
-  bailiff: { hp: 54, speed: 70, art: 'yetti_bailiff', tint: 0xffffff, shield: true, heavy: true, grab: true, tell: .65,
+  bailiff: { hp: 54, speed: 70, art: 'yetti_bailiff', tint: 0xffffff, shield: true, heavy: true, grab: true, grabVoice: false, tell: .65,
     anims: { telegraph: 'grab', hold: 'hold', block: 'block', recover: 'raise', hurt: 'hurt', dead: 'knockdown', default: 'walk' } },
   archyetti: { hp: 1320, speed: 70, art: 'archyetti', tint: 0xffffff, boss: true, scriptedBossVoices: true,
     tell: .65, rushPhase: 2, addFromPhase: 1,
@@ -79,9 +79,12 @@ function laneLoad(enemies, lane, except) {
   }
   return n;
 }
-/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. Bosses hold their lane while their adds spread around them. */
+/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. Bosses track Bob without being shoved by their adds. */
 export function stepRangedLane(self, enemies, dy, speed, dt) {
-  if (self.boss) return;
+  if (self.boss) {
+    self.y = clamp(self.y + clamp(dy, -speed * .6 * dt, speed * .6 * dt), LANE_TOP, LANE_BOT);
+    return;
+  }
   const mine = laneOf(self.y);
   if (self._laneGoal === mine) self._laneGoal = null;
   if (laneLoad(enemies, mine, self) >= MAX_RANGED_PER_LANE) {
@@ -202,7 +205,7 @@ export class Yetti {
     const hp = Math.round(t.hp * (t.boss ? 1 : hpScale));
     Object.assign(this, { id: actorId(), type, x, y, z: type === 'hover' ? 65 : 0, hp, maxHp: hp, mode: null, rushCool: 3,
       alive: true, boss: !!t.boss, phase: t.boss ? 1 : 0, facing: -1, state: 'approach', clock: 0, cooldown: 1,
-      stun: 0, shield: !!t.shield, timer: 0, poise: 0, rushDir: -1, attackY: y, attackX: x, volley: 0,
+      stun: 0, shield: !!t.shield, timer: 0, poise: 0, flashT: 0, hurtT: 0, rushDir: -1, attackY: y, attackX: x, volley: 0,
       warnFrom: null, warnTo: null, warnY: y });
   }
   planTelegraph(b, world) {
@@ -219,6 +222,16 @@ export class Yetti {
     this.warnFrom = plan.from; this.warnTo = plan.to; this.warnY = plan.y;
   }
   get canBeHit() { return this.alive && this.state !== 'split' && this.state !== 'roar' && this.state !== 'blink'; }
+  /** Body feedback is cosmetic: a hit must never cancel a boss's committed attack. */
+  showHit() {
+    if (!this.boss) return;
+    this.flashT = .08;
+    if (this.state === 'approach' || this.state === 'wait') this.hurtT = .14;
+  }
+  stepHitFeedback(dt) {
+    this.flashT = Math.max(0, this.flashT - dt);
+    this.hurtT = Math.max(0, this.hurtT - dt);
+  }
   takeHit(damage, dir, bonk = false) {
     if (!this.canBeHit) return { accepted: false };
     // Front shield blocks, but three eggplants shatter it so a phone player is never soft-locked.
@@ -231,6 +244,7 @@ export class Yetti {
       return { accepted: false, blocked: true };
     }
     this.hp = Math.max(0, this.hp - damage);
+    this.showHit();
     if (this.boss && this.hp > 0) {
       const phase = bossPhaseFor(this.hp, this.maxHp);
       // Crossing a gate: roar (untouchable beat, like RWB's Chieftain) and escalate.
@@ -252,6 +266,7 @@ export class Yetti {
   }
   breakShield() { if (!this.shield || (this.boss && !this.canBeHit)) return false; this.shield = false; this.shieldHits = 0; this.state = 'hurt'; this.stun = .5; return true; }
   update(dt, world) {
+    this.stepHitFeedback(dt);
     if (!this.alive) { this.choirBuff = 1; return; }
     const b = world.bob, pace = world.difficulty.pace, buff = choirMultiplier(this, world.enemies), t = TYPES[this.type];
     this.choirBuff = buff;
@@ -279,7 +294,7 @@ export class Yetti {
           for (const dir of [-1, 1]) world.snowball(this.x, laneY(i), dir, 'shockwave');
         }
         this.dropPulses = (this.dropPulses || 0) + 1;
-        if (this.dropPulses < 3) this.timer = 0.25;
+        if (this.dropPulses < 3) this.timer = 0.12;
         else {
           this.state = 'recover';
           this.timer = 0.6 * world.difficulty.recovery;

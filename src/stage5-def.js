@@ -6,7 +6,7 @@ export const STAGE5 = Object.freeze({ no: 5, key: 'cable', title: 'THE GONDOLA O
     [['salsero','R',0],['hover','R',1],['tagger','L',2.2]],
     [['guard','R',0],['lecturer','L',1],['walker','R',2]] ] },
   { at: 1500, l: 1280, r: 2560, waves: [
-    [['tagger','R',0],['tagger','R',.8],['charger','L',1.8]],
+    [['tagger','R',0],['tagger','L',.8],['charger','R',1.8]],
     [['choir','R',0],['salsero','L',.6],['walker','R',1.6]],
     [['guard','R',0],['hover','L',1],['salsero','R',1.8],['walker','L',2.8]] ] },
   { at: 2800, l: 2560, r: 3840, waves: [

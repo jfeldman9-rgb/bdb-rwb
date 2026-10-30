@@ -110,6 +110,10 @@ test('Bouncer clipboard breaks on three front hits or a dash, then re-arms on ea
     assert.equal(enemy.shield, true); assert.equal(enemy.shieldHits, 0);
     enemy.update(1.11, world);
     assert.equal(enemy.state, 'approach');
+    assert.deepEqual(world.pending.map(e => e.type), BOSS_ADDS.bouncer[phase - 1]);
+    world.tickPending(.59);
+    assert.equal(world.enemies.length, 1, 'adds wait through their entrance beat');
+    world.tickPending(.02);
     assert.deepEqual(world.enemies.filter(e => !e.boss).map(e => e.type), BOSS_ADDS.bouncer[phase - 1]);
     assert.equal(enemy.breakShield(), true, 'dash breaks the re-armed clipboard');
     enemy.stun = 0;
@@ -140,6 +144,10 @@ test('a dash cannot break Bouncer shield and cancel a gate roar or its adds', ()
   assert.equal(enemy.breakShield(), false);
   assert.equal(world.enemies.length, 1, 'the summon waits for the completed roar');
   enemy.update(.31, world);
+  assert.deepEqual(world.pending.map(e => e.type), BOSS_ADDS.bouncer[1]);
+  world.tickPending(.59);
+  assert.equal(world.enemies.length, 1, 'adds wait through their entrance beat');
+  world.tickPending(.02);
   assert.deepEqual(world.enemies.filter(e => !e.boss).map(e => e.type), BOSS_ADDS.bouncer[1]);
   assert.equal(enemy.breakShield(), true, 'dash breaks the clipboard once the roar ends');
 });

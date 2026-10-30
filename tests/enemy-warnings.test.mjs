@@ -7,17 +7,17 @@ globalThis.document = { getElementById: () => null, addEventListener() {} };
 globalThis.matchMedia = () => ({ matches: false, addEventListener() {} });
 const { GameScene, drawEnemyWarning, paintFootprint } = await import('../src/game-scene.js');
 const { Campaign } = await import('../src/campaign.js');
-const { Yetti, laneY, LANE_H, telegraphPlan } = await import('../src/yettis.js');
+const { Yetti, laneOf, laneY, LANE_H, telegraphPlan } = await import('../src/yettis.js');
 const { warningRect } = await import('../src/attack-geometry.js');
 
 function graphics() {
-  const rects = [], outlines = [];
+  const rects = [], outlines = [], ellipses = [];
   return {
-    rects, outlines, color: 0, alpha: 1,
+    rects, outlines, ellipses, color: 0, alpha: 1,
     clear() {}, fillStyle(color, alpha = 1) { this.color = color; this.alpha = alpha; },
     fillRect(x, y, w, h) { rects.push({ x, y, w, h, color: this.color, alpha: this.alpha }); },
     strokeRect(x, y, w, h) { outlines.push({ x, y, w, h }); },
-    lineStyle() {}, lineBetween() {}, strokeCircle() {}, fillEllipse() {}, strokeEllipse() {},
+    lineStyle() {}, lineBetween() {}, strokeCircle() {}, fillEllipse(x,y,w,h) { ellipses.push({x,y,w,h}); }, strokeEllipse() {},
   };
 }
 const rectOnly = ({ x, y, w, h }) => ({ x, y, w, h });
@@ -111,6 +111,61 @@ test('off-centre Minero lamp covers the actual shockwave lane', () => {
   const g = graphics();
   drawEnemyWarning(g, e, w);
   const r = g.rects[0];
-  assert.equal(r.y + r.h / 2, e.attackY);
-  assert.ok(r.y <= e.attackY - 25 && r.y + r.h >= e.attackY + 25);
+  assert.equal(r.y + r.h / 2, laneY(laneOf(e.attackY)));
+  for (const y of [laneY(1) - 28, laneY(1) + 28, laneY(1) + 31]) {
+    assert.equal(y >= r.y && y < r.y + r.h, laneOf(y) === laneOf(e.attackY), `lamp warning matches damage bin at y=${y}`);
+  }
+});
+
+test('every S5–7 boss projectile tell reaches the arena edge only in its actual firing directions', () => {
+  for (const type of ['dj', 'celestina', 'archyetti']) for (const phase of [1, 2, 3]) for (const dir of [-1, 1]) {
+    const { w, e } = arena(type, phase);
+    e.y += 23; e.facing = dir; e.volley = 1; e.planTelegraph(w.bob, w);
+    const g = graphics();
+    drawEnemyWarning(g, e, w);
+    e.timer = 0;
+    for (let frame = 0; !w.hostile.length && frame < 180; frame++) e.update(1 / 60, w);
+    assert.ok(w.hostile.length, `${type} phase ${phase} fires`);
+    const fired = new Map();
+    for (const p of w.hostile) {
+      const lane = laneOf(p.y);
+      if (!fired.has(lane)) fired.set(lane, new Set());
+      fired.get(lane).add(p.dir);
+    }
+    assert.equal(g.rects.length, fired.size, 'every threatened lane appears exactly once');
+    for (const [lane, dirs] of fired) {
+      const rect = g.rects.find(r => r.y + r.h / 2 === laneY(lane));
+      assert.ok(rect, `${type} phase ${phase}, lane ${lane} is warned`);
+      assert.equal(rect.x, dirs.has(-1) ? w.bounds.l : e.x);
+      assert.equal(rect.x + rect.w, dirs.has(1) ? w.bounds.r : e.x);
+      assert.equal(rect.h, LANE_H);
+    }
+  }
+});
+
+test('Celestina grab, halo, and rush have distinct procedural tells', () => {
+  const { w, e } = arena('celestina', 2);
+  const grab = graphics(); drawEnemyWarning(grab, e, w);
+  const reach = warningRect(telegraphPlan(e, w), w.bounds);
+  assert.deepEqual(grab.ellipses, [{ x: reach.x + reach.w / 2, y: reach.y + reach.h / 2, w: reach.w, h: reach.h }]);
+  assert.equal(grab.rects.length, 1, 'missed grab halo has a quieter forward warning');
+  assert.ok(grab.rects[0].alpha < .28);
+
+  e.phase = 3; e.mode = null; e.planTelegraph(w.bob, w);
+  const halo = graphics(); drawEnemyWarning(halo, e, w);
+  assert.equal(halo.ellipses.length, 0);
+  assert.equal(halo.rects.length, 2);
+
+  e.mode = 'rush'; e.planTelegraph(w.bob, w);
+  const rush = graphics(); drawEnemyWarning(rush, e, w);
+  assert.equal(rush.ellipses.length, 0);
+  assert.deepEqual(rush.rects.map(rectOnly), [warningRect(telegraphPlan(e, w), w.bounds)]);
+});
+
+test('boss-add spawn event emits entrance dust at the supplied lane', () => {
+  const calls = [];
+  const scene = { stageNo: 7, world: { events: [{ type: 'spawn', data: { x: 1210, y: laneY(2), type: 'bailiff' } }] },
+    fx: { dust: { emitParticleAt(...args) { calls.push(args); } } } };
+  GameScene.prototype.handleEvents.call(scene);
+  assert.deepEqual(calls, [[1210, laneY(2), 16]]);
 });

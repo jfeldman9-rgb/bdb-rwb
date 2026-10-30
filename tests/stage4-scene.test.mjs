@@ -217,7 +217,7 @@ test('Nightmare unlock on Stage 3 clear announces at Stage 3 and carries into St
     scene.hud = { say() {}, caption: { setText() {} } };
     scene.presentVictory();
     assert.equal(els.victory.hidden, false);
-    assert.equal(els['victory-score'].textContent, '1234 points · Nightmare unlocked');
+    assert.equal(els['victory-score'].textContent, '1234 points · 0 KOs · 0 deaths · 0:15 · Court adjourned · Nightmare unlocked');
     assert.equal(w.nightmareUnlockedPending, false);
   } finally {
     globalThis.document.getElementById = prevGet;

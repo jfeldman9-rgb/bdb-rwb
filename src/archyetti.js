@@ -16,6 +16,7 @@ export class ArchYetti extends Yetti {
     if (!this.canBeHit) return { accepted: false };
     const { hp } = applyBossDamage(this.phase, this.hp, damage);
     this.hp = hp;
+    this.showHit();
     if (this.boss && this.hp > 0) {
       const phase = bossPhaseFor(this.hp, this.maxHp);
       if (phase > this.phase) {
@@ -32,6 +33,7 @@ export class ArchYetti extends Yetti {
   }
   update(dt, world) {
     if (this.alive && this.phase >= 3 && this.hp <= 1) {
+      this.stepHitFeedback(dt);
       this.state = 'floored';
       this.choirBuff = 1;
       return;

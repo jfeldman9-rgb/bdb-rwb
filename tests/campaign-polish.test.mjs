@@ -70,7 +70,7 @@ test('an early Tribunal finisher request names the Arch-Yetti and keeps the char
   world.papi.charges = 1;
   assert.equal(world.usePapi(), false);
   assert.equal(world.papi.charges, 1);
-  assert.equal(world.message, 'WEAKEN THE ARCH-YETTI FIRST');
+  assert.equal(world.message, 'FLOOR THE ARCH-YETTI FIRST');
 
   const keep = new Campaign({ stage: 3 });
   keep.startBoss(3);

@@ -67,6 +67,10 @@ test('boss gate roar clears mash/shield stun on both Bouncer and Interventionist
       assert.equal(w.enemies.length, 1);
       for (let i = 0; i < Math.ceil(.12 * hz); i++) boss.update(1 / hz, w);
       assert.equal(boss.state, 'approach');
+      assert.deepEqual(w.pending.map(e => e.type), BOSS_ADDS[boss.type][phase - 1]);
+      w.tickPending(.59);
+      assert.equal(w.enemies.length, 1, 'adds wait through their entrance beat');
+      w.tickPending(.02);
       assert.deepEqual(w.enemies.slice(1).map(e => e.type), BOSS_ADDS[boss.type][phase - 1]);
     }
   }
@@ -101,6 +105,10 @@ test('grab before phase gate releases Bob cleanly and a subsequent mash never ov
     assert.equal(w.bob.grabPunish ?? null, null);
     for (let i = 0; i < Math.ceil(.12 * hz); i++) boss.update(1 / hz, w);
     assert.equal(boss.state, 'approach');
+    assert.deepEqual(w.pending.map(e => e.type), BOSS_ADDS[boss.type][1]);
+    w.tickPending(.59);
+    assert.equal(w.enemies.length, 1, 'adds wait through their entrance beat');
+    w.tickPending(.02);
     assert.deepEqual(w.enemies.slice(1).map(e => e.type), BOSS_ADDS[boss.type][1]);
   }
 });

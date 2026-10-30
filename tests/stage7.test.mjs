@@ -51,11 +51,11 @@ test('Stage 7 waves use core roles plus minero and bailiff only', () => {
   const entries = STAGE7.zones.flatMap(zone => zone.waves.flat());
   const allowed = [...core, ...STAGE_VARIANTS[7]];
   const mix = Object.fromEntries(allowed.map(type => [type, entries.filter(entry => entry[0] === type).length]));
-  assert.deepEqual(mix, { walker: 7, guard: 6, hover: 5, charger: 5, choir: 4, lecturer: 6, minero: 9, bailiff: 11 });
-  assert.equal(entries.length, 53);
+  assert.deepEqual(mix, { walker: 7, guard: 6, hover: 5, charger: 5, choir: 4, lecturer: 6, minero: 10, bailiff: 12 });
+  assert.equal(entries.length, 55);
   assert.ok(entries.filter(([, , delay]) => delay > 0).length >= 28);
   assert.ok(entries.filter(([, side]) => side === 'L').length >= 8);
-  assert.equal(entries.reduce((hp, [type]) => hp + TYPES[type].hp, 0), 2334);
+  assert.equal(entries.reduce((hp, [type]) => hp + TYPES[type].hp, 0), 2436);
   assert.deepEqual([...new Set(entries.map(([type]) => type))].sort(), allowed.sort());
   for (const type of BOSS_ADDS.archyetti.flat()) assert.ok(allowed.includes(type), type);
 });
