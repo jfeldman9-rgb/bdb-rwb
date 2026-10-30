@@ -10,7 +10,7 @@ export const CLIP_BASE = 'assets/cutscenes/';
 /** GitHub Pages caches intro_v3 by URL. This is the file's md5 prefix so the yell + Dad cut replaces the old one. */
 export const INTRO_REV = 'b67d6176';
 /** Same for the animated Stage 2 opener (replaces the silent Ken Burns). */
-export const STAGE2_REV = '555910b4';
+export const STAGE2_REV = 'eaeae395';
 const CLIP_REV = Object.freeze({ intro_v3: INTRO_REV, stage2_intro: STAGE2_REV });
 function introRevision(id, url) {
   const rev = CLIP_REV[id];
