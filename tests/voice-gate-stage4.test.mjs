@@ -165,7 +165,8 @@ for (const hz of [30, 60, 120]) test(`global Adventure trace includes chapters 1
   const r = runVoiceRate({ hz });
   assert.equal(r.cleared, true);
   assert.equal(r.rollingOk, true, JSON.stringify({ min: r.minVoiceGap, max: r.maxIn60s }));
-  for (const id of ['nar_ch1', 'nar_ch2', 'nar_ch3', 'nar_ch4', 'nar_victory', 'claudia_s7', 'dad_call_01']) assert.ok(r.allCounts[id], id);
+  for (const id of ['nar_ch1', 'nar_ch3', 'nar_ch4', 'nar_victory', 'claudia_s7', 'dad_call_01']) assert.ok(r.allCounts[id], id);
+  assert.equal(r.allCounts.nar_ch2, undefined, 'stage2_intro bakes nar_ch2; campaign no longer emits it');
   assert.ok(r.finaleIds.includes('nar_victory'));
   assert.ok(r.finaleIds.includes('claudia_s7'));
   assert.ok(r.victoryWait <= 3, `wait ${r.victoryWait}`);

@@ -33,18 +33,18 @@ function sceneWith(events, play) {
   return scene;
 }
 
-test('stage 2 narration waits out the kidnap clip instead of being cut off', () => {
+test('stage 2 opener bakes nar_ch2; kidnap still pauses without a held chapter card', () => {
   const w = new Campaign({ stage: 2 });
   let finish = null;
   const scene = sceneWith(w.events, (key, done) => { scene.key = key; finish = done; });
   scene.handleEvents();
   assert.deepEqual(scene.key, ['stage2', 'kidnap']);
   assert.equal(scene.pauseReasons.has('cutscene'), true);
-  assert.equal(scene.voiceHold.includes('nar_ch2'), true);
-  assert.equal(scene.captions.some(line => line.includes('Chapter Two')), false, 'nar_ch2 must not start before stopSceneAudio');
+  assert.equal(scene.voiceHold.includes('nar_ch2'), false, 'nar_ch2 lives in stage2_intro audio');
+  assert.equal(scene.captions.some(line => line.includes('Chapter Two')), false);
   finish();
   assert.equal(scene.pauseReasons.has('cutscene'), false);
-  assert.ok(scene.captions.some(line => line.includes('Chapter Two')));
+  assert.equal(scene.captions.some(line => line.includes('Chapter Two')), false);
   assert.equal(scene.captions.includes('Heaven, it turns out, has opinions. And Yettis. With wings.'), false);
 });
 
