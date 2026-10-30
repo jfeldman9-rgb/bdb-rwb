@@ -839,13 +839,14 @@
     {
       "id": "claudia_s7",
       "path": "assets/audio/voice/claudia_s7.mp3",
-      "bytes": 15980,
+      "bytes": 23852,
       "speaker": "Claudia",
       "text": "Took you long enough, Papacito.",
-      "source": "elevenlabs_mcp_s57",
-      "voice_id": "5GR0JTHRVmv00OeaRI9u",
-      "voice_name": "Maria - Playful Colombian Woman",
-      "model": "eleven_v3"
+      "source": "openai_tts_redo",
+      "voice_id": "coral",
+      "voice_name": "OpenAI coral (gpt-4o-mini-tts)",
+      "model": "gpt-4o-mini-tts",
+      "transcript": "Took you long enough, papacito."
     },
     {
       "id": "dad_s7",
@@ -905,13 +906,14 @@
     {
       "id": "celestina_intro",
       "path": "assets/audio/voice/celestina_intro.mp3",
-      "bytes": 31340,
+      "bytes": 46316,
       "speaker": "Celestina",
       "text": "Ay, Bob. I found her a nice Yetti husband.",
-      "source": "elevenlabs_mcp_s57",
-      "voice_id": "HRi5Prm2B3PevwpDmVLP",
-      "voice_name": "Mar\u00eda Blanco | Warm Expressive Versatile",
-      "model": "eleven_v3"
+      "source": "openai_tts_redo",
+      "voice_id": "ballad",
+      "voice_name": "OpenAI ballad (gpt-4o-mini-tts)",
+      "model": "gpt-4o-mini-tts",
+      "transcript": "Aye, Bob, I found her a nice yeti husband."
     },
     {
       "id": "celestina_phase2",
@@ -1129,6 +1131,22 @@
       "celestina_intro: Yetti may sound like jetty/dirty with Mar\u00eda Blanco; one redo kept",
       "dj_defeat: Mic may hear as Mike",
       "nar_ch7: Papacito may whisper-QC as papacy toe (IndexTTS Jason clone, matches prior nar quirks)"
-    ]
+    ],
+    "openai_redo": {
+      "when": "2026-10-30T12:44:29-07:00",
+      "replaced": [
+        "claudia_s7",
+        "celestina_intro"
+      ],
+      "kept_elevenlabs": [
+        "dj_defeat"
+      ],
+      "reason_kept_dj": "3 gpt-4o-mini-tts tries transcribed as Japanese \u30de\u30a4\u30af\u30c9\u30ed\u30c3\u30d7; EL kept",
+      "usage": {
+        "tts_calls": 5,
+        "stt_calls": 8,
+        "tts_chars": 112
+      }
+    }
   }
 }
