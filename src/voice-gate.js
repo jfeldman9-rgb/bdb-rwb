@@ -3,7 +3,8 @@ import { BARK } from './barks.js';
 const EPS = 1e-6;
 /**
  * Locked quotes and set-piece / scripted lines queue behind the rolling window
- * instead of dropping. Optional flavour (hurts, Papacito brags) still drops.
+ * instead of dropping. Optional flavour (hurts, laughs) still drops.
+ * Player-triggered Papacito speech is presented outside this budget.
  * Movie-owned Dad calls are resolved before offering a fallback to this gate.
  */
 export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_(?:open|produce)$|yetti_(?:porkchop|colombian_room|purple_car)_|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_(?:catchphrase$|call_|done_|s\d+$)|papi_crowd_|papi_chorus$|bouncer_|dj_|celestina_|archyetti_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;

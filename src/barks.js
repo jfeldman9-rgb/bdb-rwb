@@ -24,14 +24,14 @@ const YETTI_ATTACK = Object.freeze(['yetti_porkchop_01', 'yetti_porkchop_02']);
 const YETTI_WAVE = Object.freeze(['yetti_colombian_room_01', 'yetti_colombian_room_02']);
 const YETTI_TAUNT = Object.freeze(['yetti_purple_car_01', 'yetti_purple_car_02']);
 
-/** Highest priority speaks when several ambient lines are due together. */
+/** Initial priority; subsequent openings rotate so Where/Cory get a turn. */
 const AMBIENT_ORDER = Object.freeze(['produce', 'yetti', 'where', 'laugh', 'hurt', 'turnback', 'choir', 'cory']);
 
 export function createBarks(rng = Math.random) {
   return {
     whereAt: -1e9, coryAt: -1e9, yettiAt: -1e9, ambientAt: -1e9,
     ambientLog: [], held: Object.create(null), offers: [], open: false,
-    i: 0, attackN: 0, rng,
+    i: 0, attackN: 0, nextGroup: 0, rng,
   };
 }
 
@@ -42,6 +42,8 @@ function pick(list, st) {
 }
 
 function canSpeak(st, now) {
+  // Campaign owns the clock; standalone bark users retain the same limits.
+  if (st.canSpeak) return st.canSpeak(now);
   if (now - st.ambientAt < BARK.gap - 1e-3) return false;
   const cut = now - BARK.window;
   let n = 0;
@@ -60,6 +62,8 @@ function waiting(st, group) {
   return !!(st.held?.[group] || st.offers?.some((o) => o.group === group));
 }
 
+const canRequest = (st, now) => !st.canRequest || st.canRequest(now);
+
 /**
  * Ask the ambient gate for `id`. While a campaign step is open the line waits
  * with the others and one flush picks by priority. Outside a step it speaks now
@@ -67,6 +71,9 @@ function waiting(st, group) {
  */
 export function requestAmbient(st, now, group, id, opts = {}) {
   if (!st || !id) return null;
+  // Do not manufacture a reserved backlog while scripted dialogue is waiting.
+  // Already-held locked quotes stay held until presented or transferred.
+  if (!canRequest(st, now)) return null;
   const offer = { group, id, commit: opts.commit || null };
   if (waiting(st, group)) return null;
   if (st.open) {
@@ -82,7 +89,7 @@ export function requestAmbient(st, now, group, id, opts = {}) {
   return id;
 }
 
-/** Speak the highest-priority held line, if the gate is open. */
+/** Speak the next held group, if the shared gate is open. */
 export function flushAmbient(st, now) {
   if (!st) return null;
   const offers = st.offers || [];
@@ -93,10 +100,12 @@ export function flushAmbient(st, now) {
   }
   if (!canSpeak(st, now)) return null;
   for (let i = 0; i < AMBIENT_ORDER.length; i++) {
-    const group = AMBIENT_ORDER[i];
+    const index = ((st.nextGroup || 0) + i) % AMBIENT_ORDER.length;
+    const group = AMBIENT_ORDER[index];
     const o = st.held[group];
     if (!o) continue;
     delete st.held[group];
+    st.nextGroup = (index + 1) % AMBIENT_ORDER.length;
     mark(st, now);
     o.commit?.(now);
     return o;
@@ -106,7 +115,7 @@ export function flushAmbient(st, now) {
 
 export function barkWhere(st, now) {
   if (!st || now - st.whereAt < BARK.whereCd) return null;
-  if (waiting(st, 'where')) return null;
+  if (waiting(st, 'where') || !canRequest(st, now)) return null;
   const id = pick(BOB_WHERE, st);
   return requestAmbient(st, now, 'where', id, { commit: (t) => { st.whereAt = t; } });
 }
@@ -114,14 +123,19 @@ export function barkWhere(st, now) {
 export function barkCory(st, now) {
   if (!st || now - st.coryAt < BARK.coryCd) return null;
   if (waiting(st, 'cory')) return null;
-  if ((st.rng?.() ?? Math.random()) > BARK.coryChance) return null;
-  const id = pick(BOB_CORY, st);
+  if (!st.coryId) {
+    if ((st.rng?.() ?? Math.random()) > BARK.coryChance) return null;
+    st.coryId = pick(BOB_CORY, st);
+  }
+  if (!canRequest(st, now)) return null;
+  const id = st.coryId;
+  st.coryId = null;
   return requestAmbient(st, now, 'cory', id, { commit: (t) => { st.coryAt = t; } });
 }
 
 function yettiLine(st, now, list) {
   if (!st || now - st.yettiAt < BARK.yettiCd) return null;
-  if (waiting(st, 'yetti')) return null;
+  if (waiting(st, 'yetti') || !canRequest(st, now)) return null;
   const id = pick(list, st);
   return requestAmbient(st, now, 'yetti', id, { commit: (t) => { st.yettiAt = t; } });
 }
@@ -131,7 +145,7 @@ export function barkYettiAttack(st, now) {
   if (!st) return null;
   st.attackN = (st.attackN || 0) + 1;
   if (st.attackN % 3 !== 0 && !st.porkDue) return null;
-  if (now - st.yettiAt < BARK.yettiCd || waiting(st, 'yetti')) {
+  if (now - st.yettiAt < BARK.yettiCd || waiting(st, 'yetti') || !canRequest(st, now)) {
     st.porkDue = true;
     return null;
   }
@@ -155,7 +169,7 @@ export function barkYettiTaunt(st, now) {
     if ((st.rng?.() ?? Math.random()) > BARK.tauntChance) return null;
     st.tauntId = pick(YETTI_TAUNT, st);
   }
-  if (now - st.yettiAt < BARK.yettiCd || waiting(st, 'yetti')) return null;
+  if (now - st.yettiAt < BARK.yettiCd || waiting(st, 'yetti') || !canRequest(st, now)) return null;
   // Porkchop is owed the next opening unless it was the last Yetti line.
   if (st.porkDue && st.lastYetti !== 'pork') return null;
   const id = st.tauntId;

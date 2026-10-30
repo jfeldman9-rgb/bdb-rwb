@@ -491,7 +491,10 @@ export function presentStage(scene) {
  *  Barks still yield, so a taunt does not sit in the queue and talk over the next line. */
 const SCRIPTED_VOICE = /^(?:nar_|bdb_open|bob_s\d+$|claudia_|wingman_|interventionist_|choirmaster_|bouncer_|dad_catchphrase$)/;
 export function narrationYields(id, cur) {
-  if (/^papi_crowd_/.test(id || '')) return 'interrupt';
+  if (/^(?:papi_(?:crowd_|chorus$)|bob_papi(?:wait)?_)/.test(id || '')) return 'interrupt';
+  if (/^bob_papacito_/.test(id || '')) return 2.5;
+  // An approved campaign line can wait out a button callout without being lost.
+  if (/^(?:papi_|bob_(?:papi|papacito_))/.test(cur || '')) return 2.5;
   return isReservedVoice(id) || SCRIPTED_VOICE.test(id || '') || /^nar_/.test(cur || '') ? 2.5 : 0;
 }
 const audioNow = () => ctx ? ctx.currentTime : 0, audioLive = () => !!ctx && ctx.state === 'running';

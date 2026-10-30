@@ -50,6 +50,11 @@ const LINES = {
   line_c: ['Bob', 'Three.'],
   dad_call_02: ['Dad', 'Yettis? In this economy? Get outta heah!'],
   dad_catchphrase: ['Dad', 'Son, sometimes you just need to use the fly swatter to keep the women away!'],
+  papi_crowd_01: ['Crowd', 'We love you Papacito! Pick me!'],
+  papi_chorus: ['Runners', 'Papi! Papi! PAPI!'],
+  bob_papiwait_01: ['Bob', 'Need the ladies!'],
+  bob_papi_01: ['Bob', 'Not now, ladies!'],
+  bob_papacito_01: ['Bob', "I'm the Papacito!"],
 };
 audio.registerLines(LINES);
 audio.setVoiceFiles(Object.keys(LINES), Object.keys(LINES));
@@ -161,5 +166,35 @@ test('a third queued line waits out the line ahead of it', async () => {
   sources.at(-1).end();
   await flush(); await flush();
   assert.ok(started.includes('line_c'));
+  reset();
+});
+
+test('Papacito refusal, crowd and chorus actually start over a busy narration', async () => {
+  for (const id of ['bob_papiwait_01', 'bob_papi_01', 'papi_crowd_01', 'papi_chorus']) {
+    durations = [4, 2];
+    audio.say('nar_ch1', () => {});
+    await flush(); await flush();
+    audio.say(id, () => {});
+    await flush(); await flush();
+    assert.deepEqual(started, ['nar_ch1', id]);
+    reset();
+  }
+});
+
+test('finisher brag and approved ambient wait behind Papacito without being dropped', async () => {
+  durations = [2.43, 2.35, 2];
+  audio.say('papi_crowd_01', () => {});
+  audio.say('bob_papacito_01', () => {});
+  await flush(); await flush();
+  assert.deepEqual(started, ['papi_crowd_01']);
+  assert.equal(audio.voiceBusy('bob_papacito_01'), true);
+  now = 2.43; sources.at(-1).end();
+  await flush(); await flush();
+  assert.deepEqual(started, ['papi_crowd_01', 'bob_papacito_01']);
+  audio.say('bob_where_claudia_01', () => {});
+  assert.equal(audio.voiceBusy('bob_where_claudia_01'), true);
+  now = 4.78; sources.at(-1).end();
+  await flush(); await flush();
+  assert.deepEqual(started, ['papi_crowd_01', 'bob_papacito_01', 'bob_where_claudia_01']);
   reset();
 });

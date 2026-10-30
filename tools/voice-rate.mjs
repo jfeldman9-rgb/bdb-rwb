@@ -48,6 +48,8 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
   let panel = 0;
   const ambientAt = [];
   const voiceAt = [];
+  const playerAt = [];
+  const playerCounts = Object.create(null);
   const step = 1 / hz;
   // Final-stage/full runs include the panel and every queued finale/locked line.
   const done = () => stage != null && stage < maxStage
@@ -64,6 +66,12 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
       const id = e.data;
       const stamp = +w.elapsed.toFixed(4);
       allCounts[id] = (allCounts[id] || 0) + 1;
+      // Button VO is audible but never consumes the ambient/scripted budget.
+      if (e.bypass === 'papacito') {
+        playerAt.push(stamp);
+        playerCounts[id] = (playerCounts[id] || 0) + 1;
+        continue;
+      }
       voiceAt.push(stamp);
       if (w.victory) finaleIds.push(id);
       const g = ambientGroup(id);
@@ -116,6 +124,9 @@ export function runVoiceRate({ hz = 60, difficulty = 'adventure', seed = 0xbd28,
     victoryWait: victoryAt == null ? null : +(victoryAt - clearAt).toFixed(4),
     finaleIds,
     voiceAt,
+    playerTriggered: playerAt.length,
+    playerAt,
+    playerCounts,
     groups,
     counts,
     allCounts,

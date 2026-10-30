@@ -112,21 +112,56 @@ test('Dad swats on impact while his fallback and locked catchphrase queue for sp
   w.elapsed = 16; w.flushVoice(); assert.ok(voices(w).includes('dad_catchphrase'));
 });
 
-test('Papi keeps both locked crowd variants and a finisher still offers its brag', () => {
+test('Papi refusal speaks immediately through a full gate without consuming its budget', () => {
+  for (const reason of ['protein', 'empty', 'weaken']) {
+    const w = new Campaign({ stage: 3 }); w.elapsed = 17; w.events = [];
+    w.voiceGate.stamps = [0, 8, 16]; w.voiceGate.queue = ['dad_catchphrase'];
+    if (reason !== 'empty') w.spawnYetti('walker', 500, 630);
+    if (reason === 'weaken') {
+      w.papi.charges = 1; w.wingmen = { phase: 3 };
+      w.enemies = [{ boss: true, alive: true, hp: 100, x: 400, y: 630 }];
+    }
+    assert.equal(w.usePapi(), false);
+    const id = reason === 'protein' ? 'bob_papiwait_01' : 'bob_papi_01';
+    assert.ok(w.events.some(e => e.type === 'voice' && e.data === id && e.bypass === 'papacito'), reason);
+    assert.deepEqual(w.voiceGate.stamps, [0, 8, 16]);
+    assert.deepEqual(w.voiceGate.queue, ['dad_catchphrase']);
+    w.elapsed = 60; w.events = []; w.flushVoice();
+    assert.ok(voices(w).includes('dad_catchphrase'), 'reserved dialogue resumes at the next legal slot');
+    assert.deepEqual(w.voiceGate.stamps, [8, 16, 60]);
+  }
+});
+
+test('Papi rotates both locked crowd variants and the recorded chorus through a full gate', () => {
   const w = new Campaign({ stage: 2 }); w.events = [];
-  for (let i = 1; i <= 2; i++) {
+  w.elapsed = 17; w.voiceGate.stamps = [0, 8, 16];
+  for (const id of ['papi_crowd_01', 'papi_crowd_02', 'papi_chorus']) {
+    w.events = [];
     w.spawnYetti('walker', 500, 630); w.papi.charges = 1; w.papiTime = 0; w.papiPending = null;
-    assert.equal(w.usePapi(), true); assert.ok(requested(w).includes(`papi_crowd_0${i}`));
+    assert.equal(w.usePapi(), true);
+    assert.ok(w.events.some(e => e.type === 'voice' && e.data === id && e.bypass === 'papacito'));
+    assert.deepEqual(w.voiceGate.stamps, [0, 8, 16]);
+    assert.deepEqual(w.voiceGate.queue, []);
     assert.match(w.message, /PAPACITO STAMPEDE/);
   }
+});
+
+test('a finisher durably sequences its brag after crowd, even across a chapter change', () => {
   const fin = new Campaign({ stage: 3 }); fin.wingmen = { phase: 3 }; fin.papi.charges = 1;
+  fin.elapsed = 17; fin.events = []; fin.voiceGate.stamps = [0, 8, 16];
   fin.enemies = [{ boss: true, alive: true, hp: 1, x: 400, y: 630, type: 'wingman' }];
-  const offered = [], emit = fin.emit.bind(fin);
-  fin.emit = (type, id) => { if (type === 'voice') offered.push(id); emit(type, id); };
   assert.equal(fin.usePapi(), true);
-  assert.ok(offered.some(id => /^bob_papacito_/.test(id)));
-  assert.ok(requested(fin).includes('papi_crowd_01'));
+  assert.deepEqual(voices(fin), ['papi_crowd_01']);
+  const brag = fin.voiceAt.find(v => /^bob_papacito_/.test(v.id));
+  assert.ok(brag?.papacito);
+  assert.equal(brag.at, 19.5);
   assert.match(fin.message, /COUNCIL ADJOURNED/);
+  fin.loadStage(4); assert.ok(fin.voiceAt.includes(brag));
+  fin.elapsed = 19.49; fin.events = []; fin.flushVoice(); assert.deepEqual(voices(fin), []);
+  fin.elapsed = 19.5; fin.flushVoice();
+  assert.ok(fin.events.some(e => e.data === brag.id && e.bypass === 'papacito'));
+  assert.equal(fin.voiceAt.includes(brag), false);
+  assert.deepEqual(fin.voiceGate.stamps, [0, 8, 16]);
 });
 
 test('rescue and finale cues queue across chapter changes without resetting speech', () => {
