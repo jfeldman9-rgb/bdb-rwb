@@ -14,6 +14,7 @@ export function killImpact(type, data) {
 export function hostileShape(kind) {
   if (kind === 'halo') return { shape: 'ring', color: 0xffdf89 };
   if (kind === 'shockwave') return { shape: 'bar', color: 0xffdf89 };
+  if (kind === 'splat') return { shape: 'splat', color: 0xff3cad };
   return { shape: 'sock', color: 0xc9a882 };
 }
 /** On-screen sock size ≈ hostile hitbox (~60px). Source frames are 128×128. */

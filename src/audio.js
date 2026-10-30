@@ -91,7 +91,7 @@ function disposeAudio() {
   for (const T of Object.values(tracks)) {
     stopTrack(T, 0); T.gain.disconnect(); T.mediaSrc?.disconnect(); T.buf = null;
     if (T.el) { T.el.removeAttribute?.('src'); T.el.load?.(); }
-    delete tracks[T.id];
+    delete tracks[T.M.url];
   }
   for (const cache of [clips, musicBytes]) for (const key of Object.keys(cache)) delete cache[key];
   for (const node of [master, music, sfxBus, voiceBus, duckG, comp]) node?.disconnect();
@@ -221,8 +221,19 @@ export const sfx = {
   torchIgnite() { if (!gate('torchIgnite', 120)) return; noise({ f0: 280, f1: 1800, dur: 0.45, vol: 0.25, filter: 'bandpass', attack: 0.05 }); tone({ f0: vary(120), f1: 75, dur: 0.3, vol: 0.18, type: 'sine' }); },
 };
 let musicWanted = false, unlocked = false;
-export const MUSIC = Object.fromEntries(['title','stage1','boss1','stage2','boss2','stage3','boss3','stage4','boss4'].map(id => [id, { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 }]));
+const RISE = { url: 'assets/audio/bdb-rise.mp3', stream: true, gain: 0.65 };
+const bed = (file, loopEnd) => ({ url: `assets/audio/${file}.mp3`, stream: true, gain: 0.65, loopStart: 0, loopEnd });
+export const MUSIC = {
+  title: RISE, stage1: RISE, boss1: RISE, stage2: RISE, boss2: RISE, stage3: RISE, boss3: RISE, stage4: RISE, boss4: RISE,
+  stage5: bed('s5-gondola', 158.3), boss5: bed('s5-boss', 201.5),
+  stage6: bed('s6-saltmine', 113.1), boss6: bed('s6-boss', 119.5),
+  stage7: bed('s7-tribunal', 167.1), boss7: bed('s7-finalboss', 130.66),
+  // Asset ready; Jason picks the cue — not wired to any stage yet.
+  yetti_anthem: bed('yetti-anthem', 60.06),
+};
 const tracks = Object.create(null), musicBytes = Object.create(null);
+// Placeholder stage/boss ids share a bed. Keep one media element/source per URL.
+const trackFor = id => tracks[MUSIC[id]?.url];
 let currentTrack = null, wantedTrack = 'stage1';
 const DEFAULT_DUCK_OWNER = 'default', bedDuckOwners = new Set();
 const targetTrackGain = T => T.M.gain * (bedDuckOwners.size > 0 ? 0.35 : 1);
@@ -239,8 +250,8 @@ function fadeGain(param, to, secs) {
   // the fade start, making the curve jump before it reaches the first ramp.
 }
 function trackNode(id) {
-  let T = tracks[id]; if (T) return T;
-  const M = MUSIC[id]; T = tracks[id] = { id, M, gain: ctx.createGain(), el: null, src: null, buf: null, t0: 0, pos: M.loopStart || 0, playing: false, fallback: false, stopTimer: null };
+  let T = trackFor(id); if (T) return T;
+  const M = MUSIC[id]; T = tracks[M.url] = { id, M, gain: ctx.createGain(), el: null, src: null, buf: null, t0: 0, pos: M.loopStart || 0, playing: false, fallback: false, stopTimer: null };
   T.gain.gain.value = 0; T.gain.connect(music);
   return T;
 }
@@ -257,16 +268,16 @@ function streamEl(T) {
 function loadMusicBuffer(T) {
   if (T.buf) return Promise.resolve(T.buf);
   if (T.loading) return T.loading;
-  const audioContext = ctx, epoch = audioEpoch;
+  const audioContext = ctx, epoch = audioEpoch, id = T.id;
   // musicBytes: in-flight fetch only; drop it once decoded, but never a newer one or across audioEpoch.
-  const compressed = musicBytes[T.id] || (musicBytes[T.id] = fetch(T.M.url).then(r => r.ok ? r.arrayBuffer() : null).catch(() => null));
+  const compressed = musicBytes[id] || (musicBytes[id] = fetch(T.M.url).then(r => r.ok ? r.arrayBuffer() : null).catch(() => null));
   return (T.loading = compressed
     .then(b => b ? new Promise(res => { const p = audioContext.decodeAudioData(b.slice ? b.slice(0) : b, res, () => res(null)); if (p && p.catch) p.catch(() => res(null)); }) : null)
     .catch(() => null).then(buf => {
       T.loading = null;
       if (epoch !== audioEpoch) return null;
-      if (buf && (currentTrack === T.id || T.playing)) T.buf = buf;
-      if (musicBytes[T.id] === compressed) delete musicBytes[T.id];
+      if (buf && (trackFor(currentTrack) === T || T.playing)) T.buf = buf;
+      if (musicBytes[id] === compressed) delete musicBytes[id];
       return buf;
     }));
 }
@@ -308,14 +319,14 @@ function stopTrack(T, fade) {
   if (T.stopTimer) T.stopTimer.cancel();
   T.pos = trackPos(T);
   const halt = () => {
-    T.stopTimer = null; if (currentTrack === T.id) return;
+    T.stopTimer = null; if (trackFor(currentTrack) === T) return;
     if (T.el) T.el.pause();
     if (T.src) { try { T.src.stop(); } catch (e) { } T.src.disconnect(); T.src = null; }
     T.playing = false;
     // The source has stopped, so this buffer is no longer playing. Drop every
     // decoded track except the one that is current or still sounding. The next
     // play of a dropped track decodes again from the HTTP cache.
-    for (const k in tracks) if (k !== currentTrack && tracks[k].buf && !tracks[k].playing) tracks[k].buf = null;
+    for (const other of Object.values(tracks)) if (other !== trackFor(currentTrack) && other.buf && !other.playing) other.buf = null;
   };
   if (T.fallback || !(fade > 0)) { if (!T.fallback) fadeGain(T.gain.gain, 0, 0); halt(); return; }
   fadeGain(T.gain.gain, 0, fade);
@@ -328,7 +339,7 @@ export function duckStageBed(on, owner = DEFAULT_DUCK_OWNER) {
   else bedDuckOwners.delete(owner);
   init();
   if (!ctx || !currentTrack) return;
-  const T = tracks[currentTrack];
+  const T = trackFor(currentTrack);
   if (!T?.M) return;
   const target = targetTrackGain(T);
   if (T.fallback && T.el) { T.el.volume = 0.34 * target; return; }
@@ -339,14 +350,15 @@ export function playTrack(id, opts = {}) {
   if (id !== null && !MUSIC[id]) return;
   musicWanted = true; wantedTrack = id; init(); if (!ctx || !musicOn) return;
   const fade = opts.fade === undefined ? 1.5 : opts.fade, prev = currentTrack;
+  const previous = trackFor(prev), T = id === null ? null : trackNode(id);
   currentTrack = id;
-  if (prev && prev !== id) stopTrack(tracks[prev], fade);
+  if (previous && previous !== T) stopTrack(previous, fade);
   if (id === null) {
     // Immediate scene/video exits also own any outgoing crossfade sources.
     if (!(fade > 0)) for (const T of Object.values(tracks)) stopTrack(T, 0);
     return;
   }
-  const T = trackNode(id);
+  T.id = id; T.M = MUSIC[id];
   if (T.stopTimer) { T.stopTimer.cancel(); T.stopTimer = null; }
   if (opts.restart) {
     if (T.src) { try { T.src.stop(); } catch (e) { } T.src.disconnect(); T.src = null; }
@@ -356,22 +368,22 @@ export function playTrack(id, opts = {}) {
   const target = targetTrackGain(T);
   if (T.M.stream) {
     const el = streamEl(T); el.muted = muted;
-    if (T.fallback) { el.volume = 0.34 * target; } else fadeGain(T.gain.gain, target, prev && prev !== id ? fade : 0);
+    if (T.fallback) { el.volume = 0.34 * target; } else fadeGain(T.gain.gain, target, previous && previous !== T ? fade : 0);
     if (!audioHalted() && (el.paused !== false || !T.playing)) el.play().catch(() => {});
     T.playing = true;
     return;
   }
   if (T.playing) { fadeGain(T.gain.gain, target, fade); return; }
-  loadMusicBuffer(T).then(buf => { if (buf && tracks[id] === T && currentTrack === id && musicOn) startBuffer(T, prev ? fade : 0.4); });
+  loadMusicBuffer(T).then(buf => { if (buf && trackFor(id) === T && currentTrack === id && musicOn) startBuffer(T, prev ? fade : 0.4); });
 }
 /** what the backend is playing (or will play once decoded): for tests and the perf panel */
 export function musicState() {
-  const T = currentTrack ? tracks[currentTrack] : null;
+  const T = trackFor(currentTrack);
   return {
     current: currentTrack, wanted: wantedTrack, on: musicOn,
     ducked: bedDuckOwners.size > 0,
     gain: T ? (T.fallback && T.el ? T.el.volume / 0.34 : T.gain?.gain?.value ?? null) : null,
-    decoded: Object.keys(tracks).filter(k => tracks[k].buf), compressed: Object.keys(musicBytes),
+    decoded: Object.values(tracks).filter(T => T.buf).map(T => T.id), compressed: Object.keys(musicBytes),
   };
 }
 /** after a user gesture: retry a stream element the browser refused to autoplay */
@@ -380,7 +392,7 @@ function resumeMusic() {
   // Include an outgoing streamed track if a crossfade was in progress at hide.
   for (const T of Object.values(tracks)) if (T.playing && T.el && T.el.paused !== false) T.el.play().catch(() => {});
   // A failed fetch/decode leaves the selection intact; retry it on recovery.
-  const T = tracks[currentTrack];
+  const T = trackFor(currentTrack);
   if (T && !T.M.stream && !T.playing && !T.loading) playTrack(T.id, { fade: 0.4 });
   if (!currentTrack && wantedTrack !== null) playMusic();
 }

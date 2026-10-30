@@ -5,6 +5,7 @@ export const STORY = Object.freeze({
   mash: 'BOUNDARIES SUCCESSFULLY MASHED.', finisher: 'PAPACITO FINISHER READY',
   victory: 'CLAUDIA RESCUED. JUDGMENT STILL PENDING.',
   finalVictory: 'CLAUDIA RESCUED. FOR REAL THIS TIME.',
+  shaft: 'THE YETTIS GRAB CLAUDIA. UP THE SHAFT!',
   dad: 'Son, sometimes you just need to use the fly swatter to keep the women away!',
 });
 export const TUTORIALS = Object.freeze([

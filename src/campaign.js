@@ -1,7 +1,9 @@
 import { Bob } from './bob.js';
 import { fireGun, stepShot, GUN } from './eggplant.js';
 import { TYPES, Yetti, bossPhaseHp, RANGED_TYPES, MAX_RANGED_PER_LANE, laneOf, laneY, rangedInLane, freestLane, separateEnemies } from './yettis.js';
+import { resetActorIds } from './actor-id.js';
 import { Wingmen, isBossBragging } from './wingman.js';
+import { TribunalCourt } from './archyetti.js';
 import { collectShake, papacitoEffect, papiHitTime } from './papacito.js';
 import { DAD, createDadCall, unlockDad, noteBobKo, tickDadCall, takeCall, callEffect, ZONE_MERCY_DEATHS, grantZoneMercy, refusalBanner } from './dad-call.js';
 import { Dad } from './dad.js';
@@ -70,11 +72,13 @@ export function hitTier({ phase = false, killed = false, bonk = false, shieldBro
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
 export class Campaign {
   constructor({ stage = 1, difficulty = 'adventure', save, onSave = () => {}, rng, stageIntroPlayed = false } = {}) {
+    resetActorIds();
     this.difficultyKey = difficulty; this.difficulty = DIFFICULTIES[difficulty]; this.onSave = onSave;
     this.save = normalizeSave(save); this.beatenAtStart = !!this.save.beaten; this.events = []; this.elapsed = 0; this.score = 0; this.victory = false; this.paused = false;
     this.seenTutorials = new Set();
     this.voiceGate = createVoiceGate();
     this.nightmareUnlockedPending = false;
+    this.celestinaLinePlayed = false;
     this.stats = { shots: 0, papi: 0, dad: 0, kos: 0, deaths: 0, hits: 0, stages: [], phases: [], stageTimes: [] };
     this.papi = { charges: 0, shakeRemainder: 0 }; this.dadCall = createDadCall(stage > 1); this.barks = createBarks(typeof rng === 'function' ? rng : undefined); this.kidnapPlayed = false; this.rekidnapPlayed = false; this.rescuePreBossPlayed = false; this.papiCrowdN = 0; this.produceSpokeOnce = false; this.laughN = 0; this.hurtN = 0; this.loadStage(stage, { introPlayed: stageIntroPlayed });
   }
@@ -129,6 +133,9 @@ export class Campaign {
     if (stage === 1) this.armVoice('bdb_open', 4);
     if (stage === 3) this.armVoice('claudia_open', 2);
     if (stage === 4) { this.armVoice('claudia_s4', 8); this.armVoice('bob_s4', 16); }
+    if (stage === 5) { this.armVoice('claudia_s5', 8); this.armVoice('bob_s5', 16); }
+    if (stage === 6) this.armVoice('bob_s6', 8);
+    if (stage === 7) this.armVoice('bob_s7', 8);
   }
   /** Zone-clear heal: Story/Adventure refill; Nightmare only closes half the gap. */
   healZoneClear() {
@@ -194,7 +201,10 @@ export class Campaign {
     if(!this.pending.length)return;
     // An empty arena pulls the next straggler in quickly instead of leaving dead air.
     if(!this.enemies.some(e=>e.alive))this.pending[0].t=Math.min(this.pending[0].t,.5);
-    for(const p of this.pending)if((p.t-=dt)<=0)this.spawnYetti(p.type,p.x,p.y);
+    for(const p of this.pending)if((p.t-=dt)<=0){
+      const e=this.spawnYetti(p.type,p.x,p.y);
+      if(p.bossAdd)this.emit('spawn',{x:e.x,y:e.y,type:e.type});
+    }
     keep(this.pending, p => p.t > 0);
   }
   startBoss(phase = 1) {
@@ -219,21 +229,31 @@ export class Campaign {
         });
       }
     }
+    else if (z.type==='archyetti') {
+      this.court=new TribunalCourt();
+      this.enemies=this.court.spawn(z.l+880,630,phase);
+      if (bossHp!=null) this.enemies[0].hp=Math.max(phase>=3?1:0,Math.min(this.enemies[0].maxHp,bossHp));
+    }
     else { const boss=new Yetti(z.type,z.l+880,630); boss.phase=phase; boss.hp=Math.min(bossPhaseHp(boss.maxHp,phase),bossHp??Infinity); this.enemies=[boss]; }
     this.banner(z.name); this.emit('boss',z.type);
     const rescue = this.stageNo === 3 && !this.rescuePreBossPlayed;
     if (rescue) { this.rescuePreBossPlayed = true; this.emit('cutscene', 'rescue_pre_boss'); }
-    this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
+    if (phase === 1) this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
     if (rescue) this.armVoice('claudia_question', 3.5);
+    if (z.type==='celestina' && !this.celestinaLinePlayed) { this.celestinaLinePlayed=true; this.armVoice('claudia_s6', 3.5); }
     if (z.type==='choirmaster') this.summonWalkers();
   }
-  /** Top the arena's minions up to `types.length`, stepping in from alternating screen edges. */
+  /** Top up living + arriving minions, with a short entrance beat on the three lanes. */
   summonAdds(types = []) {
-    const count=this.enemies.filter(e=>!e.boss&&e.alive).length;
-    for (let i=count;i<types.length;i++) this.spawnYetti(types[i],i%2?this.bounds.l+70:this.bounds.r-70,clamp(600+i*30,LANE_TOP,LANE_BOT));
+    const count=this.enemies.filter(e=>!e.boss&&e.alive).length+this.pending.filter(p=>p.bossAdd).length;
+    for (let i=count;i<types.length;i++) this.pending.push({type:types[i],x:i%2?this.bounds.l+70:this.bounds.r-70,y:laneY(i%3),t:.6,bossAdd:true});
   }
   summonWalkers() { this.summonAdds(['walker','walker']); }
-  snowball(x,y,dir,kind='snowball') {
+  snowball(x,y,dir,kind='snowball', extra) {
+    if (kind === 'splat') {
+      this.hostile.push({ x, y, dir: 0, kind: 'splat', speed: 0, ttl: extra?.ttl ?? 1.4, w: extra?.w ?? 80, alive: true, hit: false });
+      return;
+    }
     const mul=this.difficultyKey==='nightmare'&&this.stageNo===3?NIGHTMARE_S3.shotMul:1;
     this.hostile.push({x,y,dir,kind,speed:(kind==='halo'?260:320)*mul,alive:true});
   }
@@ -259,6 +279,7 @@ export class Campaign {
     this.emit('ko',{x:e.x,y:e.y,source});
   }
   hit(e,damage,dir,bonk) {
+    if (e.alive && e.boss && e.canBeHit === false) { this.emit('shield',{x:e.x,y:e.y,chips:1}); return; }
     const result=e.takeHit(damage,dir,bonk);
     if (result.blocked) {
       this.emit('shield',{x:e.x,y:e.y,chips:result.shieldBroke?3:(e.shieldHits||0)});
@@ -284,6 +305,9 @@ export class Campaign {
       if (e.type==='interventionist') { this.banner(II?'THE INTERVENTIONIST · PHASE II: HE MEANS IT NOW':'THE INTERVENTIONIST · PHASE III: FULL INTERVENTION'); this.emit('voice','lecturer_intervention'); }
       else if (e.type==='choirmaster') this.banner(II?'THE CHOIRMASTER · PHASE II: THE CHOIR SWELLS':'THE CHOIRMASTER · PHASE III: HALLELUJAH, HARD MODE');
       else if (e.type==='bouncer') this.banner(II?'PHASE II: THE ROPE COMES OUT':'PHASE III: LAST CALL');
+      else if (e.type==='dj') this.banner(II?'PHASE II: REQUEST DENIED':'PHASE III: WAIT FOR IT…');
+      else if (e.type==='celestina') this.banner(II?'PHASE II: SOMETHING BORROWED':'PHASE III: SPEAK NOW OR FOREVER HOLD YOUR EGGPLANT');
+      else if (e.type==='archyetti') this.banner(II?'PHASE II: THE VERDICT':'PHASE III: ORDER IN THE COURT');
       else this.banner(`${this.def.boss.name} · PHASE ${II?'II':'III'}`);
       if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_phase${result.phase}`);
       this.hostile=[];
@@ -295,7 +319,7 @@ export class Campaign {
     const result=papacitoEffect(this.papi,this.enemies,{phase:this.finisher?.phase||0,camX:this.camX,paused:this.paused,
       dead:!this.bob.alive,victory:this.victory,dadActive:!!this.dad,active:this.papiTime>0,hitTime:e=>papiHitTime(e.x-this.camX)});
     if (!result.allowed) {
-      this.banner(result.reason==='weaken'?'WEAKEN BOTH WINGMEN FIRST':result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
+      this.banner(result.reason==='weaken'?(this.court?'FLOOR THE ARCH-YETTI FIRST':'WEAKEN BOTH WINGMEN FIRST'):result.reason==='protein'?'NEED MORE PROTEIN.':'PAPI NEEDS A CROWD.');
       if (result.reason==='protein') this.speak('bob_papiwait_01', 2.5);
       else if (result.reason==='empty' || result.reason==='weaken') this.speak('bob_papi_01', 2.5);
       return false;
@@ -458,7 +482,8 @@ export class Campaign {
     this.stats.stages.push(this.stageNo);this.stats.stageTimes.push(+(this.elapsed-this.stageStart).toFixed(1));this.save=clearStage(this.save,this.stageNo,this.score);this.onSave(this.save);
     if(!wasBeaten&&this.save.beaten){this.nightmareUnlockedPending=true;this.emit('unlock','nightmare');}
     this.clearTimer=2.5; this.hostile=[]; this.enemies.forEach(e=>{e.alive=false;});
-    this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
+    this.bob.releaseGrab();
+    this.banner(!this.def.next?STORY.finalVictory:this.stageNo===3?STORY.victory:this.stageNo===6?STORY.shaft:'CHAPTER CLEAR · EGO STILL INTACT');this.emit('clear',this.stageNo);
   }
   update(dt,input={}) {
     if(this.paused||!Number.isFinite(dt)||dt<=0)return;
@@ -468,7 +493,7 @@ export class Campaign {
     this.barks.open = true;
     const ambientSuppressed = this.papiTime > 0 || this.dadCall.on || !!this.dad;
     try {
-    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;expireOptionalVoice(this.voiceGate);if(this.voiceAt)this.voiceAt=this.voiceAt.filter(v=>isReservedVoice(v.id)||isEndingVoice(v.id));this.emit('victory');this.emit('voice','nar_victory');this.emit('voice','claudia_leave');}}return;}
+    if(this.clearTimer>0){this.clearTimer-=dt;if(this.clearTimer<=0){if(this.def.next)this.loadStage(this.def.next);else{this.victory=true;expireOptionalVoice(this.voiceGate);if(this.voiceAt)this.voiceAt=this.voiceAt.filter(v=>isReservedVoice(v.id)||isEndingVoice(v.id));this.emit('victory');this.emit('voice','nar_victory');if(this.stageNo===7){this.emit('voice','claudia_s7');this.emit('voice','dad_s7');}else this.emit('voice','claudia_leave');}}return;}
     if(this.papiTime>0){
       this.papiTime=Math.max(0,this.papiTime-dt);
       if(this.papiPending){
@@ -480,6 +505,12 @@ export class Campaign {
           this.recordKo(e,'papi');
         }
         if(pending.schedule.every(s=>s.done)){ this.score+=pending.score; this.papiPending=null; }
+      }
+      // Finishers settle before combat resumes: surviving adds must not get
+      // one last hit or grab after the runner has already defeated the boss.
+      if (this.papiTime === 0 && !this.papiPending && this.finisher) {
+        this.finisher.update(0, this);
+        if (this.finisher.complete) this.finishStage();
       }
       return;
     }
@@ -522,8 +553,17 @@ export class Campaign {
       const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
       const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
     }
-    for(const p of this.hostile){const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
-      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&Math.abs(this.bob.y-p.y)<25&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
+    for(const p of this.hostile){
+      if(p.kind==='splat'){
+        p.ttl-=dt;
+        if(p.ttl<=0){p.alive=false;continue;}
+        if(!p.hit&&Math.abs(this.bob.x-p.x)<=(p.w||80)/2&&laneOf(this.bob.y)===laneOf(p.y)&&this.bob.z<snowClearZ(this.difficultyKey, dt)){
+          this.hurtBob(false, p.x); p.hit=true;
+        }
+        continue;
+      }
+      const oldX=p.x;p.x+=p.dir*p.speed*this.difficulty.pace*dt;
+      if(this.bob.x>=Math.min(oldX,p.x)-30&&this.bob.x<=Math.max(oldX,p.x)+30&&laneOf(this.bob.y)===laneOf(p.y)&&this.bob.z<snowClearZ(this.difficultyKey, dt)){this.hurtBob(false, null, p.dir);p.alive=false;}
       if(p.x<this.camX-100||p.x>this.camX+1380)p.alive=false;
     }
     keep(this.hostile, p => p.alive);

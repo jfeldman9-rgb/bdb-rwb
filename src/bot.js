@@ -5,7 +5,7 @@ export class Bot {
   update(dt,w) {
     this.time+=dt;const b=w.bob, out={x:0,y:0,fire:false};
     if(b.state==='grabbed'){if(this.time>=this.nextMash){out.presses=1;this.nextMash=this.time+.09;}return out;}
-    const foes=w.enemies.filter(e=>e.alive&&!(e.type==='wingman'&&e.phase===3&&e.hp<=1));
+    const foes=w.enemies.filter(e=>e.alive&&!((e.type==='wingman'||e.type==='archyetti')&&e.phase===3&&e.hp<=1));
     const all=w.enemies.filter(e=>e.alive);
     if(isBossFinisherReady(w.finisher?.phase,all.filter(e=>e.boss))&&w.papi.charges){out.papi=true;return out;}
     if(w.dadCall.charges&&all.length>=2){out.dad=true;return out;}

@@ -137,9 +137,10 @@ test('rescue and finale cues queue across chapter changes without resetting spee
   w.finishStage(); w.update(3);
   assert.equal(w.stageNo, 4); assert.equal(w.victory, false);
   assert.ok(requested(w).includes('nar_ch4'));
+  while (!w.victory && w.def.next) { w.finishStage(); w.update(3); }
   w.finishStage(); w.update(3);
   assert.equal(w.victory, true);
-  for (const id of ['nar_victory', 'claudia_leave']) assert.ok(requested(w).includes(id));
+  for (const id of ['nar_victory', 'claudia_s7', 'dad_s7']) assert.ok(requested(w).includes(id));
   const said = [], men = new Wingmen(); men.phase = 3;
   const world = { enemies: [{ type: 'wingman', alive: false }, { type: 'wingman', alive: false }],
     papi: { charges: 1 }, bob: { x: 0 }, bounds: { l: 0, r: 1000 }, checkpoint: {},

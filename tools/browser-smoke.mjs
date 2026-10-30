@@ -88,8 +88,10 @@ try {
     const m = JSON.parse(data);
     if (m.id) {
       const p = pending.get(m.id); pending.delete(m.id);
-      if (m.error) p.reject(Error(JSON.stringify(m.error))); else p.resolve(m.result);
+      if (!p) return;
+      if (m.error) p.reject(Error(`${p.method}: ${JSON.stringify(m.error)}`)); else p.resolve(m.result);
     } else if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
+    else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push(m.params.args.map(arg => arg.value ?? arg.description ?? '').join(' '));
     else if (m.method === 'Network.requestWillBeSent' && m.params.request.url.includes('/assets/cutscenes/')) cutsceneRequests.push(m.params.request.url);
     else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) {
       const { status, url } = m.params.response;
@@ -97,8 +99,13 @@ try {
       else errors.push(`${status} ${url}`);
     }
   });
-  const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
-  const evaluate = async (expression) => { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
+  const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject, method }); ws.send(JSON.stringify({ id, method, params })); });
+  const evaluate = async (expression) => {
+    const wrapped = `(async()=>{const value=await eval(${JSON.stringify(expression)});if(value===undefined)return null;try{return JSON.parse(JSON.stringify(value));}catch(e){return String(value);}})()`;
+    const r = await send('Runtime.evaluate', { expression: wrapped, returnByValue: true, awaitPromise: true });
+    if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+    return r.result.value;
+  };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   async function waitFor(expression, ms = 30000) { const end = Date.now() + ms; while (Date.now() < end) { if (await evaluate(expression)) return; await sleep(100); } throw Error(`Timed out: ${expression}\n${errors.join('\n')}`); }
   const screenshots = [];
@@ -150,10 +157,13 @@ try {
     status = await evaluate(`(()=>{
       const s=window.__game.scene.getScene('gameplay');
       if(!s?.hud||s.switching||!s.scene.isActive())return {loading:true};
-      let stampede=null,plate=null;
+      let stampede=null,plate=null,rescue=null;
       for(let i=0;i<90&&!s.switching&&!s.world.victory;i++){
         s.update(0,1000/60);
         const w=s.world,{key,alpha}=window.__smokePlate(w);
+        if(!window.__rescueShot&&w.stageNo===7&&w.clearTimer>0&&s.claudiaFreed){
+          window.__rescueShot=true;rescue={x:s.claudia.x,bobX:w.bob.x,depth:s.claudia.depth,cage:!!s.claudiaCage,clip:!!document.querySelector('#bdb-cutscene')};break;
+        }
         if(!window.__smokePlates.has(key)&&w.locked&&alpha>=.99){
           window.__smokePlates.add(key);plate={stage:w.stageNo,key,alpha,camX:w.camX,zone:w.zoneIndex};break;
         }
@@ -165,12 +175,19 @@ try {
       }
       const card=document.getElementById('startup-error');
       return {stage:s.world.stageNo,zone:s.world.zoneIndex,boss:s.world.bossActive,phase:s.world.finisher?.phase,
-        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate,
+        victory:s.world.victory,elapsed:s.world.elapsed,started:!!s.started,cardHidden:!card||card.hidden,stats:s.world.stats,stampede,plate,rescue,
         victoryWait:s.world.victory?s.world.elapsed-s.world.stageStart-s.world.stats.stageTimes.at(-1):null};
     })()`);
     if (status.plate) {
       await shot(status.plate.key);
       plates.push(status.plate);
+    }
+    if (status.rescue) {
+      assert.equal(status.rescue.cage, false);
+      assert.equal(status.rescue.clip, false);
+      assert.ok(Math.abs(status.rescue.x - status.rescue.bobX) <= 150);
+      assert.ok(status.rescue.depth > 1690);
+      await shot('claudia-freed-before-finale');
     }
     if (status.stampede && !stampedeShot) {
       await shot('stampede');
@@ -271,7 +288,7 @@ try {
   }))()`);
   await shot('intro-dad');
   console.log('Intro Dad frame at', sought);
-  const video = await evaluate('({inline:document.querySelector("video").playsInline,src:document.querySelector("video").src,time:document.querySelector("video").currentTime})');
+  const video = await evaluate(`(()=>{const v=document.querySelector("#bdb-cutscene video")||document.querySelector("video");return {inline:!!v?.playsInline,src:String(v?.src||""),time:+(v?.currentTime||0)};})()`);
   assert.equal(video.inline, true);
   assert.match(video.src, /intro_v3\.mp4\?v=b67d6176/);
   assert.doesNotMatch(video.src, /opening\.mp4/);
@@ -295,10 +312,14 @@ try {
   await skipVideo();
   await waitFor('window.__game?.scene.getScene("gameplay")?.started && !document.querySelector("#bdb-cutscene") && !window.__game.isPaused');
   // Each later chapter plays its own intro. S2 and S4 then play both kidnap clips.
-  for (const stage of [2, 3, 4]) {
+  for (const stage of [2, 3, 4, 5, 6, 7]) {
     await evaluate(`window.__game.campaign.loadStage(${stage})`);
     await waitFor(`window.__game.scene.getScene('gameplay')?.started && window.__game.scene.getScene('gameplay').stageNo === ${stage}`);
     await waitFor(`!!document.querySelector("#bdb-cutscene video")?.src.includes("stage${stage}_intro.mp4")`);
+    if (stage >= 5) {
+      await waitFor('document.querySelector("#bdb-cutscene video")?.currentTime > .3');
+      await shot(`stage${stage}-intro`);
+    }
     await skipVideo();
     if (stage === 2 || stage === 4) {
       await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("kidnap_1.mp4")');
@@ -312,8 +333,83 @@ try {
     await sleep(150);
     assert.ok(await evaluate('window.__game.campaign.elapsed') > elapsed, `stage ${stage} did not resume after its intro`);
   }
-  assert.equal(await evaluate('window.__game.scene.getScene("gameplay").claudia'), null);
-  assert.equal(await evaluate('window.__game.scene.getScene("gameplay").claudiaCage'), null);
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudia'), true);
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), true);
+  await evaluate(`(()=>{const s=window.__game.scene.getScene('gameplay');s.presentVictory();})()`);
+  await waitFor('!!document.querySelector("#bdb-cutscene video")?.src.includes("final_victory.mp4")');
+  await shot('final-victory');
+  await skipVideo();
+  await waitFor('!document.getElementById("victory").hidden');
+  assert.equal(await evaluate('document.querySelector("#victory h2")?.textContent'), 'CLAUDIA RESCUED. FOR REAL THIS TIME.');
+  await shot('final-victory-panel');
+  assert.equal(await evaluate('!!window.__game.scene.getScene("gameplay").claudiaCage'), false);
+  for (const { stage, type } of [
+    { stage: 5, type: 'tagger' }, { stage: 5, type: 'dj' },
+    { stage: 6, type: 'minero' }, { stage: 6, type: 'celestina' },
+    { stage: 7, type: 'bailiff' }, { stage: 7, type: 'archyetti' },
+  ]) {
+    await send('Page.navigate', { url: `${origin}/?stage=${stage}&demo=1&nocutscenes=1` });
+    await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started');
+    const placed = await evaluate(`(async()=>{
+      const [{Yetti,laneY},{ArchYetti}]=await Promise.all([import('/src/yettis.js'),import('/src/archyetti.js')]);
+      const w=window.__game.campaign;
+      w.paused=false;w.hostile=[];w.pending=[];
+      for(const e of w.enemies)e.alive=false;
+      const x=w.bob.x+240,y=laneY(1);
+      w.bob.x=x-240;w.bob.y=y;w.camX=w.bob.x-180;
+      const enemy=${JSON.stringify(type)}==='archyetti'?new ArchYetti(x,y):new Yetti(${JSON.stringify(type)},x,y);
+      enemy.facing=-1;w.enemies=[enemy];
+      return {type:enemy.type,x:enemy.x};
+    })()`);
+    assert.equal(placed.type, type);
+    await sleep(200);
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    await shot(`painted-${type}`);
+    if (['dj', 'celestina', 'archyetti'].includes(type)) {
+      const flash = await evaluate(`(()=>{
+        const s=window.__game.scene.getScene('gameplay'),w=s.world,e=w.enemies.find(e=>e.type===${JSON.stringify(type)});
+        w.paused=true;e.state='approach';e.takeHit(1,1);s.syncViews();
+        return {mode:s.views.get(e).sprite.tintMode,fill:Phaser.TintModes.FILL,anim:s.views.get(e).cur};
+      })()`);
+      assert.equal(flash.mode, flash.fill, `${type} uses Phaser 4's actual fill tint`);
+      assert.match(flash.anim, /hurt$/);
+      await shot(`hit-flash-${type}`);
+      const restored = await evaluate(`(()=>{
+        const s=window.__game.scene.getScene('gameplay'),w=s.world,e=w.enemies.find(e=>e.type===${JSON.stringify(type)});
+        e.flashT=0;e.hurtT=0;s.syncViews();return s.views.get(e).sprite.tintMode===Phaser.TintModes.MULTIPLY;
+      })()`);
+      assert.equal(restored, true);
+    }
+  }
+  for (const { stage, name, zoneIndex } of [
+    { stage: 5, name: 's5-mid-level', zoneIndex: 2 },
+    { stage: 6, name: 's6-mid-level', zoneIndex: 2 },
+    { stage: 7, name: 's7-mid-level', zoneIndex: 2 },
+    { stage: 7, name: 's7-boss-arena', zoneIndex: 5 },
+  ]) {
+    await send('Page.navigate', { url: `${origin}/?stage=${stage}&demo=1&nocutscenes=1` });
+    await waitFor('window.__game?.scene.isActive("gameplay") && window.__game.scene.getScene("gameplay")?.started');
+    const parked = await evaluate(`(()=>{
+      const s=window.__game.scene.getScene('gameplay');
+      const w=s.world;
+      const zone=${zoneIndex}===5?w.def.boss:w.def.zones[${zoneIndex}];
+      w.paused=false;w.hostile=[];w.pending=[];
+      for(const e of w.enemies)e.alive=false;
+      w.enemies=[];
+      w.bob.x=zone.l+400;w.bob.facing=1;
+      w.zoneIndex=Math.min(${zoneIndex},4);
+      w.locked=true;w.bossActive=${zoneIndex}===5;
+      if(${zoneIndex}===5)w.startBoss(1);
+      else{w.camMax=zone.l;w.camX=zone.l;w.bounds={l:zone.l,r:zone.r};}
+      s.cameras.main.setScroll(Math.round(w.camX),0);
+      s.backdrop?.update(w.camX);
+      return {stage:w.stageNo,camX:w.camX,boss:w.bossActive,enemies:w.enemies.map(e=>e.type)};
+    })()`);
+    assert.equal(parked.stage, stage);
+    await sleep(200);
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+    await shot(name);
+  }
   const report = {
     browser: 'Chromium, SwiftShader (not hardware performance evidence)',
     httpStatus: (await fetch(`${origin}/`)).status,

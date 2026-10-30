@@ -20,6 +20,7 @@ const { registerVoiceLines } = await import('../src/voice-lines.js');
 const { duckStageBed, playTrack, musicState } = await import('../src/audio.js');
 const { createStartupGuard } = await import('../src/startup.js');
 const { q } = await import('../src/config.js');
+const { maxStage } = await import('../src/stages.js');
 registerVoiceLines();
 
 test('restarting from the Stage 3 cage into Stage 4 discards destroyed Claudia views before final victory', () => {
@@ -88,7 +89,7 @@ test('a Bouncer defeat flushed in the victory update remains visible through the
   const prevGet = document.getElementById;
   document.getElementById = id => els[id] || null;
   try {
-    const w = new Campaign({ stage: 4, rng: () => 1 });
+    const w = new Campaign({ stage: maxStage, rng: () => 1 });
     w.elapsed = 182.7; w.voiceAt = []; w.events = [];
     w.voiceGate.stamps = [125.2, 133.2, 141.2]; w.voiceGate.queue = ['bouncer_defeat'];
     const scene = Object.create(GameScene.prototype);
@@ -104,7 +105,7 @@ test('a Bouncer defeat flushed in the victory update remains visible through the
     const text = els['victory-line'].textContent;
     assert.match(text, /Fine\. You're on the list\./);
     assert.match(text, /good judgment\./);
-    assert.match(text, /Let's leave before they reform\./);
+    assert.match(text, /Took you long enough, Papacito/);
   } finally { document.getElementById = prevGet; }
 });
 
@@ -161,6 +162,23 @@ test('roleAnim selects every Bouncer animation directly before generic role fall
   assert.equal(roleAnim({ type: 'wingman', state: 'recover' }), 'land');
   assert.equal(roleAnim({ type: 'charger', state: 'telegraph' }), 'windup');
   assert.equal(roleAnim({ type: 'lecturer', state: 'hold' }), 'lecture');
+  assert.equal(roleAnim({ type: 'tagger', state: 'telegraph' }), 'shake');
+  assert.equal(roleAnim({ type: 'tagger', state: 'recover' }), 'throw');
+  assert.equal(roleAnim({ type: 'minero', state: 'telegraph' }), 'lamp');
+  assert.equal(roleAnim({ type: 'minero', state: 'slam' }), 'slam');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'telegraph', shield: false }), 'grab');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'hold' }), 'hold');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'wait', shield: true }), 'block');
+  assert.equal(roleAnim({ type: 'bailiff', state: 'recover' }), 'raise');
+  assert.equal(roleAnim({ type: 'dj', state: 'telegraph' }), 'cast');
+  assert.equal(roleAnim({ type: 'dj', state: 'drop' }), 'drop');
+  assert.equal(roleAnim({ type: 'celestina', state: 'telegraph' }), 'toss');
+  assert.equal(roleAnim({ type: 'celestina', state: 'blink' }), 'blink');
+  assert.equal(roleAnim({ type: 'celestina', state: 'hold' }), 'flutter');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'telegraph' }), 'verdict');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'slam' }), 'slam');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'roar' }), 'roar');
+  assert.equal(roleAnim({ type: 'archyetti', state: 'floored' }), 'down');
 });
 
 test('Nightmare unlock on Stage 3 clear announces at Stage 3 and carries into Stage 4 final victory once', () => {
@@ -190,6 +208,7 @@ test('Nightmare unlock on Stage 3 clear announces at Stage 3 and carries into St
 
     w.update(3);
     assert.equal(w.stageNo, 4);
+    while (w.def.next) { w.finishStage(); w.update(3); }
     w.finishStage();
     w.update(3);
     assert.equal(w.victory, true);
@@ -198,7 +217,7 @@ test('Nightmare unlock on Stage 3 clear announces at Stage 3 and carries into St
     scene.hud = { say() {}, caption: { setText() {} } };
     scene.presentVictory();
     assert.equal(els.victory.hidden, false);
-    assert.equal(els['victory-score'].textContent, '1234 points · Nightmare unlocked');
+    assert.equal(els['victory-score'].textContent, '1234 points · 0 KOs · 0 deaths · 0:15 · Court adjourned · Nightmare unlocked');
     assert.equal(w.nightmareUnlockedPending, false);
   } finally {
     globalThis.document.getElementById = prevGet;

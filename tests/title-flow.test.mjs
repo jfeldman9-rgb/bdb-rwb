@@ -14,6 +14,9 @@ test('a fresh chapter-1 start plays intro_v3; the short clip is the retry', () =
   assert.equal(chapterIntroKey(2, new URLSearchParams('intro=v2')), 'stage2');
   assert.equal(chapterIntroKey(3, new URLSearchParams('')), 'stage3');
   assert.equal(chapterIntroKey(4, new URLSearchParams('')), 'stage4');
+  assert.equal(chapterIntroKey(5, new URLSearchParams('')), 'stage5');
+  assert.equal(chapterIntroKey(6, new URLSearchParams('')), 'stage6');
+  assert.equal(chapterIntroKey(7, new URLSearchParams('')), 'stage7');
   assert.equal(stageIntroAlreadyPlayed('intro'), false);
   assert.equal(stageIntroAlreadyPlayed('intro_v2'), false);
   assert.equal(stageIntroAlreadyPlayed('stage1'), true);

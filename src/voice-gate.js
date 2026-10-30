@@ -6,10 +6,10 @@ const EPS = 1e-6;
  * instead of dropping. Optional flavour (hurts, Papacito brags) still drops.
  * Movie-owned Dad calls are resolved before offering a fallback to this gate.
  */
-export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_(?:open|produce)$|yetti_(?:porkchop|colombian_room|purple_car)_|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_(?:catchphrase$|call_|done_)|papi_crowd_|papi_chorus$|bouncer_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;
+export const RESERVED_VOICE = /^(?:nar_|claudia_|bdb_(?:open|produce)$|yetti_(?:porkchop|colombian_room|purple_car)_|bob_s\d+$|wingman_|lecturer_intervention$|choir_serious$|dad_(?:catchphrase$|call_|done_|s\d+$)|papi_crowd_|papi_chorus$|bouncer_|dj_|celestina_|archyetti_|interventionist_(?:intro|phase\d+|defeat)$|choirmaster_(?:intro|phase\d+|defeat)$)/;
 export const PRIORITY_VOICE = RESERVED_VOICE;
-export const BOSS_MOMENT_VOICE = /^(?:bouncer|interventionist|choirmaster|wingman)_(?:intro|phase\d+|defeat)$/;
-export const ENDING_VOICE = /^(?:nar_victory|claudia_leave)$/;
+export const BOSS_MOMENT_VOICE = /^(?:bouncer|interventionist|choirmaster|wingman|dj|celestina|archyetti)_(?:intro|phase\d+|defeat)$/;
+export const ENDING_VOICE = /^(?:nar_victory|claudia_leave|claudia_s7|dad_s7)$/;
 export const DUBBED_DAD_CALL = /^dad_call_0/;
 
 export function isReservedVoice(id) {
@@ -29,12 +29,12 @@ export function isEndingVoice(id) {
 }
 
 function bossMomentType(id) {
-  const m = String(id || '').match(/^(bouncer|interventionist|choirmaster|wingman)_/);
+  const m = String(id || '').match(/^(bouncer|interventionist|choirmaster|wingman|dj|celestina|archyetti)_/);
   return m ? m[1] : '';
 }
 
 function bossMomentRank(id) {
-  const m = String(id || '').match(/^(?:bouncer|interventionist|choirmaster|wingman)_(intro|phase(\d+)|defeat)$/);
+  const m = String(id || '').match(/^(?:bouncer|interventionist|choirmaster|wingman|dj|celestina|archyetti)_(intro|phase(\d+)|defeat)$/);
   if (!m) return -1;
   if (m[1] === 'intro') return 0;
   if (m[1] === 'defeat') return 99;

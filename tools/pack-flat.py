@@ -78,6 +78,31 @@ REAL = {
     'walk': (8, 12, 0), 'block': (2, 10, 0), 'grab': (4, 16, 0), 'hold': (2, 8, 0),
     'rush': (6, 16, 0), 'stomp': (4, 14, 0), 'roar': (4, 12, 0), 'hurt': (3, 14, 0), 'down': (5, 14, 0),
   }),
+  # Painted Stage 5–7 (Oct 29 Game Art): 720x600 feet y=560, 00-based. SPEC fps idle 8 / walk 10 / attacks 12.
+  'yetti_tagger': ('yetti_tagger', {
+    'idle': (4, 8, 0), 'walk': (6, 10, 0), 'shake': (4, 12, 0), 'throw': (4, 12, 0),
+    'hurt': (2, 12, 0), 'knockdown': (4, 12, 0),
+  }),
+  'yetti_minero': ('yetti_minero', {
+    'idle': (4, 8, 0), 'walk': (6, 10, 0), 'lamp': (3, 12, 0), 'slam': (5, 12, 0),
+    'hurt': (2, 12, 0), 'knockdown': (4, 12, 0),
+  }),
+  'yetti_bailiff': ('yetti_bailiff', {
+    'walk': (6, 10, 0), 'block': (2, 8, 0), 'raise': (3, 12, 0), 'grab': (4, 12, 0),
+    'hold': (2, 8, 0), 'hurt': (2, 12, 0), 'knockdown': (4, 12, 0),
+  }),
+  'dj': ('dj', {
+    'idle': (4, 8, 0), 'walk': (6, 10, 0), 'cast': (4, 12, 0), 'drop': (5, 12, 0),
+    'hurt': (2, 12, 0), 'down': (4, 12, 0),
+  }),
+  'celestina': ('celestina', {
+    'idle': (4, 8, 0), 'walk': (6, 10, 0), 'flutter': (3, 12, 0), 'toss': (4, 12, 0),
+    'blink': (3, 12, 0), 'hurt': (2, 12, 0), 'down': (4, 12, 0),
+  }),
+  'archyetti': ('archyetti', {
+    'idle': (4, 8, 0), 'walk': (6, 10, 0), 'slam': (5, 12, 0), 'verdict': (3, 12, 0),
+    'roar': (3, 12, 0), 'hurt': (2, 12, 0), 'down': (5, 12, 0),
+  }),
 }
 STANDINS = {
   'claudia': {'idle-caged': (4, 10), 'freed': (4, 12), 'portrait': (1, 1)},
@@ -88,7 +113,8 @@ STANDINS = {
 }
 
 # spin/grab tells last longer than one 16fps pass; loop so the last frame does not freeze.
-LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture', 'spin'} | {f'run{i}' for i in range(1, 7)}
+LOOP = {'idle', 'walk', 'fly', 'sing', 'hover', 'run', 'idle-caged', 'rush', 'lecture', 'spin',
+        'hold', 'block', 'flutter', 'shake', 'lamp', 'cast', 'toss', 'blink', 'verdict'} | {f'run{i}' for i in range(1, 7)}
 
 
 def stage4_standin(key, anim, i):
@@ -225,7 +251,7 @@ def pack(key, anims_spec, source=None):
     a = {
       'name': f'{key}_{anim}',
       'frames': [], 'pages': [], 'holds': [],
-      'loop': anim in LOOP or anim.startswith('run') or (key == 'bouncer' and anim == 'grab'),
+      'loop': anim in LOOP or anim.startswith('run') or (key == 'bouncer' and anim == 'grab') or (key == 'yetti_bailiff' and anim == 'grab'),
       'fps': fps,
     }
     for i in range(first, first + count):

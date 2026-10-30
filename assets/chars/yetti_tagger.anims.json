@@ -1,0 +1,163 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "yetti_tagger-0"
+  ],
+  "anims": [
+    {
+      "name": "yetti_tagger_idle",
+      "frames": [
+        "yetti_tagger_idle_00",
+        "yetti_tagger_idle_01",
+        "yetti_tagger_idle_02",
+        "yetti_tagger_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "yetti_tagger_walk",
+      "frames": [
+        "yetti_tagger_walk_00",
+        "yetti_tagger_walk_01",
+        "yetti_tagger_walk_02",
+        "yetti_tagger_walk_03",
+        "yetti_tagger_walk_04",
+        "yetti_tagger_walk_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "yetti_tagger_shake",
+      "frames": [
+        "yetti_tagger_shake_00",
+        "yetti_tagger_shake_01",
+        "yetti_tagger_shake_02",
+        "yetti_tagger_shake_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "yetti_tagger_throw",
+      "frames": [
+        "yetti_tagger_throw_00",
+        "yetti_tagger_throw_01",
+        "yetti_tagger_throw_02",
+        "yetti_tagger_throw_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_tagger_hurt",
+      "frames": [
+        "yetti_tagger_hurt_00",
+        "yetti_tagger_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "yetti_tagger_knockdown",
+      "frames": [
+        "yetti_tagger_knockdown_00",
+        "yetti_tagger_knockdown_01",
+        "yetti_tagger_knockdown_02",
+        "yetti_tagger_knockdown_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 24,
+    "unique": 24,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

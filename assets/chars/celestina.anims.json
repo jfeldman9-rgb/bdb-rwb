@@ -1,0 +1,180 @@
+{
+  "canvas": [
+    720,
+    600
+  ],
+  "baseline": 570,
+  "scale": 0.38,
+  "pages": [
+    "celestina-0"
+  ],
+  "anims": [
+    {
+      "name": "celestina_idle",
+      "frames": [
+        "celestina_idle_00",
+        "celestina_idle_01",
+        "celestina_idle_02",
+        "celestina_idle_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fps": 8
+    },
+    {
+      "name": "celestina_walk",
+      "frames": [
+        "celestina_walk_00",
+        "celestina_walk_01",
+        "celestina_walk_02",
+        "celestina_walk_03",
+        "celestina_walk_04",
+        "celestina_walk_05"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "fps": 10
+    },
+    {
+      "name": "celestina_flutter",
+      "frames": [
+        "celestina_flutter_00",
+        "celestina_flutter_01",
+        "celestina_flutter_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "celestina_toss",
+      "frames": [
+        "celestina_toss_00",
+        "celestina_toss_01",
+        "celestina_toss_02",
+        "celestina_toss_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "celestina_blink",
+      "frames": [
+        "celestina_blink_00",
+        "celestina_blink_01",
+        "celestina_blink_02"
+      ],
+      "pages": [
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83
+      ],
+      "loop": true,
+      "fps": 12
+    },
+    {
+      "name": "celestina_hurt",
+      "frames": [
+        "celestina_hurt_00",
+        "celestina_hurt_01"
+      ],
+      "pages": [
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    },
+    {
+      "name": "celestina_down",
+      "frames": [
+        "celestina_down_00",
+        "celestina_down_01",
+        "celestina_down_02",
+        "celestina_down_03"
+      ],
+      "pages": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "loop": false,
+      "fps": 12
+    }
+  ],
+  "placeholder": false,
+  "source": "/workspace/bdb-art/sprites",
+  "dedupe": {
+    "logical": 26,
+    "unique": 26,
+    "reused": 0
+  },
+  "gpu": {
+    "ASTC": "astc.ktx",
+    "ETC": "etc2.ktx",
+    "premultiplied": true
+  }
+}

@@ -1,4 +1,4 @@
-import { CutscenePlayer, STAGE_CLIPS, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
+import { CutscenePlayer, clipIdsFor, SKIP_ACTIONS, cutscenesEnabled, STORY_MAX_MS } from './cutscene.js';
 import { KEYS } from './input.js';
 import { consumePress } from './press-ownership.js';
 /**
@@ -25,7 +25,7 @@ export function createStoryPlayer(query, root=globalThis, input=null, game=null)
    }
    // Adjacent stage-open/kidnap requests share one pause and one held narration.
    const keys=Array.isArray(clipKey)?clipKey:[clipKey];
-   const ids=keys.flatMap(key=>STAGE_CLIPS[key]||[]);
+   const ids=clipIdsFor(keys);
    if(!cutscenesEnabled(query,root.navigator)||!ids.length){done();return;}
    // Park the Phaser loop for the intro as well as the stage clips. A caller
    // that already paused (startHeldClip) keeps the resume; this one no-ops.

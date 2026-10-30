@@ -20,6 +20,22 @@ export const TYPES = Object.freeze({
   bouncer: { hp: 1240, speed: 80, art: 'bouncer', tint: 0xffffff, boss: true, shield: true, grab: true, grabVoice: 'bouncer_grab',
     scriptedBossVoices: true, rushPhase: 2, stompPhase: 3, reshield: 12,
     anims: { telegraph: 'grab', hold: 'hold', rush: 'rush', slam: 'stomp', roar: 'roar', hurt: 'hurt', dead: 'down', block: 'block', default: 'walk' } },
+  tagger: { hp: 36, speed: 100, art: 'yetti_tagger', tint: 0xffffff, ranged: true, tell: .65,
+    paint: { ttl: 1.4, w: 80 },
+    anims: { telegraph: 'shake', recover: 'throw', hurt: 'hurt', dead: 'knockdown', wait: 'idle', default: 'walk' } },
+  dj: { hp: 1200, speed: 60, art: 'dj', tint: 0xffffff, boss: true, ranged: true, scriptedBossVoices: true,
+    tell: .7, addFromPhase: 1,
+    anims: { telegraph: 'cast', slam: 'drop', drop: 'drop', roar: 'cast', hurt: 'hurt', dead: 'down', wait: 'idle', approach: 'walk', default: 'idle' } },
+  minero: { hp: 48, speed: 75, art: 'yetti_minero', tint: 0xffffff, heavy: true, lamp: { tell: .8 },
+    anims: { telegraph: 'lamp', slam: 'slam', hurt: 'hurt', dead: 'knockdown', wait: 'idle', default: 'walk' } },
+  celestina: { hp: 1300, speed: 85, art: 'celestina', tint: 0xffffff, boss: true, grab: true, grabVoice: false,
+    scriptedBossVoices: true, tell: .65, rushPhase: 3, addFromPhase: 1,
+    anims: { telegraph: 'toss', blink: 'blink', hold: 'flutter', rush: 'flutter', roar: 'flutter', hurt: 'hurt', dead: 'down', wait: 'idle', default: 'walk' } },
+  bailiff: { hp: 54, speed: 70, art: 'yetti_bailiff', tint: 0xffffff, shield: true, heavy: true, grab: true, grabVoice: false, tell: .65,
+    anims: { telegraph: 'grab', hold: 'hold', block: 'block', recover: 'raise', hurt: 'hurt', dead: 'knockdown', default: 'walk' } },
+  archyetti: { hp: 1320, speed: 70, art: 'archyetti', tint: 0xffffff, boss: true, scriptedBossVoices: true,
+    tell: .65, rushPhase: 2, addFromPhase: 1,
+    anims: { telegraph: 'verdict', slam: 'slam', rush: 'slam', roar: 'roar', floored: 'down', hurt: 'hurt', dead: 'down', wait: 'idle', default: 'walk' } },
 });
 /** RWB boss gates: one long bar, phase 2 under 66%, phase 3 under 33%. */
 export const BOSS_GATES = Object.freeze([1, .66, .33]);
@@ -31,8 +47,11 @@ export const BOSS_ADDS = Object.freeze({
   interventionist: Object.freeze([[], ['lecturer', 'walker'], ['charger', 'lecturer', 'walker']]),
   choirmaster: Object.freeze([['walker', 'walker'], ['walker', 'hover', 'walker'], ['charger', 'hover', 'guard']]),
   bouncer: Object.freeze([[], ['salsero', 'walker'], ['guard', 'salsero', 'charger']]),
+  dj: Object.freeze([['walker', 'tagger'], ['hover', 'tagger', 'walker'], ['charger', 'salsero', 'hover']]),
+  celestina: Object.freeze([['walker', 'tagger'], ['minero', 'guard'], ['charger', 'minero', 'tagger']]),
+  archyetti: Object.freeze([['bailiff', 'walker'], ['minero', 'bailiff', 'hover'], ['bailiff', 'minero', 'charger']]),
 });
-export const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95], bouncer: [1.3, 1.1, .9] });
+export const BOSS_COOL = Object.freeze({ interventionist: [1.3, 1.1, .9], choirmaster: [1.5, 1.2, .95], bouncer: [1.3, 1.1, .9], dj: [1.5, 1.2, 1.0], celestina: [1.4, 1.15, .95], archyetti: [1.3, 1.1, .9] });
 /** Ranged roles that stack snowballs when they share a lane. Boss choirmaster counts; melee does not. */
 export const RANGED_TYPES = new Set(Object.keys(TYPES).filter(type => TYPES[type].ranged));
 export const MAX_RANGED_PER_LANE = 2;
@@ -60,9 +79,12 @@ function laneLoad(enemies, lane, except) {
   }
   return n;
 }
-/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. Bosses hold their lane while their adds spread around them. */
+/** Keep a ranged Yetti from being the third body in a lane. Extras slide; the first two stay. Bosses track Bob without being shoved by their adds. */
 export function stepRangedLane(self, enemies, dy, speed, dt) {
-  if (self.boss) return;
+  if (self.boss) {
+    self.y = clamp(self.y + clamp(dy, -speed * .6 * dt, speed * .6 * dt), LANE_TOP, LANE_BOT);
+    return;
+  }
   const mine = laneOf(self.y);
   if (self._laneGoal === mine) self._laneGoal = null;
   if (laneLoad(enemies, mine, self) >= MAX_RANGED_PER_LANE) {
@@ -148,6 +170,12 @@ export function rushDuration(e, pace = 1) {
   }
   return clamp((Math.abs((e.attackX ?? e.x) - e.x) + 140) / (430 * pace), .65, 1.2);
 }
+function djSafeBand(e) {
+  const lane = laneOf(e.attackY ?? e.y);
+  const step = e.volley % 2 === 0 ? 1 : -1;
+  const adjacent = lane + step < 0 || lane + step > 2 ? lane - step : lane + step;
+  return 3 - lane - adjacent;
+}
 export function telegraphPlan(e, world) {
   const bounds = world?.bounds || { l: 0, r: 1280 };
   const spec = attackSpec(e);
@@ -177,16 +205,33 @@ export class Yetti {
     const hp = Math.round(t.hp * (t.boss ? 1 : hpScale));
     Object.assign(this, { id: actorId(), type, x, y, z: type === 'hover' ? 65 : 0, hp, maxHp: hp, mode: null, rushCool: 3,
       alive: true, boss: !!t.boss, phase: t.boss ? 1 : 0, facing: -1, state: 'approach', clock: 0, cooldown: 1,
-      stun: 0, shield: !!t.shield, timer: 0, poise: 0, rushDir: -1, attackY: y, attackX: x, volley: 0,
+      stun: 0, shield: !!t.shield, timer: 0, poise: 0, flashT: 0, hurtT: 0, rushDir: -1, attackY: y, attackX: x, volley: 0,
       warnFrom: null, warnTo: null, warnY: y });
   }
   planTelegraph(b, world) {
     this.attackX = b.x; this.attackY = this.y; this.rushDir = this.facing;
     this.warnFrom = null; this.warnTo = null;
+    // Commit the next volley before its tell: the safe lane must not be the
+    // previous attack's lane, and a bridal/court rush has no safe-band promise.
+    this.safeBand = null;
+    if (this.mode !== 'rush') {
+      if ((this.type === 'celestina' && this.phase >= 3) || (this.type === 'archyetti' && this.phase >= 2)) this.safeBand = this.volley % 3;
+      else if (this.type === 'dj' && this.phase === 2) this.safeBand = djSafeBand(this);
+    }
     const plan = telegraphPlan(this, world);
     this.warnFrom = plan.from; this.warnTo = plan.to; this.warnY = plan.y;
   }
-  get canBeHit() { return this.alive && this.state !== 'split' && this.state !== 'roar'; }
+  get canBeHit() { return this.alive && this.state !== 'split' && this.state !== 'roar' && this.state !== 'blink'; }
+  /** Body feedback is cosmetic: a hit must never cancel a boss's committed attack. */
+  showHit() {
+    if (!this.boss) return;
+    this.flashT = .08;
+    if (this.state === 'approach' || this.state === 'wait') this.hurtT = .14;
+  }
+  stepHitFeedback(dt) {
+    this.flashT = Math.max(0, this.flashT - dt);
+    this.hurtT = Math.max(0, this.hurtT - dt);
+  }
   takeHit(damage, dir, bonk = false) {
     if (!this.canBeHit) return { accepted: false };
     // Front shield blocks, but three eggplants shatter it so a phone player is never soft-locked.
@@ -199,6 +244,7 @@ export class Yetti {
       return { accepted: false, blocked: true };
     }
     this.hp = Math.max(0, this.hp - damage);
+    this.showHit();
     if (this.boss && this.hp > 0) {
       const phase = bossPhaseFor(this.hp, this.maxHp);
       // Crossing a gate: roar (untouchable beat, like RWB's Chieftain) and escalate.
@@ -220,6 +266,7 @@ export class Yetti {
   }
   breakShield() { if (!this.shield || (this.boss && !this.canBeHit)) return false; this.shield = false; this.shieldHits = 0; this.state = 'hurt'; this.stun = .5; return true; }
   update(dt, world) {
+    this.stepHitFeedback(dt);
     if (!this.alive) { this.choirBuff = 1; return; }
     const b = world.bob, pace = world.difficulty.pace, buff = choirMultiplier(this, world.enemies), t = TYPES[this.type];
     this.choirBuff = buff;
@@ -231,12 +278,39 @@ export class Yetti {
     if (this.type === 'hover') this.z = 65 + Math.sin(this.clock * 3) * 10;
     if (this.stun > 0) { this.stun -= dt; if (this.stun <= 0) this.state = 'approach'; return; }
     // Phase II+ mini-bosses keep calling minions in while the arena thins out.
-    if (this.boss && this.phase >= 2 && this.state !== 'roar' && (this.addTimer = (this.addTimer ?? 9) - dt) <= 0) {
+    // New bosses may start their add timer in phase I via addFromPhase; legacy bosses stay at 2.
+    if (this.boss && this.phase >= (t.addFromPhase ?? 2) && this.state !== 'roar' && (this.addTimer = (this.addTimer ?? 9) - dt) <= 0) {
       this.addTimer = 9; world.summonAdds?.(BOSS_ADDS[this.type]?.[this.phase - 1]);
     }
     if (this.state === 'roar') {
       this.timer -= dt;
       if (this.timer <= 0) { this.state = 'approach'; this.cooldown = .5; world.summonAdds?.(BOSS_ADDS[this.type]?.[this.phase - 1]); }
+      return;
+    }
+    if (this.state === 'drop') {
+      this.timer -= dt;
+      if (this.timer <= 0) {
+        for (let i = 0; i < 3; i++) {
+          for (const dir of [-1, 1]) world.snowball(this.x, laneY(i), dir, 'shockwave');
+        }
+        this.dropPulses = (this.dropPulses || 0) + 1;
+        if (this.dropPulses < 3) this.timer = 0.12;
+        else {
+          this.state = 'recover';
+          this.timer = 0.6 * world.difficulty.recovery;
+          this.cooldown = (BOSS_COOL[this.type]?.[this.phase - 1] ?? 1.3) / pace;
+        }
+      }
+      return;
+    }
+    if (this.state === 'blink') {
+      this.timer -= dt;
+      if (this.timer <= 0) {
+        this.repositionBlink(world);
+        this.state = 'recover';
+        this.timer = 0.6 * world.difficulty.recovery;
+        this.cooldown = (BOSS_COOL[this.type]?.[this.phase - 1] ?? 1.3) / pace;
+      }
       return;
     }
     if (this.state === 'hold') { if (b.grabbedBy !== this) { this.state = 'approach'; this.cooldown = 2; } return; }
@@ -250,7 +324,22 @@ export class Yetti {
         }
         else {
           let slammed = false;
-          if (t.ranged && this.type !== 'choir' && this.type !== 'choirmaster') world.snowball(this.x, this.attackY, this.rushDir);
+          if (t.paint) world.snowball(this.attackX ?? this.x, this.attackY ?? this.y, 0, 'splat', t.paint);
+          else if (this.type === 'dj') {
+            const drop = this.resolveDj(world);
+            if (drop === 'drop') return;
+            slammed = !!drop;
+          }
+          else if (this.type === 'celestina') {
+            const next = this.resolveCelestina(world);
+            if (next === 'blink' || next === 'hold') return;
+            slammed = !!next;
+          }
+          else if (this.type === 'archyetti') {
+            slammed = !!this.resolveArchYetti(world);
+          }
+          else if (t.lamp) world.snowball(this.x, this.attackY, this.rushDir, 'shockwave');
+          else if (t.ranged && this.type !== 'choir' && this.type !== 'choirmaster') world.snowball(this.x, this.attackY, this.rushDir);
           else if (['choir','choirmaster'].includes(this.type)) {
             const skip = this.volley++ % 3;
             const bands = this.type === 'choirmaster' ? [0,1,2].filter(i => i !== skip) : [laneOf(this.attackY)];
@@ -258,7 +347,7 @@ export class Yetti {
             // Adds come from the roar and the phase timer only; the per-attack
             // telegraph no longer summons or the arena double-fills.
           } else if (meleeHits(this, b)) {
-            if (t.grab && b.grab(this)) { this.state = 'hold'; world.emit('voice', t.grabVoice || 'lecturer_intervention'); return; }
+            if (t.grab && b.grab(this)) { this.state = 'hold'; if (t.grabVoice !== false) world.emit('voice', t.grabVoice || 'lecturer_intervention'); return; }
             world.hurtBob(false, this.x);
           } else if ((this.type === 'interventionist' && this.phase >= 2) || (t.stompPhase && this.phase >= t.stompPhase)) {
             // Phase III slams both ways, so backing off behind him is no longer safe.
@@ -274,9 +363,11 @@ export class Yetti {
     }
     if (this.state === 'rush') {
       const prevX = this.x, stepSpeed = (t.lunge?.speed ?? 430) * pace;
-      this.x += this.rushDir * stepSpeed * dt; this.timer -= dt;
-      if (rushHits(this, b, prevX)) world.hurtBob(true, this.x);
+      // Spend only the remaining travel time, then test the clamped segment.
+      // A long frame must not add an unmarked tail beyond the promised stop.
+      this.x += this.rushDir * stepSpeed * Math.min(dt, Math.max(0, this.timer)); this.timer -= dt;
       this.x = clamp(this.x, world.bounds.l+55, world.bounds.r-55);
+      if (rushHits(this, b, prevX)) world.hurtBob(true, this.x);
       if (this.timer <= 0) { this.state = 'recover'; this.timer = 1.1 * world.difficulty.recovery; this.cooldown = this.boss ? 1 : 2; }
       return;
     }
@@ -293,7 +384,7 @@ export class Yetti {
       this.planTelegraph(b, world); return;
     }
     if (Math.abs(dx)<reach && Math.abs(dy)< (ranged ? 110 : 30) && this.cooldown<=0) {
-      this.state='telegraph'; this.mode=null; this.timer=(t.lunge?.tell ?? (this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65)) / pace;
+      this.state='telegraph'; this.mode=null; this.timer=(t.tell ?? t.lunge?.tell ?? t.lamp?.tell ?? (this.type==='charger' ? .72 : boss>=3 ? .5 : boss===2 ? .58 : .65)) / pace;
       this.planTelegraph(b, world); world.yellYettiAttack?.(); return;
     }
     const pref=ranged?330:65, speed=TYPES[this.type].speed*pace*buff*(boss>=3?1.45:boss===2?1.3:1);
@@ -318,5 +409,73 @@ export class Yetti {
     else this.y = clamp(this.y+clamp(dy,-speed*.6*dt,speed*.6*dt),LANE_TOP,LANE_BOT);
     this.x = clamp(this.x,world.bounds.l+55,world.bounds.r-55);
     this.state = Math.abs(this.x-oldX)>.01 ? 'approach' : 'wait';
+  }
+  /** DJ Halo only. Choirmaster halo bands stay in the choir branch above. */
+  resolveDj(world) {
+    if (this.phase >= 3) {
+      this.state = 'drop';
+      this.timer = 1.2 / (world.difficulty.pace || 1);
+      this.dropPulses = 0;
+      world.banner('WAIT FOR IT…');
+      return 'drop';
+    }
+    if (this.phase >= 2) {
+      this.safeBand ??= djSafeBand(this);
+      this.volley++;
+      for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
+      return false;
+    }
+    for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, this.attackY, dir, 'shockwave');
+    return true;
+  }
+  /** La Celestina only. Wingmen safe-band stays in wingman.js. */
+  resolveCelestina(world) {
+    if (this.phase >= 3) {
+      this.safeBand ??= this.volley % 3;
+      this.volley++;
+      for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
+      return false;
+    }
+    if (this.phase >= 2) {
+      if (meleeHits(this, world.bob) && world.bob.grab(this)) {
+        this.state = 'hold';
+        return 'hold';
+      }
+      world.snowball(this.x, this.attackY ?? this.y, this.rushDir, 'halo');
+      return false;
+    }
+    world.snowball(this.x, this.attackY ?? this.y, this.rushDir, 'halo');
+    this.state = 'blink';
+    this.timer = 0.4;
+    return 'blink';
+  }
+  repositionBlink(world) {
+    const seed = (((this.id | 0) * 1103515245) + ((this.volley | 0) * 12345)) >>> 0;
+    const dist = 300 + (seed % 201);
+    const lo = world.bounds.l + 55, hi = world.bounds.r - 55;
+    let dir = (seed >>> 8) & 1 ? 1 : -1;
+    // Turn inward at an edge rather than blinking repeatedly into the clamp.
+    if ((dir > 0 ? hi - this.x : this.x - lo) < 300) dir = -dir;
+    this.x = clamp(this.x + dir * dist, lo, hi);
+    this.y = laneY(seed % 3);
+    this.attackY = this.y;
+    this.volley++;
+  }
+  /** Arch-Yetti gavel / verdict. Wingmen safe-band stays in wingman.js. */
+  resolveArchYetti(world) {
+    if (this.phase >= 2) {
+      this.safeBand ??= this.volley % 3;
+      this.volley++;
+      for (let i = 0; i < 3; i++) if (i !== this.safeBand) world.snowball(this.x, laneY(i), this.rushDir, 'halo');
+      if (this.phase >= 3) {
+        const lane = laneOf(this.attackY ?? this.y);
+        const slamY = laneY(lane === this.safeBand ? (lane + 1) % 3 : lane);
+        for (const dir of [this.rushDir, -this.rushDir]) world.snowball(this.x, slamY, dir, 'shockwave');
+        return true;
+      }
+      return false;
+    }
+    for (const dir of [-1, 1]) world.snowball(this.x, this.attackY ?? this.y, dir, 'shockwave');
+    return true;
   }
 }
