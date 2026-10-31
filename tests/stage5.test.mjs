@@ -239,7 +239,7 @@ test('missing Stage 5–7 intro clips are optional and resolve to an empty play 
 });
 
 test('BARK and Stage 5 voice-rate stay inside the locked dialogue cap', () => {
-  assert.deepEqual(BARK, { whereCd: 60, coryCd: 120, coryChance: .05, yettiCd: 20, tauntChance: .04, gap: 8, cap: 3, window: 60 });
+  assert.deepEqual(BARK, { whereCd: 60, coryCd: 120, coryChance: .05, idleCd: 45, idleChance: .06, yettiCd: 20, tauntChance: .04, gap: 8, cap: 3, window: 60 });
   const report = runVoiceRate({ stage: 5, hz: 60 });
   assert.equal(report.cleared, true);
   assert.ok(report.ambientPerMin <= 4, `ambient ${report.ambientPerMin}/min`);

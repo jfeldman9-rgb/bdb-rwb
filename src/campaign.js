@@ -14,7 +14,8 @@ import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W, HITSTOP, CAM_LEAD } from './con
 import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
-import { createBarks, barkWhere, barkCory, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
+import { createBarks, barkWhere, barkCory, barkIdle, barkYettiWave, barkYettiTaunt, barkPapacito, barkYettiAttack, requestAmbient, flushAmbient as takeAmbient } from './barks.js';
+import { BOB_COMBAT, BOB_HURT, BOB_VICTORY, BOB_BOSS, YETTI_HURT, YETTI_DEATH, YETTI_BOSS } from './bark-packs.js';
 import { createVoiceGate, offerVoice, flushVoiceGate, isReservedVoice, expireOptionalVoice, isEndingVoice } from './voice-gate.js';
 
 /** Highest Yetti pace a chapter ramp may reach (Nightmare is 1.22 on its own). */
@@ -238,7 +239,18 @@ export class Campaign {
     this.banner(z.name); this.emit('boss',z.type);
     const rescue = this.stageNo === 3 && !this.rescuePreBossPlayed;
     if (rescue) { this.rescuePreBossPlayed = true; this.emit('cutscene', 'rescue_pre_boss'); }
-    if (phase === 1) this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
+    if (phase === 1) {
+      this.emit('voice',z.type==='wingman'?'wingman_council':`${z.type}_intro`);
+      this.rot ||= Object.create(null);
+      const useBob = (this.barks?.rng?.() ?? Math.random()) < 0.55;
+      if (useBob) {
+        const bi = this.rot.bob_boss || 0; this.rot.bob_boss = bi + 1;
+        this.ambient('boss', BOB_BOSS[bi % BOB_BOSS.length], 0);
+      } else {
+        const yi = this.rot.yetti_boss || 0; this.rot.yetti_boss = yi + 1;
+        this.ambient('boss', YETTI_BOSS[yi % YETTI_BOSS.length], 0);
+      }
+    }
     if (rescue) this.armVoice('claudia_question', 3.5);
     if (z.type==='celestina' && !this.celestinaLinePlayed) { this.celestinaLinePlayed=true; this.armVoice('claudia_s6', 3.5); }
     if (z.type==='choirmaster') this.summonWalkers();
@@ -263,7 +275,7 @@ export class Campaign {
       this.stats.hits++; this.emit('hurt',{x:this.bob.x,y:this.bob.y});
       this.hurtN++;
       if (this.hurtN % 2 === 0) {
-        const ids = ['bob_hurt_01','bob_hurt_02','bob_hurt_03'];
+        const ids = ['bob_hurt_01','bob_hurt_02','bob_hurt_03', ...BOB_HURT];
         this.rot ||= Object.create(null);
         const i = this.rot.hurt || 0; this.rot.hurt = i + 1;
         this.ambient('hurt', ids[i % ids.length], 6);
@@ -273,7 +285,23 @@ export class Campaign {
   yellYettiAttack() { const id = barkYettiAttack(this.barks, this.elapsed); if (id) this.emit('voice', id); }
   recordKo(e, source = 'bob') {
     if (e.recorded) return; e.recorded=true; this.stats.kos++;
-    if (source==='bob') { this.score += e.boss?2500:300; noteBobKo(this.dadCall); this.laughN++; if (this.laughN % 4 === 0) this.ambient('laugh', 'bdb_laugh', 20); }
+    if (source==='bob') {
+      this.score += e.boss?2500:300; noteBobKo(this.dadCall); this.laughN++;
+      if (this.laughN % 4 === 0) {
+        const ids = ['bdb_laugh', ...BOB_VICTORY];
+        this.rot ||= Object.create(null);
+        const i = this.rot.laugh || 0; this.rot.laugh = i + 1;
+        this.ambient('laugh', ids[i % ids.length], 20);
+      }
+      if (!e.boss && !TYPES[e.type]?.scriptedBossVoices) {
+        const roll = this.barks?.rng?.() ?? Math.random();
+        if (roll < 0.14) {
+          this.rot ||= Object.create(null);
+          const i = this.rot.death || 0; this.rot.death = i + 1;
+          this.ambient('death', YETTI_DEATH[i % YETTI_DEATH.length], 0);
+        }
+      }
+    }
     if (e.type==='guard') this.pickups.push({x:e.x,y:e.y,kind:'shake'});
     if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_defeat`);
     this.emit('ko',{x:e.x,y:e.y,source});
@@ -296,7 +324,21 @@ export class Campaign {
       const kind = hitTier({ phase: !!result.phase, killed: !e.alive, bonk });
       this.hitStop = Math.max(this.hitStop, HITSTOP[kind] / 60);
       this.emit('hit', { x: e.x, y: e.y, bonk, kind, dir });
-      if (bonk) this.ambient('produce', 'bdb_produce', 12);
+      if (bonk) {
+        if (!this.produceSpokeOnce) this.ambient('produce', 'bdb_produce', 12);
+        else {
+          this.rot ||= Object.create(null);
+          const i = this.rot.combat || 0; this.rot.combat = i + 1;
+          this.ambient('produce', BOB_COMBAT[i % BOB_COMBAT.length], 12);
+        }
+      } else if (e.alive && !e.boss) {
+        const roll = this.barks?.rng?.() ?? Math.random();
+        if (roll < 0.07) {
+          this.rot ||= Object.create(null);
+          const i = this.rot.yetti_hurt || 0; this.rot.yetti_hurt = i + 1;
+          this.ambient('yetti', YETTI_HURT[i % YETTI_HURT.length], 0);
+        }
+      }
     }
     if (result.phase) {
       if (this.bob.grabbedBy === e) this.bob.releaseGrab();
@@ -552,6 +594,7 @@ export class Campaign {
       this.barkAcc -= 1;
       const yt=barkYettiTaunt(this.barks,this.elapsed); if(yt)this.emit('voice',yt);
       const cory=barkCory(this.barks,this.elapsed); if(cory)this.emit('voice',cory);
+      const idle=barkIdle(this.barks,this.elapsed); if(idle)this.emit('voice',idle);
     }
     for(const p of this.hostile){
       if(p.kind==='splat'){

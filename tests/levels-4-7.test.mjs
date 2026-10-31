@@ -141,7 +141,7 @@ test('every Stage 4 resident atlas has webp, ASTC, ETC2, page metadata and anima
 });
 
 test('BARK retains every baseline gate and cooldown value', () => {
-  assert.deepEqual(BARK, { whereCd: 60, coryCd: 120, coryChance: .05, yettiCd: 20, tauntChance: .04, gap: 8, cap: 3, window: 60 });
+  assert.deepEqual(BARK, { whereCd: 60, coryCd: 120, coryChance: .05, idleCd: 45, idleChance: .06, yettiCd: 20, tauntChance: .04, gap: 8, cap: 3, window: 60 });
 });
 
 test('every PRESENT voice has an mp3; the Stage 4 script captions without missing-file fetches', () => {

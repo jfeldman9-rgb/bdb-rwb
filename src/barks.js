@@ -1,9 +1,14 @@
 // Combat bark rotation with cooldowns. Pure enough for unit tests.
 // Ambient lines share one gate: 8s apart, and at most BARK.cap in any rolling 60s.
+import {
+  BOB_IDLE, YETTI_COMBAT, YETTI_IDLE,
+} from './bark-packs.js';
 export const BARK = Object.freeze({
   whereCd: 60,
   coryCd: 120,
   coryChance: 0.05,
+  idleCd: 45,
+  idleChance: 0.06,
   yettiCd: 20,
   tauntChance: 0.04,
   gap: 8,
@@ -20,16 +25,16 @@ const YETTI_CYCLE = Object.freeze([
   'yetti_colombian_room_01', 'yetti_colombian_room_02',
   'yetti_purple_car_01', 'yetti_purple_car_02',
 ]);
-const YETTI_ATTACK = Object.freeze(['yetti_porkchop_01', 'yetti_porkchop_02']);
-const YETTI_WAVE = Object.freeze(['yetti_colombian_room_01', 'yetti_colombian_room_02']);
-const YETTI_TAUNT = Object.freeze(['yetti_purple_car_01', 'yetti_purple_car_02']);
+const YETTI_ATTACK = Object.freeze(['yetti_porkchop_01', 'yetti_porkchop_02', ...YETTI_COMBAT]);
+const YETTI_WAVE = Object.freeze(['yetti_colombian_room_01', 'yetti_colombian_room_02', ...YETTI_COMBAT]);
+const YETTI_TAUNT = Object.freeze(['yetti_purple_car_01', 'yetti_purple_car_02', ...YETTI_IDLE]);
 
 /** Highest priority speaks when several ambient lines are due together. */
-const AMBIENT_ORDER = Object.freeze(['produce', 'yetti', 'where', 'laugh', 'hurt', 'turnback', 'choir', 'cory']);
+const AMBIENT_ORDER = Object.freeze(['produce', 'yetti', 'where', 'laugh', 'hurt', 'turnback', 'choir', 'cory', 'idle', 'boss', 'death']);
 
 export function createBarks(rng = Math.random) {
   return {
-    whereAt: -1e9, coryAt: -1e9, yettiAt: -1e9, ambientAt: -1e9,
+    whereAt: -1e9, coryAt: -1e9, idleAt: -1e9, yettiAt: -1e9, ambientAt: -1e9,
     ambientLog: [], held: Object.create(null), offers: [], open: false,
     i: 0, attackN: 0, rng,
   };
@@ -163,8 +168,17 @@ export function barkYettiTaunt(st, now) {
   return requestAmbient(st, now, 'yetti', id, { commit: (t) => { st.yettiAt = t; st.lastYetti = 'taunt'; } });
 }
 
+/** Rare Bob idle chatter while free-roaming / between waves. */
+export function barkIdle(st, now) {
+  if (!st || now - st.idleAt < BARK.idleCd) return null;
+  if (waiting(st, 'idle')) return null;
+  if ((st.rng?.() ?? Math.random()) > BARK.idleChance) return null;
+  const id = pick(BOB_IDLE, st);
+  return requestAmbient(st, now, 'idle', id, { commit: (t) => { st.idleAt = t; } });
+}
+
 export function barkPapacito(st) {
   return pick(['bob_papacito_01', 'bob_papacito_02'], st || { i: 0 });
 }
 
-export { BOB_WHERE, BOB_CORY, YETTI_CYCLE, YETTI_ATTACK, YETTI_WAVE, YETTI_TAUNT, AMBIENT_ORDER };
+export { BOB_WHERE, BOB_CORY, YETTI_CYCLE, YETTI_ATTACK, YETTI_WAVE, YETTI_TAUNT, AMBIENT_ORDER, BOB_IDLE };

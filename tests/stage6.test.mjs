@@ -215,7 +215,7 @@ test('Stage 6 opener and altar lines respect the locked dialogue cap', () => {
 });
 
 test('BARK and Stage 6 voice-rate stay inside the locked dialogue cap', () => {
-  assert.deepEqual(BARK, { whereCd: 60, coryCd: 120, coryChance: .05, yettiCd: 20, tauntChance: .04, gap: 8, cap: 3, window: 60 });
+  assert.deepEqual(BARK, { whereCd: 60, coryCd: 120, coryChance: .05, idleCd: 45, idleChance: .06, yettiCd: 20, tauntChance: .04, gap: 8, cap: 3, window: 60 });
   const report = runVoiceRate({ stage: 6, hz: 60 });
   assert.equal(report.cleared, true);
   assert.ok(report.ambientPerMin <= 4, `ambient ${report.ambientPerMin}/min`);
