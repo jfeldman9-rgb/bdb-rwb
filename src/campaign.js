@@ -11,6 +11,7 @@ import { DIFFICULTIES } from './difficulty.js';
 import { resolveStage } from './stages.js';
 import { normalizeSave, clearStage } from './save.js';
 import { clamp, LANE_TOP, LANE_BOT, VW, WORLD_W, HITSTOP, CAM_LEAD } from './config.js';
+import { chainMultiplier, CHAIN_WINDOW } from './hud.js';
 import { updateCamera, moveBounds, lockSnaps } from './camera.js';
 import { plateKeyForCam } from './zone-stream.js';
 import { STORY, TUTORIALS } from './story.js';
@@ -69,6 +70,11 @@ export function hitTier({ phase = false, killed = false, bonk = false, shieldBro
   if (bonk || shieldBroke) return 'medium';
   return 'light';
 }
+/**
+ * Light chips are one frame, and a held stream does not pay that frame on every shot.
+ * Bonk, KO, and phase still use the full 6/9/14 table.
+ */
+export const LIGHT_STOP_GAP = 0.5;
 
 /** All gameplay lives here; Phaser and the headless bot use the same fixed steps. */
 export class Campaign {
@@ -285,8 +291,9 @@ export class Campaign {
   yellYettiAttack() { const id = barkYettiAttack(this.barks, this.elapsed); if (id) this.emit('voice', id); }
   recordKo(e, source = 'bob') {
     if (e.recorded) return; e.recorded=true; this.stats.kos++;
+    this.noteChain();
     if (source==='bob') {
-      this.score += e.boss?2500:300; noteBobKo(this.dadCall); this.laughN++;
+      this.score += (e.boss?2500:300) * chainMultiplier(this.chain); noteBobKo(this.dadCall); this.laughN++;
       if (this.laughN % 4 === 0) {
         const ids = ['bdb_laugh', ...BOB_VICTORY];
         this.rot ||= Object.create(null);
@@ -302,7 +309,7 @@ export class Campaign {
         }
       }
     }
-    if (e.type==='guard') this.pickups.push({x:e.x,y:e.y,kind:'shake'});
+    if (e.type==='guard') this.pickups.push({x:e.koFrom ?? e.x,y:e.y,kind:'shake'});
     if (TYPES[e.type]?.scriptedBossVoices) this.emit('voice', `${e.type}_defeat`);
     this.emit('ko',{x:e.x,y:e.y,source});
   }
@@ -314,7 +321,7 @@ export class Campaign {
       if (result.shieldBroke) {
         this.banner(STORY.shield);
         const kind = hitTier({ shieldBroke: true });
-        this.hitStop = Math.max(this.hitStop, HITSTOP[kind] / 60);
+        this.applyHitStop(kind);
         this.emit('hit', { x: e.x, y: e.y, bonk: false, kind, dir });
       }
       else if (this.stageNo===1 && !this.shieldHintShown) { this.shieldHintShown=true; this.banner('BLOCKED! DASH THROUGH THE GOLD SHIELD.'); }
@@ -322,7 +329,7 @@ export class Campaign {
     }
     if (result.accepted) {
       const kind = hitTier({ phase: !!result.phase, killed: !e.alive, bonk });
-      this.hitStop = Math.max(this.hitStop, HITSTOP[kind] / 60);
+      this.applyHitStop(kind);
       this.emit('hit', { x: e.x, y: e.y, bonk, kind, dir });
       if (bonk) {
         if (!this.produceSpokeOnce) this.ambient('produce', 'bdb_produce', 12);
@@ -500,6 +507,18 @@ export class Campaign {
     this.spoke[key] = this.elapsed;
     this.emit('voice', ids[i % ids.length]);
     return true;
+  }
+  noteChain() {
+    const now = this.elapsed;
+    if ((this.chain || 0) > 0 && now - this.chainAt <= CHAIN_WINDOW) this.chain += 1;
+    else this.chain = 1;
+    this.chainAt = now;
+  }
+  applyHitStop(kind) {
+    if (kind === 'light' && this.elapsed - (this.lightStopAt ?? -1e9) < LIGHT_STOP_GAP) return;
+    if (kind === 'light') this.lightStopAt = this.elapsed;
+    const frames = HITSTOP[kind] || 0;
+    if (frames > 0) this.hitStop = Math.max(this.hitStop, frames / 60);
   }
   latchInput(input) {
     if (!input) return;

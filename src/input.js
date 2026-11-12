@@ -42,8 +42,9 @@ export class Input {
   take(a,win=.18){if(this.peek(a,win)){delete this.buf[a];return true;}return false;}
   peek(a,win=.18){return this.buf[a]!==undefined&&this.t-this.buf[a]<=win;}
   flushPresses(){this.buf={};}
-  clear(){this.held={};this.keysDown.clear();this.buf={};this.padHeld={};this.padPrev={};this.pointers.clear();this.touchAxis={x:0,y:0};this.x=this.y=0;this.stickId=null;this.lastTap={left:-9,right:-9};
+  clear(){this.held={};this.keysDown.clear();this.buf={};this.padHeld={};this.padPrev={};this.pointers.clear();this.touchAxis={x:0,y:0};this.x=this.y=0;this.stickId=null;this.stickCenter=null;this.lastTap={left:-9,right:-9};
     const doc=this.root.document;const knob=doc?.getElementById('knob');if(knob)knob.style.transform='';doc?.querySelectorAll('.tb.on').forEach(el=>el.classList.remove('on'));
+    this.hideStick();
   }
   down(a){return !!this.held[a]||!!this.padHeld[a]||[...this.pointers.values()].includes(a);}
   bindTouch(){
@@ -55,14 +56,73 @@ export class Input {
       for(const event of ['pointerup','pointercancel','lostpointercapture'])this.onDOM(el,event,end);
     }
     const stick=doc.getElementById('stick'),knob=doc.getElementById('knob');if(!stick)return;
-    const move=e=>{if(e.pointerId!==this.stickId)return;const r=stick.getBoundingClientRect(),R=r.width/2;
-      let dx=(e.clientX-r.left-R)/R,dy=(e.clientY-r.top-R)/R;const m=Math.max(1,Math.hypot(dx,dy));dx/=m;dy/=m;
-      this.touchAxis={x:Math.abs(dx)>.23?dx:0,y:Math.abs(dy)>.23?dy:0};if(knob)knob.style.transform=`translate(${dx*R*.55}px,${dy*R*.55}px)`;
-    };
-    this.onDOM(stick,'pointerdown',e=>{if(this.stickId!=null)return;e.preventDefault();this.stickId=e.pointerId;stick.setPointerCapture?.(e.pointerId);move(e);});
-    this.onDOM(stick,'pointermove',move);
-    const end=e=>{if(e.pointerId!==this.stickId)return;this.stickId=null;this.touchAxis={x:0,y:0};if(knob)knob.style.transform='';};
-    for(const event of ['pointerup','pointercancel','lostpointercapture'])this.onDOM(stick,event,end);
+    this.stickEl=stick;this.knobEl=knob;
+    this.onDOM(stick,'pointerdown',e=>{if(this.stickId!=null)return;e.preventDefault();this.stickId=e.pointerId;this.stickCenter=null;stick.setPointerCapture?.(e.pointerId);this.moveStick(e);});
+    this.onDOM(stick,'pointermove',e=>this.moveStick(e));
+    for(const event of ['pointerup','pointercancel','lostpointercapture'])this.onDOM(stick,event,e=>this.endStick(e));
+    this.onDOM(this.root,'pointerdown',e=>this.tryFloatStick(e));
+    this.onDOM(this.root,'pointermove',e=>{if(e.pointerId===this.stickId)this.moveStick(e);});
+    for(const event of ['pointerup','pointercancel'])this.onDOM(this.root,event,e=>this.endStick(e));
+  }
+  /** Left 40% of the playfield, under the top-button row. */
+  inStickZone(e){
+    const doc=this.root.document;
+    const game=doc?.getElementById?.('game');
+    const g=game?.getBoundingClientRect?.();
+    const width=g?.width||this.root.innerWidth||doc?.documentElement?.clientWidth||0;
+    const left=g?.left||0;
+    if(!(width>0))return false;
+    const x=(e.clientX??0)-left;
+    if(x<0||x>width*0.4)return false;
+    const top=doc?.getElementById?.('top-buttons');
+    const tr=top?.getBoundingClientRect?.();
+    const limit=tr&&(tr.height||tr.bottom)?(typeof tr.bottom==='number'?tr.bottom:tr.top+tr.height):0;
+    return (e.clientY??0)>=limit;
+  }
+  tryFloatStick(e){
+    if(this.stickId!=null||!this.stickEl)return;
+    if(e.pointerType&&e.pointerType!=='touch'&&e.pointerType!=='pen')return;
+    const body=this.root.document?.body;
+    if(body?.classList?.contains?.('playing')===false)return;
+    if(e.target?.closest?.('button,a,input,select,textarea'))return;
+    if(!this.inStickZone(e))return;
+    e.preventDefault?.();
+    const stick=this.stickEl;
+    const rect=stick.getBoundingClientRect?.()||{width:100};
+    const half=(rect.width||100)/2;
+    const host=stick.parentElement?.getBoundingClientRect?.()||{left:0,top:0};
+    stick.style.left=`${(e.clientX??0)-(host.left||0)-half}px`;
+    stick.style.top=`${(e.clientY??0)-(host.top||0)-half}px`;
+    stick.style.bottom='auto';
+    stick.style.visibility='visible';
+    stick.classList?.add('live');
+    this.stickCenter={x:e.clientX,y:e.clientY};
+    this.stickId=e.pointerId;
+    stick.setPointerCapture?.(e.pointerId);
+    this.moveStick(e);
+  }
+  hideStick(){
+    const stick=this.stickEl;if(!stick)return;
+    stick.classList?.remove('live');
+    stick.style.visibility='hidden';
+  }
+  moveStick(e){
+    if(e.pointerId!==this.stickId)return;
+    const stick=this.stickEl;if(!stick)return;
+    const r=stick.getBoundingClientRect?.()||{left:0,top:0,width:100};
+    const R=r.width/2||1;
+    let dx,dy;
+    if(this.stickCenter){dx=(e.clientX-this.stickCenter.x)/R;dy=(e.clientY-this.stickCenter.y)/R;}
+    else{dx=(e.clientX-r.left-R)/R;dy=(e.clientY-r.top-R)/R;}
+    const m=Math.max(1,Math.hypot(dx,dy));dx/=m;dy/=m;
+    this.touchAxis={x:Math.abs(dx)>.23?dx:0,y:Math.abs(dy)>.23?dy:0};
+    if(this.knobEl)this.knobEl.style.transform=`translate(${dx*R*.55}px,${dy*R*.55}px)`;
+  }
+  endStick(e){
+    if(this.stickId==null||e?.pointerId!==this.stickId)return;
+    this.stickId=null;this.stickCenter=null;this.touchAxis={x:0,y:0};
+    if(this.knobEl)this.knobEl.style.transform='';
+    this.hideStick();
   }
   pollPad(){
     const p=Array.from(this.root.navigator?.getGamepads?.()||[]).find(Boolean);this.padHeld={};

@@ -113,6 +113,8 @@ export function stepRangedLane(self, enemies, dy, speed, dt) {
 const ROAR = 1.1;
 /** Flinch window: a held eggplant stream staggers a Yetti at most this often, so packs still close in. Bonks always stagger. */
 export const POISE = Object.freeze({ light: .45, heavy: .9 });
+/** A killing eggplant slides the body at least this far along the shot. */
+export const KILL_KNOCK = 80;
 export function choirMultiplier(e, enemies) {
   for (let i = 0; i < enemies.length; i++) {
     const a = enemies[i];
@@ -257,7 +259,12 @@ export class Yetti {
         return { accepted: true, phase };
       }
     }
-    if (this.hp === 0) { this.alive = false; this.state = 'dead'; }
+    if (this.hp === 0) {
+      this.alive = false; this.state = 'dead';
+      const push = Math.sign(dir);
+      // Shake pickups stay where the kill landed. The body is what slides.
+      if (push) { this.koFrom = this.x; this.x += push * KILL_KNOCK; }
+    }
     else if (!this.boss && (bonk || this.poise <= 0)) {
       this.state = 'hurt'; this.stun = bonk ? .4 : .14; this.x += dir * (bonk ? 65 : 12);
       this.poise = TYPES[this.type].heavy ? POISE.heavy : POISE.light;
