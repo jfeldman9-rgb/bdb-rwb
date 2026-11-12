@@ -20,7 +20,7 @@ Open **http://127.0.0.1:8765/** to play or **http://127.0.0.1:8765/?demo=1** for
 | DAD | R / V | LB |
 | Pause | Escape / P | Start |
 
-Touch uses a stick and five buttons. Play in landscape. Story is the default on a fresh touch device; Adventure is the desktop default. Nightmare unlocks after victory. Optional auto-fire is off initially. It fires along Bob's current facing lane.
+Touch uses a floating stick and five buttons. A touch in the left side of the screen places the stick; letting go hides it. Play in landscape. Story is the default on a fresh touch device; Adventure is the desktop default. Nightmare unlocks after victory. Auto-fire starts on for a fresh touch save and off on desktop. A saved choice is kept. It fires along Bob's current facing lane.
 
 Three shakes grant a PAPI charge (maximum two). PAPI clears visible regular enemies. In the finale, weaken **both Wingmen to 1 HP**, then use PAPI. A shake trio appears every eight seconds if the finisher is ready and the meter is empty. Dad first becomes available in Chapter 1, zone 3; recharge needs both ten Bob KOs and 45 seconds, up to three calls per campaign. Checkpoints provide unlimited continues.
 

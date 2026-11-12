@@ -62,6 +62,20 @@ export function bossBarLayout(bars, out = []){
   return out;
 }
 export const mashRing = b => ({visible:b.state==='grabbed',progress:Math.min(1,b.grabMash/MASH_NEED)});
+/** Consecutive KOs inside this window build a chain. The counter shows from 3. */
+export const CHAIN_WINDOW = 2.5;
+export function chainMultiplier(chain) {
+  const n = chain | 0;
+  if (n >= 10) return 3;
+  if (n >= 5) return 2;
+  return 1;
+}
+export function chainLabel(chain, age = 0) {
+  const n = chain | 0;
+  if (n < 3 || age > CHAIN_WINDOW) return '';
+  const mult = chainMultiplier(n);
+  return mult > 1 ? `${n} CHAIN x${mult}` : `${n} CHAIN`;
+}
 export function stagePrompt(w){
   if(w.bob.state==='grabbed')return `MASH ANY BUTTON  ${Math.min(6,Math.floor(w.bob.grabMash))}/6`;
   if(w.finisher?.ready)return 'PRESS PAPI TO FINISH THE RESCUE';
@@ -86,6 +100,7 @@ export class HUD {
  constructor(scene){this.scene=scene;const text=(x,y,size,color='#f7f1e4')=>scene.add.text(x,y,'',{fontFamily:'Arial, sans-serif',fontSize:size,color,fontStyle:'bold'}).setScrollFactor(0).setDepth(20001);
   this.g=scene.add.graphics().setScrollFactor(0).setDepth(20000);this.chapter=text(30,22,14,'#dcc08a');this.health=text(30,48,27);this.meter=text(30,85,15);
   this.score=text(1245,26,17).setOrigin(1,0);this.zone=text(1245,53,13,'#a6bbcd').setOrigin(1,0);
+  this.chain=text(1245,76,16,'#ffd27a').setOrigin(1,0);
   this.banner=text(640,148,25).setOrigin(.5).setAlign('center').setWordWrapWidth(1020);
   this.boss=text(640,106,14).setOrigin(.5);this.prompt=text(640,684,16,'#fff0bf').setOrigin(.5);
   this.w1=text(390,60,12,'#d0beff');this.w2=text(650,60,12,'#ffb1d6');
@@ -98,6 +113,8 @@ export class HUD {
   this.health.setText('♥ '.repeat(Math.ceil(w.bob.hp))+'♡ '.repeat(Math.max(0,w.bob.maxHp-Math.ceil(w.bob.hp))));
   this.meter.setText(`SHAKES ${'▰'.repeat(w.papi.shakeRemainder)}${'▱'.repeat(3-w.papi.shakeRemainder)}   PAPI ${w.papi.charges}/2   DAD ${dadMeter(w.dadCall)}`);
   this.score.setText(`${String(Math.floor(w.score)).padStart(6,'0')}  PTS`);this.zone.setText(`${w.difficultyKey.toUpperCase()}  ·  ${w.bossActive?'BOSS':`ZONE ${Math.min(w.def.zones.length,w.zoneIndex+1)}/${w.def.zones.length}`}`);
+  const chainAge = Number.isFinite(w.chainAt) ? (w.elapsed || 0) - w.chainAt : Infinity;
+  this.chain.setText(chainLabel(w.chain, chainAge));
   this.banner.setText(w.paused?'PAUSED':w.victory?(!w.def?.next?STORY.finalVictory:'CLAUDIA RESCUED.'):w.messageTime>0?w.message:'');
   this.boss.setText(bossLabel(w));
   this.prompt.setText(stagePrompt(w));
