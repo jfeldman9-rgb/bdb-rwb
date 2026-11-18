@@ -23,6 +23,38 @@ test('title begins on gamepad Start; gameplay pauses on Enter',()=>{
  other.root.emit('keydown',{code:'KeyR'});
  assert.equal(gameplayWantsPause(other.input),false);
 });
+test('a touch in the left 40% below the top buttons floats the stick and release hides it',()=>{
+  const{root,els,input}=setup();
+  root.innerWidth=1000;root.innerHeight=500;
+  const classes=new Set();
+  els.stick.classList={add(c){classes.add(c);},remove(c){classes.delete(c);},toggle(){},contains(c){return classes.has(c);}};
+  els.stick.getBoundingClientRect=()=>({left:0,top:0,width:100,height:100});
+  els.stick.parentElement={getBoundingClientRect:()=>({left:0,top:0})};
+  const top={getBoundingClientRect:()=>({left:600,top:0,width:200,height:80,bottom:80})};
+  const orig=root.document.getElementById;
+  root.document.getElementById=id=>id==='top-buttons'?top:orig(id);
+  const down=(id,x,y,type='touch',target)=>(root.emit('pointerdown',{pointerId:id,pointerType:type,clientX:x,clientY:y,target}),input.stickId??null);
+  assert.equal(down(1,500,200),null,'the right 60% is not a stick');
+  assert.equal(down(2,100,40),null,'above the top buttons is not a stick');
+  assert.equal(down(3,100,200,'mouse'),null,'a mouse click does not raise the stick');
+  assert.equal(down(4,120,200,'touch',{closest:()=>true}),null,'buttons keep their own presses');
+  assert.equal(down(5,200,300),5);
+  assert.equal(els.stick.style.visibility,'visible');
+  assert.equal(classes.has('live'),true);
+  assert.equal(els.stick.style.left,'150px');
+  assert.equal(els.stick.style.top,'250px');
+  root.emit('pointermove',{pointerId:5,clientX:260,clientY:300});
+  input.update(.01);
+  assert.ok(input.x>.8,`axis ${input.x}`);
+  root.emit('pointerup',{pointerId:5});
+  input.update(.01);
+  assert.equal(input.x,0);
+  assert.equal(input.stickId,null);
+  assert.equal(els.stick.style.visibility,'hidden');
+  assert.equal(classes.has('live'),false);
+  root.document.body.classList={add(){},remove(){},toggle(){},contains:name=>name==='playing'?false:false};
+  assert.equal(down(6,180,240),null,'the title screen does not raise a stick');
+});
 test('Escape and P do not start the title; gameplay still pauses',()=>{
  for(const code of ['Escape','KeyP']){
   const title=setup();

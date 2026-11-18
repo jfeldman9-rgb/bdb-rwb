@@ -7,7 +7,7 @@ export const LANE_TOP = 572, LANE_BOT = 690;      // walkable depth band (screen
 export const WORLD_W = 7760;
 export const q = new URLSearchParams(globalThis.location?.search || '');
 export const DPR = globalThis.devicePixelRatio || 1;
-export const HITSTOP = { light: 4, medium: 6, heavy: 9, finisher: 14 };   // frames @60
+export const HITSTOP = { light: 1, medium: 6, heavy: 9, finisher: 14 };   // frames @60. Light chips are 0–1; bonk/KO/phase stay 6/9/14.
 export const SHAKE = { light: 0.16, medium: 0.28, heavy: 0.5, finisher: 0.75 };
 export const DEBUG = !!q.get('debug');
 export const clamp = (v, a, b) => v < a ? a : v > b ? b : v;

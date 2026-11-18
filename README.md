@@ -1,6 +1,6 @@
 # The Legend of Claudia: BDB's Awakening
 
-A three-chapter lane brawler on the vendored Phaser 4.2.1 engine. Bob fires straight eggplants, dashes through angelic Yetti shields, calls Dad, and rescues Claudia with a Papacito finale. The upgrade shop is cut from v1.
+A seven-chapter rescue campaign with a 3D action RPG and the original Phaser lane brawler. Both editions run from the static site and use the game's existing characters, art, voices and films.
 
 Run from the repository root:
 
@@ -8,7 +8,19 @@ Run from the repository root:
 python3 -m http.server 8765
 ```
 
-Open **http://127.0.0.1:8765/** to play or **http://127.0.0.1:8765/?demo=1** for the campaign bot. No build step or npm install is needed.
+Open **http://127.0.0.1:8765/index.html** and select **Play 3D RPG** or **Classic 2D**. Both modes also work from a static project subdirectory. Three.js r160 and Phaser are vendored locally. No build step or npm install is needed.
+
+## 3D RPG
+
+Use the virtual stick or WASD / arrows to explore. Bob automatically targets nearby Yettis and fires eggplants. Tap **Papacito** (Q) for a stampede or **Call Dad** (R) for the BDB fly swatter. The pause button, Escape or P pauses the adventure.
+
+Break the two violet halo seals in either order, then follow the gold gate marker to the chapter boss. The optional green shrine restores health and powers. Shrines, seals and bosses grant XP that increases health and damage. The Wingmen and the Arch-Yetti require a Papacito finisher. After the boss falls, approach the gate to continue.
+
+Seals, shrines and chapter unlocks save on this device under `bdb-rpg-3d-v1`. Continue from the campaign menu or replay an unlocked chapter. The RPG supports portrait and landscape. Direct links use `index.html?mode=3d` or `index.html?mode=3d&nocutscenes=1` to skip films.
+
+## Classic 2D
+
+Select **Classic 2D**, open `index.html?mode=classic`, or use `?demo=1` for the classic campaign bot.
 
 | Action | Keyboard | Gamepad |
 | --- | --- | --- |
@@ -20,7 +32,7 @@ Open **http://127.0.0.1:8765/** to play or **http://127.0.0.1:8765/?demo=1** for
 | DAD | R / V | LB |
 | Pause | Escape / P | Start |
 
-Touch uses a stick and five buttons. Play in landscape. Story is the default on a fresh touch device; Adventure is the desktop default. Nightmare unlocks after victory. Optional auto-fire is off initially. It fires along Bob's current facing lane.
+Touch uses a floating stick and five buttons. A touch in the left side of the screen places the stick; letting go hides it. Play in landscape. Story is the default on a fresh touch device; Adventure is the desktop default. Nightmare unlocks after victory. Auto-fire starts on for a fresh touch save and off on desktop. A saved choice is kept. It fires along Bob's current facing lane.
 
 Three shakes grant a PAPI charge (maximum two). PAPI clears visible regular enemies. In the finale, weaken **both Wingmen to 1 HP**, then use PAPI. A shake trio appears every eight seconds if the finisher is ready and the meter is empty. Dad first becomes available in Chapter 1, zone 3; recharge needs both ten Bob KOs and 45 seconds, up to three calls per campaign. Checkpoints provide unlimited continues.
 

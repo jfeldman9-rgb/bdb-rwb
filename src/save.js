@@ -2,12 +2,19 @@ import { resolveDifficulty } from './difficulty.js';
 import { maxStage } from './stages.js';
 export const SAVE_KEY = 'bdb-rwb-save-v1';
 export const DEFAULT_SAVE = Object.freeze({ version: 1, beaten: false, unlockedStage: 1, bestScore: 0, difficulty: 'adventure', autoFire: false });
+/** A missing save follows the device. A stored autoFire, including an explicit false, is kept. */
+export function autoFireFromSave(value, touch = false) {
+  if (value == null) return !!touch;
+  const s = typeof value === 'object' ? value : {};
+  if (Object.prototype.hasOwnProperty.call(s, 'autoFire')) return s.autoFire === true;
+  return false;
+}
 export function normalizeSave(value, touch = false) {
   const s = value && typeof value === 'object' ? value : {};
   const number = (v, fallback) => typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : fallback;
   const beaten = s.beaten === true;
   return { version: 1, beaten, unlockedStage: Math.max(beaten ? 4 : 1, Math.min(maxStage, number(s.unlockedStage ?? s.unlockedChapter, 1))),
-    bestScore: Math.max(0, number(s.bestScore, 0)), difficulty: resolveDifficulty(s.difficulty, beaten, touch), autoFire: s.autoFire === true };
+    bestScore: Math.max(0, number(s.bestScore, 0)), difficulty: resolveDifficulty(s.difficulty, beaten, touch), autoFire: autoFireFromSave(value, touch) };
 }
 export function loadSave(storage, touch = false) {
   try { return normalizeSave(JSON.parse((storage ?? globalThis.localStorage)?.getItem(SAVE_KEY) ?? 'null'), touch); }

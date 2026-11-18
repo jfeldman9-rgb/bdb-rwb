@@ -1,4 +1,13 @@
-import test from'node:test';import assert from'node:assert/strict';import{Yetti,TYPES,choirMultiplier,choirAura,separateEnemies,laneY,laneOf}from'../src/yettis.js';import{Campaign}from'../src/campaign.js';
+import test from'node:test';import assert from'node:assert/strict';import{Yetti,TYPES,choirMultiplier,choirAura,separateEnemies,laneY,laneOf,KILL_KNOCK}from'../src/yettis.js';import{Campaign}from'../src/campaign.js';
+test('a killing eggplant pushes the Yetti at least 80px; a chip does not',()=>{
+  assert.equal(KILL_KNOCK,80);
+  assert.equal(TYPES.choirmaster.hp,1140);
+  const chip=new Yetti('walker',500,630);const chipX=chip.x;chip.takeHit(12,1,false);assert.equal(chip.alive,true);assert.equal(chip.x,chipX+12);
+  const right=new Yetti('walker',500,630);right.hp=12;right.takeHit(12,1,false);assert.equal(right.alive,false);assert.ok(right.x-500>=80,`pushed to ${right.x}`);
+  const left=new Yetti('walker',500,630);left.hp=12;left.takeHit(12,-1,false);assert.equal(left.alive,false);assert.ok(500-left.x>=80,`pushed to ${left.x}`);
+  const w=new Campaign();const g=new Yetti('guard',400,630);g.shield=false;g.hp=12;w.enemies=[g];w.hit(g,48,-1,false);
+  assert.equal(g.alive,false);assert.ok(400-g.x>=80);assert.equal(w.pickups[0].x,400,'the shake stays where the kill landed');
+});
 test('packet HP scales by twelve for all six roles',()=>{assert.deepEqual(Object.fromEntries(['walker','guard','hover','charger','choir','lecturer'].map(k=>[k,TYPES[k].hp])),{walker:24,guard:48,hover:36,charger:48,choir:36,lecturer:48});});
 test('guard front blocks, rear hits, and dash breaks the shield',()=>{const e=new Yetti('guard',100,630);assert.ok(e.takeHit(12,1).blocked);assert.equal(e.hp,48);assert.ok(e.takeHit(12,-1).accepted);assert.equal(e.hp,36);assert.ok(e.breakShield());assert.ok(e.takeHit(12,1).accepted);});
 test('guard shield shatters after three frontal eggplants',()=>{const e=new Yetti('guard',100,630);assert.ok(e.takeHit(12,1).blocked);assert.equal(e.shieldHits,1);assert.ok(e.takeHit(12,1).blocked);assert.equal(e.shieldHits,2);const third=e.takeHit(12,1);assert.ok(third.blocked);assert.ok(third.shieldBroke);assert.equal(e.shield,false);assert.equal(e.hp,48);assert.ok(e.takeHit(12,1).accepted);assert.equal(e.hp,36);});
